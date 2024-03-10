@@ -1,5 +1,11 @@
 defmodule Mozart.Util do
-  def get_test_state() do
-    %{}
+
+  alias Mozart.Data.ProcessModel
+  alias Mozart.Data.ProcessState
+
+  def get_simple_state() do
+    %ProcessState{
+      model: %ProcessModel{name: "foo", tasks: [], initial_task: :foo}
+    }
   end
 end
