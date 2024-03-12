@@ -1,3 +1,3 @@
-defmodule Mozart.Data.ServiceTask do
-  defstruct [:name, :function]
+defmodule Mozart.Data.Task do
+  defstruct [:name, :type, :function, :next]
 end
