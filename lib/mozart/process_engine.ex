@@ -6,9 +6,11 @@ defmodule Mozart.ProcessEngine do
 
   ## GenServer callbacks
 
-  def init(state) do
+  def init({model, data}) do
     id = UUID.generate()
-    state = Map.put(state, :id, id)
+    state = %ProcessState{model: model, data: data, id: id}
+    state = Map.put(state, :open_task_names, [state.model.initial_task])
+    state = execute_service_tasks(state)
     {:ok, state}
   end
 
@@ -28,6 +30,10 @@ defmodule Mozart.ProcessEngine do
     {:reply, state.data, state}
   end
 
+  def handle_call(:get_open_tasks, _from, state) do
+    {:reply, state.open_task_names, state}
+  end
+
   def handle_cast({:set_model, model}, state) do
     {:noreply, Map.put(state, :model, model)}
   end
@@ -42,21 +48,18 @@ defmodule Mozart.ProcessEngine do
 
   ## callback utilities
 
-  def initialize_tasks(state) do
-    %{model: model} = state
-    %{initial_task: task, tasks: tasks} = model
-    tasks = [task | tasks]
-    model = Map.put(model, :tasks, tasks)
-    Map.put(state, :model, model)
+  def complete_service_task(task, state) do
+    data = task.function.(state.data)
+    Map.put(state, :data, data)
   end
 
-  def complete_service_task(_task, _state) do
-
+  def get_task(task_name, state) do
+    Enum.find(state.model.tasks, fn task -> task.name == task_name end)
   end
 
   def execute_service_tasks(state) do
-    %ProcessState{open_tasks: open_tasks, data: _data} = state
-    service_tasks = Enum.filter(open_tasks, fn task -> task.type == :service end)
-    Enum.each(service_tasks, fn task -> complete_service_task(task, state) end)
+    open_tasks = Enum.map(state.open_task_names, fn name -> get_task(name, state) end)
+    [service_task] = Enum.filter(open_tasks, fn task -> task.type == :service end)
+    complete_service_task(service_task, state)
   end
 end

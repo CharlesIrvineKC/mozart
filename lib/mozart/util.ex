@@ -10,7 +10,7 @@ defmodule Mozart.Util do
           %Task{
             name: :foo,
             type: :service,
-            function: fn data -> IO.puts(data.foo) end,
+            function: fn data -> data end,
             next: nil
           }
         ],
