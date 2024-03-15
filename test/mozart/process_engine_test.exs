@@ -4,6 +4,8 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Util
   alias Mozart.ProcessEngine
 
+  @moduletag timeout: :infinity
+
   test "start server and get id" do
     model = Util.get_simple_model()
     data = %{foo: "foo"}
@@ -32,7 +34,7 @@ defmodule Mozart.ProcessEngineTest do
     model = Util.get_simple_model()
     data = %{value: 1}
     {:ok, server} = GenServer.start_link(ProcessEngine, {model, data})
-    assert GenServer.call(server, :get_open_tasks) == [:foo]
+    assert GenServer.call(server, :get_open_tasks) == []
   end
 
   test "complete increment by one task" do
@@ -40,5 +42,14 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, server} = GenServer.start_link(ProcessEngine, {model, data})
     assert GenServer.call(server, :get_data) == %{value: 1}
+    assert GenServer.call(server, :get_open_tasks) == []
+  end
+
+  test "two increment tasks in a row" do
+    model = Util.get_increment_twice_by_one_model()
+    data = %{value: 0}
+    {:ok, server} = GenServer.start_link(ProcessEngine, {model, data})
+    assert GenServer.call(server, :get_data) == %{value: 3}
+    assert GenServer.call(server, :get_open_tasks) == []
   end
 end

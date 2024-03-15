@@ -50,7 +50,25 @@ defmodule Mozart.ProcessEngine do
 
   def complete_service_task(task, state) do
     data = task.function.(state.data)
-    Map.put(state, :data, data)
+    state = Map.put(state, :data, data)
+    [_ | open_task_names] = state.open_task_names
+    state = Map.put(state, :open_task_names, open_task_names)
+
+    state =
+      if task.next != nil do
+        open_task_names = [task.next | state.open_task_names]
+        Map.put(state, :open_task_names, open_task_names)
+      else
+        state
+      end
+
+    if state.open_task_names != [] do
+      [task_name | _] = state.open_task_names
+      task = get_task(task_name, state)
+      complete_service_task(task, state)
+    else
+      state
+    end
   end
 
   def get_task(task_name, state) do
