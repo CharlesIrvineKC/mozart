@@ -77,7 +77,11 @@ defmodule Mozart.ProcessEngine do
 
   def execute_service_tasks(state) do
     open_tasks = Enum.map(state.open_task_names, fn name -> get_task(name, state) end)
-    [service_task] = Enum.filter(open_tasks, fn task -> task.type == :service end)
-    complete_service_task(service_task, state)
+    service_tasks = Enum.filter(open_tasks, fn task -> task.type == :service end)
+    if (service_tasks != []) do
+      complete_service_task(List.first(service_tasks), state)
+    else
+      state
+    end
   end
 end

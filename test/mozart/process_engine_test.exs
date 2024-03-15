@@ -15,6 +15,14 @@ defmodule Mozart.ProcessEngineTest do
     assert GenServer.call(server, :get_data) == %{foo: "foo"}
   end
 
+  test "one user task" do
+    model = Util.get_simple_user_task_model()
+    data = %{value: 0}
+    {:ok, server} = GenServer.start_link(ProcessEngine, {model, data})
+    assert GenServer.call(server, :get_data) == %{value: 0}
+    assert GenServer.call(server, :get_open_tasks) == [:foo]
+  end
+
   test "set and get process state model" do
     model = Util.get_simple_model()
     data = "foo"
@@ -50,6 +58,14 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, server} = GenServer.start_link(ProcessEngine, {model, data})
     assert GenServer.call(server, :get_data) == %{value: 3}
+    assert GenServer.call(server, :get_open_tasks) == []
+  end
+
+  test "Three increment tasks in a row" do
+    model = Util.get_increment_three_times_by_one_model()
+    data = %{value: 0}
+    {:ok, server} = GenServer.start_link(ProcessEngine, {model, data})
+    assert GenServer.call(server, :get_data) == %{value: 6}
     assert GenServer.call(server, :get_open_tasks) == []
   end
 end
