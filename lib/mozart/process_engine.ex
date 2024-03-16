@@ -34,16 +34,27 @@ defmodule Mozart.ProcessEngine do
     {:reply, state.open_task_names, state}
   end
 
+  def handle_call({:complete_user_task, task_name, return_data}, _from, state) do
+    state =
+      if Enum.member?(state.open_task_names, task_name) do
+        data = Map.merge(state.data, return_data)
+        state = Map.put(state, :data, data)
+        open_task_names = List.delete(state.open_task_names, task_name)
+        state = Map.put(state, :open_task_names, open_task_names)
+        execute_service_tasks(state)
+      else
+        state
+      end
+
+    {:reply, state.data, state}
+  end
+
   def handle_cast({:set_model, model}, state) do
     {:noreply, Map.put(state, :model, model)}
   end
 
   def handle_cast({:set_data, data}, state) do
     {:noreply, Map.put(state, :data, data)}
-  end
-
-  def handle_cast({:complete_task, _task}, state) do
-    {:noreply, state}
   end
 
   ## callback utilities
@@ -78,7 +89,8 @@ defmodule Mozart.ProcessEngine do
   def execute_service_tasks(state) do
     open_tasks = Enum.map(state.open_task_names, fn name -> get_task(name, state) end)
     service_tasks = Enum.filter(open_tasks, fn task -> task.type == :service end)
-    if (service_tasks != []) do
+
+    if service_tasks != [] do
       complete_service_task(List.first(service_tasks), state)
     else
       state

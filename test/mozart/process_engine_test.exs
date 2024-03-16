@@ -23,6 +23,28 @@ defmodule Mozart.ProcessEngineTest do
     assert GenServer.call(server, :get_open_tasks) == [:foo]
   end
 
+  test "complete one user task" do
+    model = Util.get_simple_user_task_model()
+    data = %{value: 0}
+    {:ok, server} = GenServer.start_link(ProcessEngine, {model, data})
+    assert GenServer.call(server, :get_data) == %{value: 0}
+    assert GenServer.call(server, :get_open_tasks) == [:foo]
+    GenServer.call(server, {:complete_user_task, :foo, %{foo: :foo, bar: :bar}})
+    assert GenServer.call(server, :get_data) == %{value: 0, foo: :foo, bar: :bar}
+    assert GenServer.call(server, :get_open_tasks) == []
+  end
+
+  test "complete one user task then sevice task" do
+    model = Util.get_simple_user_task_then_service_task_model()
+    data = %{value: 0}
+    {:ok, server} = GenServer.start_link(ProcessEngine, {model, data})
+    assert GenServer.call(server, :get_data) == %{value: 0}
+    assert GenServer.call(server, :get_open_tasks) == [:user_task_1]
+    GenServer.call(server, {:complete_user_task, :user_task_1, %{foo: :foo, bar: :bar}}, :infinity)
+    assert GenServer.call(server, :get_data) == %{value: 0, foo: :foo, bar: :bar}
+    assert GenServer.call(server, :get_open_tasks) == []
+  end
+
   test "set and get process state model" do
     model = Util.get_simple_model()
     data = "foo"

@@ -32,6 +32,26 @@ defmodule Mozart.Util do
       }
   end
 
+  def get_simple_user_task_then_service_task_model() do
+    %ProcessModel{
+        name: :user_task_then_service,
+        tasks: [
+          %Task{
+            name: :user_task_1,
+            type: :user,
+            next: :increment_by_one_task
+          },
+          %Task{
+            name: :increment_by_one_task,
+            type: :service,
+            function: fn map -> Map.put(map, :value, map.value + 1) end,
+            next: nil
+          }
+        ],
+        initial_task: :user_task_1
+      }
+  end
+
   def get_increment_by_one_model() do
     %ProcessModel{
         name: :increment_by_one_process,
