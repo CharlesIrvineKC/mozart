@@ -15,6 +15,12 @@ defmodule Mozart.ProcessManager do
     {:reply, :pong, state}
   end
 
+  def handle_call({:get_process_model, name}, _from, state) do
+    process_models = state.process_models
+    process_model = Map.get(process_models, name)
+    {:reply, process_model, state}
+  end
+
   def handle_call({:start_process, process_model_name, data}, _from, state) do
     process_model = Map.get(state.process_models, process_model_name)
     {:ok, process_pid} = GenServer.start_link(ProcessEngine, {process_model, data})
