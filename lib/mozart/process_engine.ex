@@ -73,13 +73,7 @@ defmodule Mozart.ProcessEngine do
         state
       end
 
-    if state.open_task_names != [] do
-      [task_name | _] = state.open_task_names
-      task = get_task(task_name, state)
-      complete_service_task(task, state)
-    else
-      state
-    end
+    execute_service_tasks(state)
   end
 
   def get_task(task_name, state) do

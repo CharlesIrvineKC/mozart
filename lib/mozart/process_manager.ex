@@ -3,9 +3,13 @@ defmodule Mozart.ProcessManager do
 
   alias Mozart.ProcessEngine
 
+  ## Client API
+
   def start_link(_init_arg) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
+
+  ## Callbacks
 
   def init(_init_arg) do
     {:ok, %{process_instances: %{}, process_models: %{}}}

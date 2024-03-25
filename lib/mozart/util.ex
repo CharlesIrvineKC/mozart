@@ -10,7 +10,7 @@ defmodule Mozart.Util do
           %Task{
             name: :foo,
             type: :service,
-            function: fn data -> data end,
+            function: fn data -> Map.merge(data, %{bar: :bar}) end,
             next: nil
           }
         ],
@@ -49,6 +49,26 @@ defmodule Mozart.Util do
           }
         ],
         initial_task: :user_task_1
+      }
+  end
+
+  def get_service_task_then_simple_user_task_model() do
+    %ProcessModel{
+        name: :user_task_then_service,
+        tasks: [
+          %Task{
+            name: :increment_by_one_task,
+            type: :service,
+            function: fn map -> Map.put(map, :value, map.value + 1) end,
+            next: :user_task_1
+          },
+          %Task{
+            name: :user_task_1,
+            type: :user,
+            next: nil
+          },
+        ],
+        initial_task: :increment_by_one_task
       }
   end
 
