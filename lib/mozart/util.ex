@@ -25,6 +25,7 @@ defmodule Mozart.Util do
           %Task{
             name: :foo,
             type: :user,
+            assigned_groups: ["admin"],
             next: nil
           }
         ],
@@ -39,7 +40,8 @@ defmodule Mozart.Util do
           %Task{
             name: :user_task_1,
             type: :user,
-            next: :increment_by_one_task
+            assigned_groups: ["admin"],
+           next: :increment_by_one_task
           },
           %Task{
             name: :increment_by_one_task,
@@ -65,6 +67,7 @@ defmodule Mozart.Util do
           %Task{
             name: :user_task_1,
             type: :user,
+            assigned_groups: ["admin"],
             next: nil
           },
         ],

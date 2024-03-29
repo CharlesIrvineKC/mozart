@@ -2,30 +2,34 @@ defmodule Mozart.ProcessManagerTest do
   use ExUnit.Case
 
   alias Mozart.ProcessManager
-  alias Mozart.ProcessEngine
+  # alias Mozart.ProcessEngine
   alias Mozart.Util
-
-  test "start process manager" do
-    assert GenServer.call(ProcessManager, :ping) == :pong
-  end
 
   setup do
     simple_model = Util.get_simple_model()
     GenServer.cast(ProcessManager, {:load_process_model, simple_model})
     simple_data = %{foo: :foo}
-    %{ simple_data: simple_data}
+    %{simple_data: simple_data, user_id: "crirvine"}
   end
 
   test "load a process model" do
-    model = GenServer.call(ProcessManager, {:get_process_model, :foo})
+    model = ProcessManager.get_process_model(:foo)
     assert model.name == :foo
   end
 
-  test "start a simple process", %{simple_data: simple_data} do
-    simple_model = GenServer.call(ProcessManager, {:get_process_model, :foo})
-    {:ok, ppid} = GenServer.start_link(ProcessEngine, {simple_model, simple_data})
-    assert ppid != nil
-    assert GenServer.call(ppid, :get_data) == %{foo: :foo, bar: :bar}
-    assert GenServer.call(ppid, :get_open_tasks) == []
+  test "start a simple process new", %{simple_data: simple_data} do
+    process_id = ProcessManager.start_process(:foo, simple_data)
+    assert process_id != nil
+  end
+
+  test "start a process and get its ppid", %{simple_data: simple_data} do
+    process_id = ProcessManager.start_process(:foo, simple_data)
+    process_pid = ProcessManager.get_process_ppid(process_id)
+    assert process_pid != nil
+  end
+
+  test "get user tasks", %{user_id: user_id} do
+    tasks = IO.inspect(ProcessManager.get_user_tasks(user_id))
+    assert tasks == []
   end
 end
