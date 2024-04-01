@@ -4,6 +4,7 @@ defmodule Mozart.UserManagerTest do
   alias Mozart.UserManager
 
   setup do
+    UserManager.start_link(nil)
     %{user: "foo"}
   end
 

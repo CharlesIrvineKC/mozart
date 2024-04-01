@@ -2,11 +2,13 @@ defmodule Mozart.ProcessManagerTest do
   use ExUnit.Case
 
   alias Mozart.ProcessManager
-  # alias Mozart.ProcessEngine
+  alias Mozart.UserManager
   alias Mozart.Util
 
   setup do
     simple_model = Util.get_simple_model()
+    ProcessManager.start_link(nil)
+    UserManager.start_link(nil)
     GenServer.cast(ProcessManager, {:load_process_model, simple_model})
     simple_data = %{foo: :foo}
     %{simple_data: simple_data, user_id: "crirvine"}

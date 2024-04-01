@@ -3,6 +3,7 @@ defmodule Mozart.MixProject do
 
   def project do
     [
+      aliases: [test: "test --no-start"],
       app: :mozart,
       version: "0.1.0",
       elixir: "~> 1.16",
