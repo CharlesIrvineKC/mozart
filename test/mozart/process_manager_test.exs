@@ -4,11 +4,13 @@ defmodule Mozart.ProcessManagerTest do
   alias Mozart.ProcessManager
   alias Mozart.UserManager
   alias Mozart.Util
+  alias Mozart.Data.User
 
   setup do
     simple_model = Util.get_simple_model()
     ProcessManager.start_link(nil)
     UserManager.start_link(nil)
+    UserManager.insert_user(%User{name: "crirvine", groups: ["admin"]})
     GenServer.cast(ProcessManager, {:load_process_model, simple_model})
     simple_data = %{foo: :foo}
     %{simple_data: simple_data, user_id: "crirvine"}
@@ -31,7 +33,7 @@ defmodule Mozart.ProcessManagerTest do
   end
 
   test "get user tasks", %{user_id: user_id} do
-    tasks = IO.inspect(ProcessManager.get_user_tasks(user_id))
+    tasks = ProcessManager.get_user_tasks(user_id)
     assert tasks == []
   end
 end
