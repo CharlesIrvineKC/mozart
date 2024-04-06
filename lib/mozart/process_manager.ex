@@ -26,6 +26,10 @@ defmodule Mozart.ProcessManager do
     GenServer.call(__MODULE__, {:get_user_tasks, user_id})
   end
 
+  def load_process_model(model) do
+    GenServer.cast(__MODULE__, {:load_process_model, model})
+  end
+
   ## Callbacks
 
   def init(_init_arg) do

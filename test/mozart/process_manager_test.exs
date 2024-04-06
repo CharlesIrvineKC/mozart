@@ -7,33 +7,37 @@ defmodule Mozart.ProcessManagerTest do
   alias Mozart.Data.User
 
   setup do
-    simple_model = Util.get_simple_model()
     ProcessManager.start_link(nil)
     UserManager.start_link(nil)
-    UserManager.insert_user(%User{name: "crirvine", groups: ["admin"]})
-    GenServer.cast(ProcessManager, {:load_process_model, simple_model})
-    simple_data = %{foo: :foo}
-    %{simple_data: simple_data, user_id: "crirvine"}
+    %{ok: nil}
   end
 
   test "load a process model" do
+    ProcessManager.load_process_model(Util.get_simple_model())
+
     model = ProcessManager.get_process_model(:foo)
     assert model.name == :foo
   end
 
-  test "start a simple process new", %{simple_data: simple_data} do
-    process_id = ProcessManager.start_process(:foo, simple_data)
+  test "start a simple process new" do
+    ProcessManager.load_process_model(Util.get_simple_model())
+
+    process_id = ProcessManager.start_process(:foo, %{foo: :foo})
+    
     assert process_id != nil
   end
 
-  test "start a process and get its ppid", %{simple_data: simple_data} do
-    process_id = ProcessManager.start_process(:foo, simple_data)
+  test "start a process and get its ppid" do
+    ProcessManager.load_process_model(Util.get_simple_model())
+
+    process_id = ProcessManager.start_process(:foo, %{foo: :foo})
     process_pid = ProcessManager.get_process_ppid(process_id)
     assert process_pid != nil
   end
 
-  test "get user tasks", %{user_id: user_id} do
-    tasks = ProcessManager.get_user_tasks(user_id)
+  test "get empty user tasks" do
+    UserManager.insert_user(%User{name: "crirvine", groups: ["admin"]})
+    tasks = ProcessManager.get_user_tasks("crirvine")
     assert tasks == []
   end
 end
