@@ -17,12 +17,24 @@ defmodule Mozart.ProcessEngineTest do
     assert ProcessEngine.is_complete(ppid) == true
   end
 
-  test "execute process with choice" do
+  test "execute process with choice returning :foo" do
     model = Util.get_choice_model()
     data = %{value: 1}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
 
-    assert ProcessEngine.get_open_tasks(ppid) == [:foo]
+    assert ProcessEngine.get_open_tasks(ppid) == []
+    assert ProcessEngine.get_data(ppid) == %{value: 1, foo: :foo}
+    assert ProcessEngine.is_complete(ppid) == true
+  end
+
+  test "execute process with choice returning :bar" do
+    model = Util.get_choice_model()
+    data = %{value: 11}
+    {:ok, ppid} = ProcessEngine.start_link(model, data)
+
+    assert ProcessEngine.get_open_tasks(ppid) == []
+    assert ProcessEngine.get_data(ppid) == %{value: 11, bar: :bar}
+    assert ProcessEngine.is_complete(ppid) == true
   end
 
   test "one user task" do

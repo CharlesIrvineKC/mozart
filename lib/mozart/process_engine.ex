@@ -122,7 +122,8 @@ defmodule Mozart.ProcessEngine do
       )
     open_task_names = [next_task_name | state.open_task_names]
     open_task_names = List.delete(open_task_names, task.name)
-    Map.put(state, :open_task_names, open_task_names)
+    state = Map.put(state, :open_task_names, open_task_names)
+    execute_process(state)
   end
 
   defp get_task(task_name, state) do
