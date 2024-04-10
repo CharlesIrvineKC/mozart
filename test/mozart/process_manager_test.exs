@@ -23,7 +23,6 @@ defmodule Mozart.ProcessManagerTest do
     ProcessManager.load_process_model(Util.get_simple_model())
 
     process_id = ProcessManager.start_process(:foo, %{foo: :foo})
-    
     assert process_id != nil
   end
 

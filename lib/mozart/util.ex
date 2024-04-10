@@ -3,6 +3,41 @@ defmodule Mozart.Util do
   alias Mozart.Data.Task
   alias Mozart.Data.ProcessModel
 
+  def get_choice_model() do
+    %ProcessModel{
+        name: :foo,
+        tasks: [
+          %Task{
+            name: :choice_flow,
+            type: :choice,
+            choices: [
+              %{
+                expression: fn data -> data.value < 10 end,
+                next: :foo
+              },
+              %{
+                expression: fn data -> data.value >= 10 end,
+                next: :bar
+              }
+            ]
+          },
+          %Task{
+            name: :foo,
+            type: :service,
+            function: fn data -> Map.merge(data, %{foo: :foo}) end,
+            next: nil
+          },
+          %Task{
+            name: :bar,
+            type: :service,
+            function: fn data -> Map.merge(data, %{bar: :bar}) end,
+            next: nil
+          }
+        ],
+        initial_task: :choice_flow
+      }
+  end
+
   def get_simple_model() do
     %ProcessModel{
         name: :foo,

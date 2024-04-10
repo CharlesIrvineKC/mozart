@@ -14,6 +14,15 @@ defmodule Mozart.ProcessEngineTest do
     id = ProcessEngine.get_id(ppid)
     assert id != nil
     assert ProcessEngine.get_data(ppid) == %{foo: "foo", bar: :bar}
+    assert ProcessEngine.is_complete(ppid) == true
+  end
+
+  test "execute process with choice" do
+    model = Util.get_choice_model()
+    data = %{value: 1}
+    {:ok, ppid} = ProcessEngine.start_link(model, data)
+
+    assert ProcessEngine.get_open_tasks(ppid) == [:foo]
   end
 
   test "one user task" do
@@ -23,6 +32,7 @@ defmodule Mozart.ProcessEngineTest do
 
     assert ProcessEngine.get_data(ppid) == %{value: 0}
     assert ProcessEngine.get_open_tasks(ppid) == [:foo]
+    assert ProcessEngine.is_complete(ppid) == false
   end
 
   test "complete one user task" do
@@ -80,6 +90,7 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 1}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_open_tasks(ppid) == []
+    assert ProcessEngine.is_complete(ppid) == true
   end
 
   test "complete increment by one task" do
@@ -88,6 +99,7 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_data(ppid) == %{value: 1}
     assert ProcessEngine.get_open_tasks(ppid) == []
+    assert ProcessEngine.is_complete(ppid) == true
   end
 
   test "two increment tasks in a row" do
@@ -96,6 +108,7 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_data(ppid) == %{value: 3}
     assert ProcessEngine.get_open_tasks(ppid) == []
+    assert ProcessEngine.is_complete(ppid) == true
   end
 
   test "Three increment tasks in a row" do
@@ -104,5 +117,6 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_data(ppid) == %{value: 6}
     assert ProcessEngine.get_open_tasks(ppid) == []
+    assert ProcessEngine.is_complete(ppid) == true
   end
 end
