@@ -16,7 +16,7 @@ defmodule Mozart.ProcessManagerTest do
 
   test "load a process model" do
     model = ProcessManager.get_process_model(:simple_process_model)
-    ProcessManager.load_process_model(IO.inspect(model))
+    ProcessManager.load_process_model(model)
 
     model = ProcessManager.get_process_model(:simple_process_model)
     assert model.name == :simple_process_model
@@ -24,7 +24,7 @@ defmodule Mozart.ProcessManagerTest do
 
   test "start a simple process new" do
     model = ProcessManager.get_process_model(:simple_process_model)
-    ProcessManager.load_process_model(IO.inspect(model))
+    ProcessManager.load_process_model(model)
 
     process_id = ProcessManager.start_process(:simple_process_model, %{foo: :foo})
     assert process_id != nil
@@ -32,7 +32,7 @@ defmodule Mozart.ProcessManagerTest do
 
   test "start a process and get its ppid" do
     model = ProcessManager.get_process_model(:simple_process_model)
-    ProcessManager.load_process_model(IO.inspect(model))
+    ProcessManager.load_process_model(model)
 
     process_id = ProcessManager.start_process(:simple_process_model, %{foo: :foo})
     process_pid = ProcessManager.get_process_ppid(process_id)
