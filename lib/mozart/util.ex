@@ -1,14 +1,14 @@
 defmodule Mozart.Util do
-
   alias Mozart.Data.Task
   alias Mozart.Data.ProcessModel
 
-  def get_choice_model() do
-    %ProcessModel{
-        name: :foo,
+  def get_testing_process_models do
+    [
+      %ProcessModel{
+        name: :choice_process_model,
         tasks: [
           %Task{
-            name: :choice_flow,
+            name: :choice_task,
             type: :choice,
             choices: [
               %{
@@ -34,13 +34,10 @@ defmodule Mozart.Util do
             next: nil
           }
         ],
-        initial_task: :choice_flow
-      }
-  end
-
-  def get_simple_model() do
-    %ProcessModel{
-        name: :foo,
+        initial_task: :choice_task
+      },
+      %ProcessModel{
+        name: :simple_process_model,
         tasks: [
           %Task{
             name: :foo,
@@ -50,12 +47,9 @@ defmodule Mozart.Util do
           }
         ],
         initial_task: :foo
-      }
-  end
-
-  def get_simple_user_task_model() do
-    %ProcessModel{
-        name: :foo,
+      },
+      %ProcessModel{
+        name: :user_task_process_model,
         tasks: [
           %Task{
             name: :foo,
@@ -65,18 +59,15 @@ defmodule Mozart.Util do
           }
         ],
         initial_task: :foo
-      }
-  end
-
-  def get_simple_user_task_then_service_task_model() do
-    %ProcessModel{
+      },
+      %ProcessModel{
         name: :user_task_then_service,
         tasks: [
           %Task{
             name: :user_task_1,
             type: :user,
             assigned_groups: ["admin"],
-           next: :increment_by_one_task
+            next: :increment_by_one_task
           },
           %Task{
             name: :increment_by_one_task,
@@ -86,12 +77,9 @@ defmodule Mozart.Util do
           }
         ],
         initial_task: :user_task_1
-      }
-  end
-
-  def get_service_task_then_simple_user_task_model() do
-    %ProcessModel{
-        name: :user_task_then_service,
+      },
+      %ProcessModel{
+        name: :service_then_user_task,
         tasks: [
           %Task{
             name: :increment_by_one_task,
@@ -104,14 +92,11 @@ defmodule Mozart.Util do
             type: :user,
             assigned_groups: ["admin"],
             next: nil
-          },
+          }
         ],
         initial_task: :increment_by_one_task
-      }
-  end
-
-  def get_increment_by_one_model() do
-    %ProcessModel{
+      },
+      %ProcessModel{
         name: :increment_by_one_process,
         tasks: [
           %Task{
@@ -122,12 +107,9 @@ defmodule Mozart.Util do
           }
         ],
         initial_task: :increment_by_one_task
-      }
-  end
-
-  def get_increment_twice_by_one_model() do
-    %ProcessModel{
-        name: :increment_by_one_process,
+      },
+      %ProcessModel{
+        name: :increment_by_one_twice_process,
         tasks: [
           %Task{
             name: :increment_by_one_task,
@@ -140,15 +122,12 @@ defmodule Mozart.Util do
             type: :service,
             function: fn map -> Map.put(map, :value, map.value + 2) end,
             next: nil
-          },
+          }
         ],
         initial_task: :increment_by_one_task
-      }
-  end
-
-  def get_increment_three_times_by_one_model() do
-    %ProcessModel{
-        name: :increment_by_one_process,
+      },
+      %ProcessModel{
+        name: :three_increment_by_one_process,
         tasks: [
           %Task{
             name: :increment_by_one_task,
@@ -167,9 +146,10 @@ defmodule Mozart.Util do
             type: :service,
             function: fn map -> Map.put(map, :value, map.value + 3) end,
             next: nil
-          },
+          }
         ],
         initial_task: :increment_by_one_task
       }
+    ]
   end
 end
