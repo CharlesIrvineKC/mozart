@@ -1,4 +1,4 @@
-defmodule Mozart.TaskManager do
+defmodule Mozart.UserTaskManager do
   use GenServer
 
   ## Client API
