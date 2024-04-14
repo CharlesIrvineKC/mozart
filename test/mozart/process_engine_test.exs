@@ -1,6 +1,7 @@
 defmodule Mozart.ProcessEngineTest do
   use ExUnit.Case
 
+  alias Mozart.UserTaskManager
   alias Mozart.Util
   alias Mozart.ProcessEngine
   alias Mozart.ProcessManager
@@ -10,6 +11,7 @@ defmodule Mozart.ProcessEngineTest do
   setup do
 
     ProcessManager.start_link(nil)
+    UserTaskManager.start_link([])
     Enum.each(Util.get_testing_process_models(), fn model -> ProcessManager.load_process_model(model) end)
     %{ok: nil}
   end
@@ -53,6 +55,7 @@ defmodule Mozart.ProcessEngineTest do
     assert ProcessEngine.get_data(ppid) == %{value: 0}
     assert ProcessEngine.get_open_tasks(ppid) == [:foo]
     assert ProcessEngine.is_complete(ppid) == false
+    assert UserTaskManager.get_user_tasks() != []
   end
 
   test "complete one user task" do

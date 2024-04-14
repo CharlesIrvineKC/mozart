@@ -1,11 +1,11 @@
-defmodule Mozart.TaskManagerTest do
+defmodule Mozart.UserTaskManagerTest do
   use ExUnit.Case
 
   alias Mozart.UserTaskManager
   alias Mozart.Data.Task
 
   setup do
-    UserTaskManager.start_link([])
+    {:ok, _pid} = UserTaskManager.start_link([])
     %{ok: nil}
   end
 

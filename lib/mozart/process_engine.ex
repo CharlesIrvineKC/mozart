@@ -2,6 +2,7 @@ defmodule Mozart.ProcessEngine do
   use GenServer
 
   alias Mozart.Data.ProcessState
+  alias Mozart.UserTaskManager
   alias Ecto.UUID
 
   ## Client API
@@ -42,10 +43,16 @@ defmodule Mozart.ProcessEngine do
 
   def init({model, data}) do
     id = UUID.generate()
-    state = %ProcessState{model: model, data: data, id: id}
-    state = Map.put(state, :open_task_names, [state.model.initial_task])
+    state = %ProcessState{model: model, data: data, id: id, open_task_names: []}
+    state = insert_new_task(state, state.model.initial_task)
     state = execute_process(state)
     {:ok, state}
+  end
+
+  def insert_new_task(state, task_name) do
+    new_task = get_task(task_name, state)
+    if (new_task.type == :user), do: UserTaskManager.insert_user_task(new_task)
+    Map.put(state, :open_task_names, [task_name | state.open_task_names])
   end
 
   def handle_call(:is_complete, _from, state) do
@@ -105,8 +112,7 @@ defmodule Mozart.ProcessEngine do
 
     state =
       if task.next != nil do
-        open_task_names = [task.next | state.open_task_names]
-        Map.put(state, :open_task_names, open_task_names)
+        insert_new_task(state, task.next)
       else
         state
       end
@@ -120,9 +126,8 @@ defmodule Mozart.ProcessEngine do
         task.choices,
         fn choice -> if choice.expression.(state.data), do: choice.next end
       )
-    open_task_names = [next_task_name | state.open_task_names]
-    open_task_names = List.delete(open_task_names, task.name)
-    state = Map.put(state, :open_task_names, open_task_names)
+    state = insert_new_task(state, next_task_name)
+    state = Map.put(state, :open_task_names, List.delete(state.open_task_names, task.name))
     execute_process(state)
   end
 
