@@ -5,7 +5,7 @@ defmodule Mozart.UserManagerTest do
   alias Mozart.Data.User
 
   setup do
-    UserManager.start_link(nil)
+    {:ok, _pid} = UserManager.start_link(nil)
     %{user: %User{name: "Irvine", groups: [:admin]}}
   end
 

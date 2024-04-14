@@ -10,8 +10,8 @@ defmodule Mozart.ProcessEngineTest do
 
   setup do
 
-    ProcessManager.start_link(nil)
-    UserTaskManager.start_link([])
+    {:ok, _pid} = ProcessManager.start_link(nil)
+    {:ok, _pid} = UserTaskManager.start_link([])
     Enum.each(Util.get_testing_process_models(), fn model -> ProcessManager.load_process_model(model) end)
     %{ok: nil}
   end

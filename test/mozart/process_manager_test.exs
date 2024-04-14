@@ -7,10 +7,11 @@ defmodule Mozart.ProcessManagerTest do
   alias Mozart.Data.User
 
   setup do
-    ProcessManager.start_link(nil)
+    {:ok, _pid} = ProcessManager.start_link(nil)
 
     Enum.each(Util.get_testing_process_models(), fn model -> ProcessManager.load_process_model(model) end)
-    UserManager.start_link(nil)
+
+    {:ok, _pid} = UserManager.start_link(nil)
     %{ok: nil}
   end
 

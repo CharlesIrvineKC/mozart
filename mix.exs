@@ -3,10 +3,10 @@ defmodule Mozart.MixProject do
 
   def project do
     [
-      aliases: [test: "test --no-start"],
       app: :mozart,
       version: "0.1.0",
       elixir: "~> 1.16",
+      aliases: [test: "test --no-start"],
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
