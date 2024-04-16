@@ -1,9 +1,9 @@
-defmodule Mozart.ProcessManager do
+defmodule Mozart.ProcessService do
   use GenServer
 
   alias Mozart.ProcessEngine
-  alias Mozart.UserManager
-  alias Mozart.UserTaskManager
+  alias Mozart.UserService
+  alias Mozart.UserTaskService
 
   ## Client API
 
@@ -56,8 +56,8 @@ defmodule Mozart.ProcessManager do
   end
 
   def handle_call({:get_user_tasks, user_id}, _from, state) do
-    member_groups = UserManager.get_assigned_groups(user_id)
-    tasks = UserTaskManager.get_tasks_for_groups(member_groups)
+    member_groups = UserService.get_assigned_groups(user_id)
+    tasks = UserTaskService.get_tasks_for_groups(member_groups)
     {:reply, tasks, state}
   end
 

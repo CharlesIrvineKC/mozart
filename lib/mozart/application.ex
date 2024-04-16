@@ -4,9 +4,9 @@ defmodule Mozart.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Mozart.ProcessManager, nil},
-      {Mozart.UserManager, nil},
-      {Mozart.UserTaskManager, []}
+      {Mozart.ProcessService, nil},
+      {Mozart.UserService, nil},
+      {Mozart.UserTaskService, []}
     ]
 
     opts = [strategy: :one_for_one, name: Mozart.Supervisor]

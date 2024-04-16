@@ -1,4 +1,4 @@
-defmodule Mozart.UserManager do
+defmodule Mozart.UserService do
   use GenServer
 
   ## Client API

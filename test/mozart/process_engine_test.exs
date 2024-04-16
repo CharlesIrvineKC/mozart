@@ -1,23 +1,23 @@
 defmodule Mozart.ProcessEngineTest do
   use ExUnit.Case
 
-  alias Mozart.UserTaskManager
+  alias Mozart.UserTaskService
   alias Mozart.Util
   alias Mozart.ProcessEngine
-  alias Mozart.ProcessManager
+  alias Mozart.ProcessService
 
   @moduletag timeout: :infinity
 
   setup do
 
-    {:ok, _pid} = ProcessManager.start_link(nil)
-    {:ok, _pid} = UserTaskManager.start_link([])
-    Enum.each(Util.get_testing_process_models(), fn model -> ProcessManager.load_process_model(model) end)
+    {:ok, _pid} = ProcessService.start_link(nil)
+    {:ok, _pid} = UserTaskService.start_link([])
+    Enum.each(Util.get_testing_process_models(), fn model -> ProcessService.load_process_model(model) end)
     %{ok: nil}
   end
 
   test "start server and get id" do
-    model = ProcessManager.get_process_model(:simple_process_model)
+    model = ProcessService.get_process_model(:simple_process_model)
     data = %{foo: "foo"}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
 
@@ -28,7 +28,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "execute process with choice returning :foo" do
-    model = ProcessManager.get_process_model(:choice_process_model)
+    model = ProcessService.get_process_model(:choice_process_model)
     data = %{value: 1}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
 
@@ -38,7 +38,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "execute process with choice returning :bar" do
-    model = ProcessManager.get_process_model(:choice_process_model)
+    model = ProcessService.get_process_model(:choice_process_model)
     data = %{value: 11}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
 
@@ -48,18 +48,18 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "one user task" do
-    model = ProcessManager.get_process_model(:user_task_process_model)
+    model = ProcessService.get_process_model(:user_task_process_model)
     data = %{value: 0}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
 
     assert ProcessEngine.get_data(ppid) == %{value: 0}
     assert ProcessEngine.get_open_tasks(ppid) == [:foo]
     assert ProcessEngine.is_complete(ppid) == false
-    assert UserTaskManager.get_user_tasks() != []
+    assert UserTaskService.get_user_tasks() != []
   end
 
   test "complete one user task" do
-    model = ProcessManager.get_process_model(:user_task_process_model)
+    model = ProcessService.get_process_model(:user_task_process_model)
     data = %{value: 0}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
 
@@ -72,7 +72,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "complete one user task then sevice task" do
-    model = ProcessManager.get_process_model(:user_task_then_service)
+    model = ProcessService.get_process_model(:user_task_then_service)
     data = %{value: 0}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_data(ppid) == %{value: 0}
@@ -83,7 +83,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "complete one servuce task then user task" do
-    model = ProcessManager.get_process_model(:service_then_user_task)
+    model = ProcessService.get_process_model(:service_then_user_task)
     data = %{value: 0}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_data(ppid) == %{value: 1}
@@ -94,7 +94,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "set and get process state model" do
-    model = ProcessManager.get_process_model(:simple_process_model)
+    model = ProcessService.get_process_model(:simple_process_model)
     data = %{foo: :foo}
     {:ok, ppid} = GenServer.start_link(ProcessEngine, {model, data})
     assert GenServer.call(ppid, :get_model) == model
@@ -102,14 +102,14 @@ defmodule Mozart.ProcessEngineTest do
 
   test "set and get data" do
     data = %{value: 1}
-    model = ProcessManager.get_process_model(:simple_process_model)
+    model = ProcessService.get_process_model(:simple_process_model)
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     ProcessEngine.set_data(ppid, data)
     assert ProcessEngine.get_data(ppid) == data
   end
 
   test "get process model open tasks" do
-    model = ProcessManager.get_process_model(:simple_process_model)
+    model = ProcessService.get_process_model(:simple_process_model)
     data = %{value: 1}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_open_tasks(ppid) == []
@@ -117,7 +117,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "complete increment by one task" do
-    model = ProcessManager.get_process_model(:increment_by_one_process)
+    model = ProcessService.get_process_model(:increment_by_one_process)
     data = %{value: 0}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_data(ppid) == %{value: 1}
@@ -126,7 +126,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "two increment tasks in a row" do
-    model = ProcessManager.get_process_model(:increment_by_one_twice_process)
+    model = ProcessService.get_process_model(:increment_by_one_twice_process)
     data = %{value: 0}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_data(ppid) == %{value: 3}
@@ -135,7 +135,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "Three increment tasks in a row" do
-    model = ProcessManager.get_process_model(:three_increment_by_one_process)
+    model = ProcessService.get_process_model(:three_increment_by_one_process)
     data = %{value: 0}
     {:ok, ppid} = ProcessEngine.start_link(model, data)
     assert ProcessEngine.get_data(ppid) == %{value: 6}

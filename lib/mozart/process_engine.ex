@@ -2,7 +2,7 @@ defmodule Mozart.ProcessEngine do
   use GenServer
 
   alias Mozart.Data.ProcessState
-  alias Mozart.UserTaskManager
+  alias Mozart.UserTaskService
   alias Ecto.UUID
 
   ## Client API
@@ -51,7 +51,7 @@ defmodule Mozart.ProcessEngine do
 
   def insert_new_task(state, task_name) do
     new_task = get_task(task_name, state)
-    if (new_task.type == :user), do: UserTaskManager.insert_user_task(new_task)
+    if (new_task.type == :user), do: UserTaskService.insert_user_task(new_task)
     Map.put(state, :open_task_names, [task_name | state.open_task_names])
   end
 
