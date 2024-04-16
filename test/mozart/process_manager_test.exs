@@ -3,15 +3,16 @@ defmodule Mozart.ProcessManagerTest do
 
   alias Mozart.ProcessManager
   alias Mozart.UserManager
+  alias Mozart.UserTaskManager
   alias Mozart.Util
   alias Mozart.Data.User
 
   setup do
     {:ok, _pid} = ProcessManager.start_link(nil)
-
     Enum.each(Util.get_testing_process_models(), fn model -> ProcessManager.load_process_model(model) end)
-
     {:ok, _pid} = UserManager.start_link(nil)
+    {:ok, _pid} = UserTaskManager.start_link([])
+
     %{ok: nil}
   end
 
@@ -40,7 +41,7 @@ defmodule Mozart.ProcessManagerTest do
     assert process_pid != nil
   end
 
-  test "get empty user tasks" do
+  test "get user tasks for person" do
     UserManager.insert_user(%User{name: "crirvine", groups: ["admin"]})
     tasks = ProcessManager.get_user_tasks("crirvine")
     assert tasks == []

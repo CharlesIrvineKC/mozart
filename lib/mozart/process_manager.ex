@@ -3,6 +3,7 @@ defmodule Mozart.ProcessManager do
 
   alias Mozart.ProcessEngine
   alias Mozart.UserManager
+  alias Mozart.UserTaskManager
 
   ## Client API
 
@@ -56,12 +57,8 @@ defmodule Mozart.ProcessManager do
 
   def handle_call({:get_user_tasks, user_id}, _from, state) do
     member_groups = UserManager.get_assigned_groups(user_id)
-    tasks = find_tasks_assigned_to_groups(member_groups, state.process_instances)
+    tasks = UserTaskManager.get_tasks_for_groups(member_groups)
     {:reply, tasks, state}
-  end
-
-  def find_tasks_assigned_to_groups(_groups, _p_instances) do
-    []
   end
 
   def handle_cast({:load_process_model, process_model}, state) do

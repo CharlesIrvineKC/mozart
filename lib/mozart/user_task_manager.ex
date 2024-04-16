@@ -15,8 +15,8 @@ defmodule Mozart.UserTaskManager do
     GenServer.cast(__MODULE__, {:insert_user_task, task})
   end
 
-  def get_tasks_from_groups(groups) do
-    GenServer.call(__MODULE__, {:get_tasks_from_groups, groups})
+  def get_tasks_for_groups(groups) do
+    GenServer.call(__MODULE__, {:get_tasks_for_groups, groups})
   end
 
   ## Callbacks
@@ -29,7 +29,7 @@ defmodule Mozart.UserTaskManager do
     {:reply, state.user_tasks, state}
   end
 
-  def handle_call({:get_tasks_from_groups, groups}, _from, state) do
+  def handle_call({:get_tasks_for_groups, groups}, _from, state) do
     intersection = fn grp1, grp2 -> temp = grp1 -- grp2; grp1 -- temp end
     tasks = Enum.filter(state.user_tasks, fn task -> intersection.(task.assigned_groups, groups) != [] end)
     {:reply, tasks, state}
