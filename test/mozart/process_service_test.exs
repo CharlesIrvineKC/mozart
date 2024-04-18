@@ -28,16 +28,16 @@ defmodule Mozart.ProcessServiceTest do
     model = ProcessService.get_process_model(:simple_process_model)
     ProcessService.load_process_model(model)
 
-    process_id = ProcessService.start_process(:simple_process_model, %{foo: :foo})
-    assert process_id != nil
+    process_uid = ProcessService.start_process(:simple_process_model, %{foo: :foo})
+    assert process_uid != nil
   end
 
   test "start a process and get its ppid" do
     model = ProcessService.get_process_model(:simple_process_model)
     ProcessService.load_process_model(model)
 
-    process_id = ProcessService.start_process(:simple_process_model, %{foo: :foo})
-    process_pid = ProcessService.get_process_ppid(process_id)
+    process_uid = ProcessService.start_process(:simple_process_model, %{foo: :foo})
+    process_pid = ProcessService.get_process_ppid(process_uid)
     assert process_pid != nil
   end
 

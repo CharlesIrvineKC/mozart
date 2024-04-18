@@ -1,9 +1,11 @@
 defmodule Mozart.UserTaskServiceTest do
   use ExUnit.Case
 
+  alias Mozart.ProcessEngine
   alias Mozart.ProcessService
   alias Mozart.UserTaskService
   alias Mozart.Data.Task
+  alias Mozart.Data.User
   alias Mozart.Util
 
   setup do
@@ -38,9 +40,29 @@ defmodule Mozart.UserTaskServiceTest do
   test "complete a user task" do
     model = ProcessService.get_process_model(:user_task_process_model)
     ProcessService.load_process_model(model)
-    process_id = ProcessService.start_process(:user_task_process_model, %{foo: :foo})
-    process_pid = ProcessService.get_process_ppid(process_id)
+    process_uid = ProcessService.start_process(:user_task_process_model, %{foo: :foo})
 
+    process_pid = ProcessService.get_process_ppid(process_uid)
+    assert ProcessEngine.is_complete(process_pid) == false
 
+    ProcessEngine.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
+    assert ProcessEngine.is_complete(process_pid) == true
+  end
+
+  test "complete a user task with specified user" do
+    model = ProcessService.get_process_model(:user_task_process_model)
+    ProcessService.load_process_model(model)
+    process_uid = ProcessService.start_process(:user_task_process_model, %{foo: :foo})
+
+    process_pid = ProcessService.get_process_ppid(process_uid)
+    assert ProcessEngine.is_complete(process_pid) == false
+
+    user = %User{name: "cirvine", groups: ["admin"]}
+    assert UserTaskService.get_tasks_for_groups(user.groups) != []
+    UserTaskService.get_user_tasks()
+
+    ProcessEngine.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
+    assert ProcessEngine.get_data(process_pid) == %{foobar: "foobar", foo: :foo}
+    assert ProcessEngine.is_complete(process_pid) == true
   end
 end
