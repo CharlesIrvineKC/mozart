@@ -5,6 +5,7 @@ defmodule Mozart.Application do
   def start(_type, _args) do
     children = [
       {Mozart.ProcessService, nil},
+      {Mozart.ProcessModelService, nil},
       {Mozart.UserService, nil},
       {Mozart.UserTaskService, []}
     ]

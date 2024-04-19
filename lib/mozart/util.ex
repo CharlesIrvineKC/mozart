@@ -5,6 +5,36 @@ defmodule Mozart.Util do
   def get_testing_process_models do
     [
       %ProcessModel{
+        name: :call_process_model,
+        tasks: [
+          %Task{
+            name: :call_process_task,
+            type: :sub_process,
+            sub_process: :subprocess_model,
+            next: :bar
+          },
+          %Task{
+            name: :bar,
+            type: :service,
+            function: fn data -> Map.merge(data, %{bar: :bar}) end,
+            next: nil
+          }
+        ],
+        initial_task: :call_process_task
+      },
+      %ProcessModel{
+        name: :subprocess_model,
+        tasks: [
+          %Task{
+            name: :foo,
+            type: :service,
+            function: fn data -> Map.merge(data, %{foo: :foo}) end,
+            next: nil
+          }
+        ],
+        initial_task: :foo
+      },
+      %ProcessModel{
         name: :choice_process_model,
         tasks: [
           %Task{

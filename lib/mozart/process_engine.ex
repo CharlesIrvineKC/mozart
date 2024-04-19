@@ -3,20 +3,25 @@ defmodule Mozart.ProcessEngine do
 
   alias Mozart.Data.ProcessState
   alias Mozart.UserTaskService
+  alias Mozart.ProcessModelService
   alias Ecto.UUID
 
   ## Client API
 
-  def start_link(model, data) do
-    GenServer.start_link(__MODULE__, {model, data})
+  def start_link(model, data, parent \\ nil) do
+    GenServer.start_link(__MODULE__, {model, data, parent})
   end
 
   def get_state(ppid) do
     GenServer.call(ppid, :get_state)
   end
 
-  def get_id(ppid) do
-    GenServer.call(ppid, :get_id)
+  def get_uid(ppid) do
+    GenServer.call(ppid, :get_uid)
+  end
+
+  def get_model(ppid) do
+    GenServer.call(ppid, :get_model)
   end
 
   def get_data(ppid) do
@@ -41,9 +46,9 @@ defmodule Mozart.ProcessEngine do
 
   ## GenServer callbacks
 
-  def init({model, data}) do
-    id = UUID.generate()
-    state = %ProcessState{model: model, data: data, id: id, open_task_names: []}
+  def init({model, data, parent}) do
+    uid = UUID.generate()
+    state = %ProcessState{model: model, data: data, uid: uid, open_task_names: [], parent: parent}
     state = insert_new_task(state, state.model.initial_task)
     state = execute_process(state)
     {:ok, state}
@@ -67,8 +72,8 @@ defmodule Mozart.ProcessEngine do
     {:reply, state.model, state}
   end
 
-  def handle_call(:get_id, _from, state) do
-    {:reply, state.id, state}
+  def handle_call(:get_uid, _from, state) do
+    {:reply, state.uid, state}
   end
 
   def handle_call(:get_data, _from, state) do
@@ -131,6 +136,12 @@ defmodule Mozart.ProcessEngine do
     execute_process(state)
   end
 
+  def complete_call_process_task(task, state) do
+    sub_process_model = ProcessModelService.get_process_model(task.sub_process)
+    data = state.data
+    {:ok, _ppid} = start_link(sub_process_model, data, state.uid)
+  end
+
   defp get_task(task_name, state) do
     Enum.find(state.model.tasks, fn task -> task.name == task_name end)
   end
@@ -142,7 +153,7 @@ defmodule Mozart.ProcessEngine do
 
   defp is_executable(name, state) do
     task = get_task(name, state)
-    if task.type == :service || task.type == :choice, do: task
+    if task.type == :service || task.type == :choice || task.type == :sub_process, do: task
   end
 
   defp execute_process(state) do
@@ -156,6 +167,9 @@ defmodule Mozart.ProcessEngine do
 
           executable_task.type == :choice ->
             complete_choice_task(executable_task, state)
+
+          executable_task.type == :sub_process ->
+            complete_call_process_task(executable_task, state)
         end
       else
         state

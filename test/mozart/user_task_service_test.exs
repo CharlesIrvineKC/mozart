@@ -3,6 +3,7 @@ defmodule Mozart.UserTaskServiceTest do
 
   alias Mozart.ProcessEngine
   alias Mozart.ProcessService
+  alias Mozart.ProcessModelService
   alias Mozart.UserTaskService
   alias Mozart.Data.Task
   alias Mozart.Data.User
@@ -11,7 +12,8 @@ defmodule Mozart.UserTaskServiceTest do
   setup do
     {:ok, _pid} = UserTaskService.start_link([])
     {:ok, _pid} = ProcessService.start_link(nil)
-    Enum.each(Util.get_testing_process_models(), fn model -> ProcessService.load_process_model(model) end)
+    {:ok, _pid} = ProcessModelService.start_link(nil)
+    Enum.each(Util.get_testing_process_models(), fn model -> ProcessModelService.load_process_model(model) end)
     %{ok: nil}
   end
 
@@ -38,8 +40,6 @@ defmodule Mozart.UserTaskServiceTest do
   end
 
   test "complete a user task" do
-    model = ProcessService.get_process_model(:user_task_process_model)
-    ProcessService.load_process_model(model)
     process_uid = ProcessService.start_process(:user_task_process_model, %{foo: :foo})
 
     process_pid = ProcessService.get_process_ppid(process_uid)
@@ -50,8 +50,6 @@ defmodule Mozart.UserTaskServiceTest do
   end
 
   test "complete a user task with specified user" do
-    model = ProcessService.get_process_model(:user_task_process_model)
-    ProcessService.load_process_model(model)
     process_uid = ProcessService.start_process(:user_task_process_model, %{foo: :foo})
 
     process_pid = ProcessService.get_process_ppid(process_uid)
