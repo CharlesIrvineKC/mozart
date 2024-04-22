@@ -24,6 +24,10 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:start_process, model_name, process_data})
   end
 
+  def start_sub_process(model_name, process_data, parent_uid) do
+    GenServer.cast(__MODULE__, {:start_sub_process, model_name, process_data, parent_uid})
+  end
+
   def get_user_tasks(user_id) do
     GenServer.call(__MODULE__, {:get_user_tasks, user_id})
   end
@@ -31,7 +35,11 @@ defmodule Mozart.ProcessService do
   ## Callbacks
 
   def init(_init_arg) do
-    {:ok, %{process_instances: %{}, process_models: %{}}}
+    {:ok, %{process_instances: %{}}}
+  end
+
+  def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
   end
 
   def handle_call(:get_process_instances, _from, state) do
@@ -42,6 +50,12 @@ defmodule Mozart.ProcessService do
     {:reply, Map.get(state.process_instances, process_uid), state}
   end
 
+  def handle_call({:get_user_tasks, user_id}, _from, state) do
+    member_groups = UserService.get_assigned_groups(user_id)
+    tasks = UserTaskService.get_tasks_for_groups(member_groups)
+    {:reply, tasks, state}
+  end
+
   def handle_call({:start_process, process_model_name, data}, _from, state) do
     process_model = ProcessModelService.get_process_model(process_model_name)
     {:ok, process_pid} = ProcessEngine.start_link(process_model, data)
@@ -50,9 +64,11 @@ defmodule Mozart.ProcessService do
     {:reply, process_uid, Map.put(state, :process_instances, process_instances)}
   end
 
-  def handle_call({:get_user_tasks, user_id}, _from, state) do
-    member_groups = UserService.get_assigned_groups(user_id)
-    tasks = UserTaskService.get_tasks_for_groups(member_groups)
-    {:reply, tasks, state}
+  def handle_cast({:start_sub_process, process_model_name, data, parent_uid}, state) do
+    process_model = ProcessModelService.get_process_model(process_model_name)
+    {:ok, process_pid} = ProcessEngine.start_link(process_model, data, parent_uid)
+    process_uid = ProcessEngine.get_uid(process_pid)
+    process_instances = Map.put(state.process_instances, process_uid, process_pid)
+    {:noreply, Map.put(state, :process_instances, process_instances)}
   end
 end

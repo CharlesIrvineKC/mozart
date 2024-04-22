@@ -15,8 +15,8 @@ defmodule Mozart.Util do
           },
           %Task{
             name: :bar,
-            type: :service,
-            function: fn data -> Map.merge(data, %{bar: :bar}) end,
+            type: :user,
+            assigned_groups: ["admin"],
             next: nil
           }
         ],
@@ -26,13 +26,13 @@ defmodule Mozart.Util do
         name: :subprocess_model,
         tasks: [
           %Task{
-            name: :foo,
+            name: :service_task,
             type: :service,
-            function: fn data -> Map.merge(data, %{foo: :foo}) end,
+            function: fn data -> Map.merge(data, %{service: :service}) end,
             next: nil
           }
         ],
-        initial_task: :foo
+        initial_task: :service_task
       },
       %ProcessModel{
         name: :choice_process_model,

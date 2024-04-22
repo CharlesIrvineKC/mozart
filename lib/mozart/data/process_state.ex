@@ -6,8 +6,9 @@ defmodule Mozart.Data.ProcessState do
     model: %ProcessModel{},
     data: %{},
     uid: nil,
-    open_task_names: nil,
+    open_tasks: nil,
     complete: false,
-    parent: nil
+    parent: nil,
+    children: []
   ]
 end

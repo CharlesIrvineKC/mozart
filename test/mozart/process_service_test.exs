@@ -22,10 +22,9 @@ defmodule Mozart.ProcessServiceTest do
     %{ok: nil}
   end
 
-  # test "start simple subprocess" do
-  #   ProcessService.start_process(:call_process_model, %{foo: :foo})
-  #   IO.inspect(ProcessService.get_process_instances())
-  # end
+  test "start simple subprocess" do
+    process_uid = ProcessService.start_process(:call_process_model, %{foo: :foo})
+  end
 
   test "start a process and get its ppid" do
     process_uid = ProcessService.start_process(:simple_process_model, %{foo: :foo})
