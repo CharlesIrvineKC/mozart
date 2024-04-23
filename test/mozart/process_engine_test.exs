@@ -41,16 +41,15 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, _ppid} = PE.start_link(model, data)
     assert length(Map.keys(PS.get_process_instances())) == 2
     pids = Map.values(PS.get_process_instances())
-    Enum.each(IO.inspect(pids), fn pid -> IO.inspect(PE.get_state(pid), label: "**** state ****") end)
   end
 
   test "execute process with service subprocess" do
     model = ProcessModelService.get_process_model(:simple_call_service_process_model)
     data = %{value: 1}
-    {:ok, _ppid} = PE.start_link(model, data)
+    {:ok, ppid} = PE.start_link(model, data)
     assert length(Map.keys(PS.get_process_instances())) == 2
-    pids = Map.values(PS.get_process_instances())
-    Enum.each(IO.inspect(pids), fn pid -> IO.inspect(PE.get_state(pid), label: "**** state ****") end)
+    assert PE.get_data(ppid) == %{value: 1, service: :service}
+
   end
 
   test "execute process with choice returning :foo" do

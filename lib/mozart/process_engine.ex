@@ -55,7 +55,16 @@ defmodule Mozart.ProcessEngine do
 
   def init({model, data, parent}) do
     uid = UUID.generate()
-    state = %ProcessState{model: model, data: data, uid: uid, open_tasks: [], parent: parent}
+
+    state = %ProcessState{
+      model: model,
+      data: data,
+      uid: uid,
+      open_tasks: [],
+      pending_sub_tasks: [],
+      parent: parent
+    }
+
     state = insert_new_task(state, state.model.initial_task)
     ProcessService.register_process_instance(uid, self())
     state = execute_process(state)
@@ -119,14 +128,15 @@ defmodule Mozart.ProcessEngine do
   def handle_cast({:notify_child_complete, sub_process_name, child_data}, state) do
     state = Map.put(state, :data, Map.merge(state.data, child_data))
 
-    open_tasks =
-      Enum.reject(state.open_tasks, fn task ->
+    pending_sub_tasks =
+      Enum.reject(state.pending_sub_tasks, fn task ->
         task.sub_process_impl == sub_process_name
       end)
+    state = Map.merge(state, %{pending_sub_tasks: pending_sub_tasks})
 
     task = get_task_by_sub_process_name(sub_process_name, state)
-    open_tasks = [new_task_instance(task) | open_tasks]
-    state = Map.merge(state, %{open_tasks: open_tasks, complete: true})
+    state = if task.next, do: insert_new_task(state, task.next), else: state
+
     state = execute_process(state)
     {:noreply, state}
   end
@@ -198,26 +208,30 @@ defmodule Mozart.ProcessEngine do
   defp is_executable(otask, state) do
     task = get_task(otask.task_name, state)
 
-    if task.type == :service || task.type == :choice ||
-         (task.type == :sub_process && !otask.pending),
+    if task.type == :service || task.type == :choice || task.type == :sub_process,
        do: true,
        else: false
   end
 
   defp set_subprocess_task_pending(executable_task, state) do
     otask = Enum.find(state.open_tasks, fn ot -> ot.task_name == executable_task.name end)
-    otask = %TaskInstance{otask | pending: true}
 
     open_tasks =
-      Enum.map(state.open_tasks, fn ot ->
+      Enum.reject(state.open_tasks, fn ot ->
         if ot.task_name == ot.task_name, do: otask, else: ot
       end)
 
-    Map.put(state, :open_tasks, open_tasks)
+    pending_sub_tasks = [otask | state.pending_sub_tasks]
+
+    state |> Map.put(:open_tasks, open_tasks) |> Map.put(:pending_sub_tasks, pending_sub_tasks)
+  end
+
+  defp work_remaining(state) do
+    state.open_tasks != [] || state.pending_sub_tasks != []
   end
 
   defp execute_process(state) do
-    if state.open_tasks != [] do
+    if work_remaining(state) do
       executable_task = get_executable_task(state)
 
       if executable_task do
@@ -237,14 +251,11 @@ defmodule Mozart.ProcessEngine do
       end
     else
       ## process is complete
-      IO.puts "PROCESS IS COMPLETE"
-      state = Map.put(state, :complete, true)
-
       if state.parent do
         ProcessEngine.notify_child_complete(state.parent, state.model.name, state.data)
-      else
-        state
       end
+
+      Map.put(state, :complete, true)
     end
   end
 end

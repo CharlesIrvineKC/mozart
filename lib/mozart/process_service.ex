@@ -26,6 +26,10 @@ defmodule Mozart.ProcessService do
     GenServer.cast(__MODULE__, {:register_process_instance, uid, pid})
   end
 
+  def get_state() do
+    GenServer.call(__MODULE__, :get_state)
+  end
+
   ## Callbacks
 
   def init(_init_arg) do
