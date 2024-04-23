@@ -2,6 +2,7 @@ defmodule Mozart.ProcessEngine do
   use GenServer
 
   alias Mozart.ProcessEngine
+  alias Mozart.ProcessService
   alias Mozart.Data.ProcessState
   alias Mozart.Data.TaskInstance
   alias Mozart.UserTaskService
@@ -56,7 +57,7 @@ defmodule Mozart.ProcessEngine do
     uid = UUID.generate()
     state = %ProcessState{model: model, data: data, uid: uid, open_tasks: [], parent: parent}
     state = insert_new_task(state, state.model.initial_task)
-    IO.puts "call execute fromn init"
+    ProcessService.register_process_instance(uid, self())
     state = execute_process(state)
     {:ok, state}
   end
@@ -70,7 +71,6 @@ defmodule Mozart.ProcessEngine do
   end
 
   def insert_new_task(state, task_name) do
-    IO.inspect(task_name, label: "task_name")
     new_task = get_task(task_name, state)
     if new_task.type == :user, do: UserTaskService.insert_user_task(new_task)
     task_instance = new_task_instance(new_task)
@@ -126,8 +126,7 @@ defmodule Mozart.ProcessEngine do
 
     task = get_task_by_sub_process_name(sub_process_name, state)
     open_tasks = [new_task_instance(task) | open_tasks]
-    state = Map.put(state, :open_tasks, open_tasks)
-    IO.puts "call execute from notify_child_complete"
+    state = Map.merge(state, %{open_tasks: open_tasks, complete: true})
     state = execute_process(state)
     {:noreply, state}
   end
@@ -154,7 +153,7 @@ defmodule Mozart.ProcessEngine do
       else
         state
       end
-    IO.puts "call execute from complete service task"
+
     execute_process(state)
   end
 
@@ -176,7 +175,6 @@ defmodule Mozart.ProcessEngine do
     data = state.data
     {:ok, process_pid} = start_link(sub_process_model, data, self())
     state = Map.put(state, :children, [process_pid | state.children])
-    IO.puts "call execute from call subprocess task"
     execute_process(state)
   end
 
@@ -219,16 +217,10 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp execute_process(state) do
-    IO.inspect(self(), label: "*********** execute_process ********************")
-    IO.inspect(state.model.name, label: "state.model.name")
-    IO.inspect(state.open_tasks, label: "open tasks")
-
     if state.open_tasks != [] do
       executable_task = get_executable_task(state)
 
       if executable_task do
-        IO.inspect(executable_task.name, label: "executable_task.name")
-
         cond do
           executable_task.type == :service ->
             complete_service_task(executable_task, state)
@@ -245,6 +237,7 @@ defmodule Mozart.ProcessEngine do
       end
     else
       ## process is complete
+      IO.puts "PROCESS IS COMPLETE"
       state = Map.put(state, :complete, true)
 
       if state.parent do

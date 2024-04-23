@@ -5,25 +5,43 @@ defmodule Mozart.Util do
   def get_testing_process_models do
     [
       %ProcessModel{
-        name: :call_process_model,
+        name: :simple_call_process_model,
         tasks: [
           %Task{
             name: :call_process_task,
             type: :sub_process,
-            sub_process: :subprocess_model,
-            next: :bar
-          },
-          %Task{
-            name: :bar,
-            type: :user,
-            assigned_groups: ["admin"],
+            sub_process: :user_subprocess_model,
             next: nil
           }
         ],
         initial_task: :call_process_task
       },
       %ProcessModel{
-        name: :subprocess_model,
+        name: :simple_call_service_process_model,
+        tasks: [
+          %Task{
+            name: :call_process_task,
+            type: :sub_process,
+            sub_process: :service_subprocess_model,
+            next: nil
+          }
+        ],
+        initial_task: :call_process_task
+      },
+      %ProcessModel{
+        name: :user_subprocess_model,
+        tasks: [
+          %Task{
+            name: :user_task,
+            type: :user,
+            assigned_groups: ["admin"],
+            next: nil
+          }
+        ],
+        initial_task: :user_task
+      },
+      %ProcessModel{
+        name: :service_subprocess_model,
         tasks: [
           %Task{
             name: :service_task,

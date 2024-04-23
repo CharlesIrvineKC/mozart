@@ -1,9 +1,9 @@
 defmodule Mozart.UserTaskServiceTest do
   use ExUnit.Case
 
-  alias Mozart.ProcessEngine
-  alias Mozart.ProcessService
-  alias Mozart.ProcessModelService
+  alias Mozart.ProcessEngine, as: PE
+  alias Mozart.ProcessService, as: PS
+  alias Mozart.ProcessModelService, as: PMS
   alias Mozart.UserTaskService
   alias Mozart.Data.Task
   alias Mozart.Data.User
@@ -11,9 +11,9 @@ defmodule Mozart.UserTaskServiceTest do
 
   setup do
     {:ok, _pid} = UserTaskService.start_link([])
-    {:ok, _pid} = ProcessService.start_link(nil)
-    {:ok, _pid} = ProcessModelService.start_link(nil)
-    Enum.each(Util.get_testing_process_models(), fn model -> ProcessModelService.load_process_model(model) end)
+    {:ok, _pid} = PS.start_link(nil)
+    {:ok, _pid} = PMS.start_link(nil)
+    Enum.each(Util.get_testing_process_models(), fn model -> PMS.load_process_model(model) end)
     %{ok: nil}
   end
 
@@ -40,27 +40,27 @@ defmodule Mozart.UserTaskServiceTest do
   end
 
   test "complete a user task" do
-    process_uid = ProcessService.start_process(:user_task_process_model, %{foo: :foo})
+    model = PMS.get_process_model(:user_task_process_model)
+    {:ok, process_pid} = PE.start_link(model, %{foo: :foo})
 
-    process_pid = ProcessService.get_process_ppid(process_uid)
-    assert ProcessEngine.is_complete(process_pid) == false
+    assert PE.is_complete(process_pid) == false
 
-    ProcessEngine.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
-    assert ProcessEngine.is_complete(process_pid) == true
+    PE.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
+    assert PE.is_complete(process_pid) == true
   end
 
   test "complete a user task with specified user" do
-    process_uid = ProcessService.start_process(:user_task_process_model, %{foo: :foo})
+    model = PMS.get_process_model(:user_task_process_model)
+    {:ok, process_pid} = PE.start_link(model, %{foo: :foo})
 
-    process_pid = ProcessService.get_process_ppid(process_uid)
-    assert ProcessEngine.is_complete(process_pid) == false
+    assert PE.is_complete(process_pid) == false
 
     user = %User{name: "cirvine", groups: ["admin"]}
     assert UserTaskService.get_tasks_for_groups(user.groups) != []
     UserTaskService.get_user_tasks()
 
-    ProcessEngine.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
-    assert ProcessEngine.get_data(process_pid) == %{foobar: "foobar", foo: :foo}
-    assert ProcessEngine.is_complete(process_pid) == true
+    PE.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
+    assert PE.get_data(process_pid) == %{foobar: "foobar", foo: :foo}
+    assert PE.is_complete(process_pid) == true
   end
 end

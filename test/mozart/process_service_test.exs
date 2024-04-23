@@ -22,16 +22,6 @@ defmodule Mozart.ProcessServiceTest do
     %{ok: nil}
   end
 
-  test "start simple subprocess" do
-    process_uid = ProcessService.start_process(:call_process_model, %{foo: :foo})
-  end
-
-  test "start a process and get its ppid" do
-    process_uid = ProcessService.start_process(:simple_process_model, %{foo: :foo})
-    process_pid = ProcessService.get_process_ppid(process_uid)
-    assert process_pid != nil
-  end
-
   test "get user tasks for person" do
     UserService.insert_user(%User{name: "crirvine", groups: ["admin"]})
     tasks = ProcessService.get_user_tasks("crirvine")

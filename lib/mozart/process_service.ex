@@ -1,8 +1,6 @@
 defmodule Mozart.ProcessService do
   use GenServer
 
-  alias Mozart.ProcessModelService
-  alias Mozart.ProcessEngine
   alias Mozart.UserService
   alias Mozart.UserTaskService
 
@@ -20,16 +18,12 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_process_ppid, process_uid})
   end
 
-  def start_process(model_name, process_data) do
-    GenServer.call(__MODULE__, {:start_process, model_name, process_data})
-  end
-
-  def start_sub_process(model_name, process_data, parent_uid) do
-    GenServer.cast(__MODULE__, {:start_sub_process, model_name, process_data, parent_uid})
-  end
-
   def get_user_tasks(user_id) do
     GenServer.call(__MODULE__, {:get_user_tasks, user_id})
+  end
+
+  def register_process_instance(uid, pid) do
+    GenServer.cast(__MODULE__, {:register_process_instance, uid, pid})
   end
 
   ## Callbacks
@@ -56,19 +50,8 @@ defmodule Mozart.ProcessService do
     {:reply, tasks, state}
   end
 
-  def handle_call({:start_process, process_model_name, data}, _from, state) do
-    process_model = ProcessModelService.get_process_model(process_model_name)
-    {:ok, process_pid} = ProcessEngine.start_link(process_model, data)
-    process_uid = ProcessEngine.get_uid(process_pid)
-    process_instances = Map.put(state.process_instances, process_uid, process_pid)
-    {:reply, process_uid, Map.put(state, :process_instances, process_instances)}
-  end
-
-  def handle_cast({:start_sub_process, process_model_name, data, parent_uid}, state) do
-    process_model = ProcessModelService.get_process_model(process_model_name)
-    {:ok, process_pid} = ProcessEngine.start_link(process_model, data, parent_uid)
-    process_uid = ProcessEngine.get_uid(process_pid)
-    process_instances = Map.put(state.process_instances, process_uid, process_pid)
+  def handle_cast({:register_process_instance, uid, pid}, state) do
+    process_instances = Map.put(state.process_instances, uid, pid)
     {:noreply, Map.put(state, :process_instances, process_instances)}
   end
 end

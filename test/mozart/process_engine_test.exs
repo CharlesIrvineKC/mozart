@@ -4,14 +4,14 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.UserTaskService
   alias Mozart.Util
   alias Mozart.ProcessEngine, as: PE
-  alias Mozart.ProcessService
+  alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessModelService
   alias Mozart.ProcessModelService
 
   @moduletag timeout: :infinity
 
   setup do
-    {:ok, _pid} = ProcessService.start_link(nil)
+    {:ok, _pid} = PS.start_link(nil)
     {:ok, _pid} = ProcessModelService.start_link(nil)
     {:ok, _pid} = UserTaskService.start_link([])
 
@@ -27,21 +27,30 @@ defmodule Mozart.ProcessEngineTest do
     data = %{foo: "foo"}
     {:ok, ppid} = PE.start_link(model, data)
 
-    id = PE.get_uid(ppid)
-    assert id != nil
+    uid = PE.get_uid(ppid)
+    assert uid != nil
     assert PE.get_data(ppid) == %{foo: "foo", bar: :bar}
     assert PE.is_complete(ppid) == true
+    %{^uid => rpid} = PS.get_process_instances()
+    assert ppid == rpid
   end
 
   test "execute process with subprocess" do
-    model = ProcessModelService.get_process_model(:call_process_model)
+    model = ProcessModelService.get_process_model(:simple_call_process_model)
     data = %{value: 1}
-    {:ok, ppid} = PE.start_link(model, data)
+    {:ok, _ppid} = PE.start_link(model, data)
+    assert length(Map.keys(PS.get_process_instances())) == 2
+    pids = Map.values(PS.get_process_instances())
+    Enum.each(IO.inspect(pids), fn pid -> IO.inspect(PE.get_state(pid), label: "**** state ****") end)
+  end
 
-    # [child_pid] = PE.get_state(ppid).children
-    IO.inspect(ppid, label: "pid")
-    ## IO.inspect(PE.get_state(ppid))
-    ## (PE.get_state(child_pid))
+  test "execute process with service subprocess" do
+    model = ProcessModelService.get_process_model(:simple_call_service_process_model)
+    data = %{value: 1}
+    {:ok, _ppid} = PE.start_link(model, data)
+    assert length(Map.keys(PS.get_process_instances())) == 2
+    pids = Map.values(PS.get_process_instances())
+    Enum.each(IO.inspect(pids), fn pid -> IO.inspect(PE.get_state(pid), label: "**** state ****") end)
   end
 
   test "execute process with choice returning :foo" do
