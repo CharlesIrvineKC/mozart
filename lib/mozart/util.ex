@@ -2,6 +2,102 @@ defmodule Mozart.Util do
   alias Mozart.Data.Task
   alias Mozart.Data.ProcessModel
 
+  def get_choice_process_models do
+    [
+      %ProcessModel{
+        name: :choice_process_model,
+        tasks: [
+          %Task{
+            name: :choice_task,
+            type: :choice,
+            choices: [
+              %{
+                expression: fn data -> data.value < 10 end,
+                next: :foo
+              },
+              %{
+                expression: fn data -> data.value >= 10 end,
+                next: :bar
+              }
+            ]
+          },
+          %Task{
+            name: :foo,
+            type: :service,
+            function: fn data -> Map.merge(data, %{foo: :foo}) end,
+            next: nil
+          },
+          %Task{
+            name: :bar,
+            type: :service,
+            function: fn data -> Map.merge(data, %{bar: :bar}) end,
+            next: nil
+          }
+        ],
+        initial_task: :choice_task
+      },
+    ]
+  end
+
+  def get_complex_process_models do
+    [
+      %ProcessModel{
+        name: :call_process_model,
+        tasks: [
+          %Task{
+            name: :call_process_task,
+            type: :sub_process,
+            sub_process: :service_subprocess_model,
+            next: :service_task1
+          },
+          %Task{
+            name: :service_task1,
+            type: :service,
+            function: fn data -> Map.put(data, :value, data.value + 1) end,
+            next: :service_task2
+          },
+          %Task{
+            name: :service_task2,
+            type: :service,
+            function: fn data -> Map.put(data, :value, data.value + 1) end,
+            next: :service_task3
+          },
+          %Task{
+            name: :service_task3,
+            type: :service,
+            function: fn data -> Map.put(data, :value, data.value + 1) end,
+            next: nil
+          },
+        ],
+        initial_task: :call_process_task
+      },
+      %ProcessModel{
+        name: :service_subprocess_model,
+        tasks: [
+          %Task{
+            name: :service_task1,
+            type: :service,
+            function: fn data -> Map.put(data, :value, data.value + 1) end,
+            next: :service_task2
+          },
+          %Task{
+            name: :service_task2,
+            type: :service,
+            function: fn data -> Map.put(data, :value, data.value + 1) end,
+            next: :service_task3
+          },
+          %Task{
+            name: :service_task3,
+            type: :service,
+            function: fn data -> Map.put(data, :value, data.value + 1) end,
+            next: nil
+          },
+        ],
+        initial_task: :service_task1
+      },
+    ]
+  end
+
   def get_testing_process_models do
     [
       %ProcessModel{
