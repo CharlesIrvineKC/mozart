@@ -65,7 +65,7 @@ defmodule Mozart.ProcessEngine do
       parent: parent
     }
 
-    state = insert_new_task_i(state, state.model.initial_task)
+    state = process_next_task(state, state.model.initial_task)
     ProcessService.register_process_instance(uid, self())
     state = execute_process(state)
     {:ok, state}
@@ -79,11 +79,17 @@ defmodule Mozart.ProcessEngine do
     end
   end
 
-  def insert_new_task_i(state, task_name) do
-    new_task = get_task_def(task_name, state)
-    if new_task.type == :user, do: UserTaskService.insert_user_task(new_task)
-    task_instance = new_task_instance(new_task)
-    Map.put(state, :task_instances, [task_instance | state.task_instances])
+  def process_next_task(state, task_name) do
+    task_def = get_task_def(task_name, state)
+    cond do
+      task_def.type == :user ->
+        UserTaskService.insert_user_task(task_def)
+        task_instance = new_task_instance(task_def)
+        Map.put(state, :task_instances, [task_instance | state.task_instances])
+      Enum.member?([:service, :choice, :sub_process, :join], task_def.type) ->
+        task_instance = new_task_instance(task_def)
+        Map.put(state, :task_instances, [task_instance | state.task_instances])
+    end
   end
 
   def handle_call(:is_complete, _from, state) do
@@ -124,7 +130,7 @@ defmodule Mozart.ProcessEngine do
         task_def = get_task_def(task_name, state)
 
         state =
-          if task_def.next, do: insert_new_task_i(state, task_def.next), else: state
+          if task_def.next, do: process_next_task(state, task_def.next), else: state
 
         execute_process(state)
       else
@@ -145,7 +151,7 @@ defmodule Mozart.ProcessEngine do
     state = Map.merge(state, %{pending_sub_tasks: pending_sub_tasks})
 
     task = get_task_def_by_sub_process_name(sub_process_name, state)
-    state = if task.next, do: insert_new_task_i(state, task.next), else: state
+    state = if task.next, do: process_next_task(state, task.next), else: state
 
     state = execute_process(state)
     {:noreply, state}
@@ -170,7 +176,7 @@ defmodule Mozart.ProcessEngine do
 
     state = Map.put(state, :task_instances, task_instances)
 
-    state = if task.next, do: insert_new_task_i(state, task.next), else: state
+    state = if task.next, do: process_next_task(state, task.next), else: state
     execute_process(state)
   end
 
@@ -181,7 +187,7 @@ defmodule Mozart.ProcessEngine do
         fn choice -> if choice.expression.(state.data), do: choice.next end
       )
 
-    state = insert_new_task_i(state, next_task_name)
+    state = process_next_task(state, next_task_name)
 
     task_instances =
       Enum.reject(state.task_instances, fn task_i -> task_i.task_name == task.name end)
