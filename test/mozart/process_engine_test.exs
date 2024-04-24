@@ -64,7 +64,7 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 1}
     {:ok, ppid} = PE.start_link(model, data)
 
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_task_instances(ppid) == []
     assert PE.get_data(ppid) == %{value: 1, foo: :foo}
     assert PE.is_complete(ppid) == true
   end
@@ -75,7 +75,7 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 11}
     {:ok, ppid} = PE.start_link(model, data)
 
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_task_instances(ppid) == []
     assert PE.get_data(ppid) == %{value: 11, bar: :bar}
     assert PE.is_complete(ppid) == true
   end
@@ -87,8 +87,8 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, ppid} = PE.start_link(model, data)
 
     assert PE.get_data(ppid) == %{value: 0}
-    open_tasks = PE.get_open_tasks(ppid)
-    assert Enum.map(open_tasks, fn ot -> ot.task_name end) == [:foo]
+    task_instances = PE.get_task_instances(ppid)
+    assert Enum.map(task_instances, fn t_i -> t_i.task_name end) == [:foo]
     assert PE.is_complete(ppid) == false
     assert UTS.get_user_tasks() != []
   end
@@ -100,12 +100,12 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, ppid} = PE.start_link(model, data)
 
     assert PE.get_data(ppid) == %{value: 0}
-    open_tasks = PE.get_open_tasks(ppid)
-    assert Enum.map(open_tasks, fn ot -> ot.task_name end) == [:foo]
+    task_instances = PE.get_task_instances(ppid)
+    assert Enum.map(task_instances, fn t_i -> t_i.task_name end) == [:foo]
 
     PE.complete_user_task(ppid, :foo, %{foo: :foo, bar: :bar})
     assert PE.get_data(ppid) == %{value: 0, foo: :foo, bar: :bar}
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_task_instances(ppid) == []
   end
 
   test "complete one user task then sevice task" do
@@ -114,11 +114,12 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, ppid} = PE.start_link(model, data)
     assert PE.get_data(ppid) == %{value: 0}
-    task_names = Enum.map(PE.get_open_tasks(ppid), fn t -> t.task_name end)
+    task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.task_name end)
     assert task_names == [:user_task_1]
     PE.complete_user_task(ppid, :user_task_1, %{foo: :foo, bar: :bar})
-    assert PE.get_data(ppid) == %{value: 0, foo: :foo, bar: :bar}
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar}
+    assert PE.is_complete(ppid) == true
+    assert PE.get_task_instances(ppid) == []
   end
 
   test "complete one servuce task then user task" do
@@ -127,11 +128,11 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, ppid} = PE.start_link(model, data)
     assert PE.get_data(ppid) == %{value: 1}
-    task_names = Enum.map(PE.get_open_tasks(ppid), fn t -> t.task_name end)
+    task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.task_name end)
     assert task_names == [:user_task_1]
     PE.complete_user_task(ppid, :user_task_1, %{foo: :foo, bar: :bar})
     assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar}
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_task_instances(ppid) == []
   end
 
   test "set and get process state model" do
@@ -156,7 +157,7 @@ defmodule Mozart.ProcessEngineTest do
     model = PMS.get_process_model(:simple_process_model)
     data = %{value: 1}
     {:ok, ppid} = PE.start_link(model, data)
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_task_instances(ppid) == []
     assert PE.is_complete(ppid) == true
   end
 
@@ -166,7 +167,7 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, ppid} = PE.start_link(model, data)
     assert PE.get_data(ppid) == %{value: 1}
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_task_instances(ppid) == []
     assert PE.is_complete(ppid) == true
   end
 
@@ -176,7 +177,7 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, ppid} = PE.start_link(model, data)
     assert PE.get_data(ppid) == %{value: 3}
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_task_instances(ppid) == []
     assert PE.is_complete(ppid) == true
   end
 
@@ -186,7 +187,7 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, ppid} = PE.start_link(model, data)
     assert PE.get_data(ppid) == %{value: 6}
-    assert PE.get_open_tasks(ppid) == []
+    assert PE.get_task_instances(ppid) == []
     assert PE.is_complete(ppid) == true
   end
 end

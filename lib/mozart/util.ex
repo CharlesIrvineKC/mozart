@@ -25,12 +25,18 @@ defmodule Mozart.Util do
             name: :foo,
             type: :service,
             function: fn data -> Map.merge(data, %{foo: :foo}) end,
-            next: nil
+            next: :join_task
           },
           %Task{
             name: :bar,
             type: :service,
             function: fn data -> Map.merge(data, %{bar: :bar}) end,
+            next: :join_task
+          },
+          %Task{
+            name: :join_task,
+            type: :join,
+            inputs: [:foo, :bar],
             next: nil
           }
         ],
