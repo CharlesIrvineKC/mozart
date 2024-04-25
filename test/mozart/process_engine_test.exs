@@ -88,7 +88,7 @@ defmodule Mozart.ProcessEngineTest do
 
     assert PE.get_data(ppid) == %{value: 0}
     task_instances = PE.get_task_instances(ppid)
-    assert Enum.map(task_instances, fn t_i -> t_i.task_name end) == [:foo]
+    assert Enum.map(task_instances, fn t_i -> t_i.name end) == [:foo]
     assert PE.is_complete(ppid) == false
     assert UTS.get_user_tasks() != []
   end
@@ -101,7 +101,7 @@ defmodule Mozart.ProcessEngineTest do
 
     assert PE.get_data(ppid) == %{value: 0}
     task_instances = PE.get_task_instances(ppid)
-    assert Enum.map(task_instances, fn t_i -> t_i.task_name end) == [:foo]
+    assert Enum.map(task_instances, fn t_i -> t_i.name end) == [:foo]
 
     PE.complete_user_task(ppid, :foo, %{foo: :foo, bar: :bar})
     assert PE.get_data(ppid) == %{value: 0, foo: :foo, bar: :bar}
@@ -114,7 +114,7 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, ppid} = PE.start_link(model, data)
     assert PE.get_data(ppid) == %{value: 0}
-    task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.task_name end)
+    task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.name end)
     assert task_names == [:user_task_1]
     PE.complete_user_task(ppid, :user_task_1, %{foo: :foo, bar: :bar})
     assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar}
@@ -128,7 +128,7 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, ppid} = PE.start_link(model, data)
     assert PE.get_data(ppid) == %{value: 1}
-    task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.task_name end)
+    task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.name end)
     assert task_names == [:user_task_1]
     PE.complete_user_task(ppid, :user_task_1, %{foo: :foo, bar: :bar})
     assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar}

@@ -7,7 +7,6 @@ defmodule Mozart.Data.ProcessState do
     data: %{},
     uid: nil,
     task_instances: nil,
-    pending_sub_tasks: [],
     complete: false,
     parent: nil,
     children: []

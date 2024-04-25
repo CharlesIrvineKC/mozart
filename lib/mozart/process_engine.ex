@@ -4,7 +4,7 @@ defmodule Mozart.ProcessEngine do
   alias Mozart.ProcessEngine
   alias Mozart.ProcessService
   alias Mozart.Data.ProcessState
-  alias Mozart.Data.TaskInstance
+  alias Mozart.Data.Task
   alias Mozart.UserTaskService
   alias Mozart.ProcessModelService
   alias Ecto.UUID
@@ -61,7 +61,6 @@ defmodule Mozart.ProcessEngine do
       data: data,
       uid: uid,
       task_instances: [],
-      pending_sub_tasks: [],
       parent: parent
     }
 
@@ -71,24 +70,19 @@ defmodule Mozart.ProcessEngine do
     {:ok, state}
   end
 
-  def new_task_instance(task) do
-    if task.type == :sub_process do
-      %TaskInstance{task_name: task.name, sub_process_impl: task.sub_process}
-    else
-      %TaskInstance{task_name: task.name}
-    end
-  end
+  defp process_next_task(state, task_name) do
+    task_i = get_task_def(task_name, state)
+    state = Map.put(state, :task_instances, [task_i | state.task_instances])
 
-  def process_next_task(state, task_name) do
-    task_def = get_task_def(task_name, state)
-    cond do
-      task_def.type == :user ->
-        UserTaskService.insert_user_task(task_def)
-        task_instance = new_task_instance(task_def)
-        Map.put(state, :task_instances, [task_instance | state.task_instances])
-      Enum.member?([:service, :choice, :sub_process, :join], task_def.type) ->
-        task_instance = new_task_instance(task_def)
-        Map.put(state, :task_instances, [task_instance | state.task_instances])
+    if task_i.type == :user, do: UserTaskService.insert_user_task(task_i)
+
+    if task_i.type == :sub_process do
+      sub_process_model = ProcessModelService.get_process_model(task_i.sub_process)
+      data = state.data
+      {:ok, process_pid} = start_link(sub_process_model, data, self())
+      Map.put(state, :children, [process_pid | state.children])
+    else
+      state
     end
   end
 
@@ -118,12 +112,12 @@ defmodule Mozart.ProcessEngine do
 
   def handle_cast({:complete_user_task, task_name, return_data}, state) do
     state =
-      if Enum.find(state.task_instances, fn t_i -> t_i.task_name == task_name end) do
+      if Enum.find(state.task_instances, fn t_i -> t_i.name == task_name end) do
         data = Map.merge(state.data, return_data)
         state = Map.put(state, :data, data)
 
         task_instances =
-          Enum.reject(state.task_instances, fn task -> task.task_name == task_name end)
+          Enum.reject(state.task_instances, fn task -> task.name == task_name end)
 
         state = Map.put(state, :task_instances, task_instances)
 
@@ -141,17 +135,18 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast({:notify_child_complete, sub_process_name, child_data}, state) do
-    state = Map.put(state, :data, Map.merge(state.data, child_data))
+    task_instance =
+      Enum.find(state.task_instances, fn ti -> ti.sub_process == sub_process_name end)
 
-    pending_sub_tasks =
-      Enum.reject(state.pending_sub_tasks, fn task ->
-        task.sub_process_impl == sub_process_name
+    task_instance = Map.put(task_instance, :complete, true)
+
+    task_instances =
+      Enum.map(state.task_instances, fn ti ->
+        if ti.name == task_instance.name, do: task_instance, else: ti
       end)
 
-    state = Map.merge(state, %{pending_sub_tasks: pending_sub_tasks})
-
-    task = get_task_def_by_sub_process_name(sub_process_name, state)
-    state = if task.next, do: process_next_task(state, task.next), else: state
+    state =
+      state |> Map.put(:task_instances, task_instances) |> Map.put(:data, child_data)
 
     state = execute_process(state)
     {:noreply, state}
@@ -172,7 +167,7 @@ defmodule Mozart.ProcessEngine do
     state = Map.put(state, :data, data)
 
     task_instances =
-      Enum.reject(state.task_instances, fn task_i -> task_i.task_name == task.name end)
+      Enum.reject(state.task_instances, fn task_i -> task_i.name == task.name end)
 
     state = Map.put(state, :task_instances, task_instances)
 
@@ -180,7 +175,7 @@ defmodule Mozart.ProcessEngine do
     execute_process(state)
   end
 
-  def complete_choice_task(task, state) do
+  defp complete_choice_task(task, state) do
     next_task_name =
       Enum.find_value(
         task.choices,
@@ -190,17 +185,22 @@ defmodule Mozart.ProcessEngine do
     state = process_next_task(state, next_task_name)
 
     task_instances =
-      Enum.reject(state.task_instances, fn task_i -> task_i.task_name == task.name end)
+      Enum.reject(state.task_instances, fn task_i -> task_i.name == task.name end)
 
     state = Map.put(state, :task_instances, task_instances)
     execute_process(state)
   end
 
-  def call_subprocess_task(task_i, state) do
-    sub_process_model = ProcessModelService.get_process_model(task_i.sub_process)
-    data = state.data
-    {:ok, process_pid} = start_link(sub_process_model, data, self())
-    state = Map.put(state, :children, [process_pid | state.children])
+  defp complete_subprocess_task_i(task_i, state) do
+    data = Map.merge(task_i.data, state.data)
+    state = Map.put(state, :data, data)
+
+    task_instances =
+      Enum.reject(state.task_instances, fn ti -> task_i.name == ti.name end)
+
+    state = Map.put(state, :task_instances, task_instances)
+
+    state = if task_i.next, do: process_next_task(state, task_i.next), else: state
     execute_process(state)
   end
 
@@ -208,61 +208,28 @@ defmodule Mozart.ProcessEngine do
     Enum.find(state.model.tasks, fn task -> task.name == task_name end)
   end
 
-  defp get_task_def_by_sub_process_name(sub_process_name, state) do
-    Enum.find(state.model.tasks, fn task -> sub_process_name == task.sub_process end)
-  end
-
-  def get_executable_task(state) do
-    task_name =
-      Enum.find_value(state.task_instances, fn task_i ->
-        if is_executable(task_i, state), do: task_i.task_name
-      end)
-
-    if task_name, do: get_task_def(task_name, state)
-  end
-
-  defp is_executable(task_i, state) do
-    task = get_task_def(task_i.task_name, state)
-
-    if task.type == :service || task.type == :choice || task.type == :sub_process,
-      do: true,
-      else: false
-  end
-
-  defp set_subprocess_task_pending(executable_task, state) do
-    task_i = Enum.find(state.task_instances, fn t_i -> t_i.task_name == executable_task.name end)
-
-    task_instances =
-      Enum.reject(state.task_instances, fn t_i ->
-        if t_i.task_name == t_i.task_name, do: task_i, else: t_i
-      end)
-
-    pending_sub_tasks = [task_i | state.pending_sub_tasks]
-
-    state
-    |> Map.put(:task_instances, task_instances)
-    |> Map.put(:pending_sub_tasks, pending_sub_tasks)
+  defp get_complete_able_task(state) do
+    Enum.find(state.task_instances, fn ti -> Task.complete_able(ti) end)
   end
 
   defp work_remaining(state) do
-    state.task_instances != [] || state.pending_sub_tasks != []
+    state.task_instances != []
   end
 
   defp execute_process(state) do
     if work_remaining(state) do
-      executable_task = get_executable_task(state)
+      complete_able_task_i = get_complete_able_task(state)
 
-      if executable_task do
+      if complete_able_task_i do
         cond do
-          executable_task.type == :service ->
-            complete_service_task(executable_task, state)
+          complete_able_task_i.type == :service ->
+            complete_service_task(complete_able_task_i, state)
 
-          executable_task.type == :choice ->
-            complete_choice_task(executable_task, state)
+          complete_able_task_i.type == :choice ->
+            complete_choice_task(complete_able_task_i, state)
 
-          executable_task.type == :sub_process ->
-            state = set_subprocess_task_pending(executable_task, state)
-            call_subprocess_task(executable_task, state)
+          complete_able_task_i.type == :sub_process ->
+            complete_subprocess_task_i(complete_able_task_i, state)
         end
       else
         state
