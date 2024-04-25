@@ -1,6 +1,6 @@
 # Mozart
 
-**TODO: Add description**
+Mozart will be a open source BPM engine. It is written in Elixir and is in the early stages of development.
 
 ## Installation
 
