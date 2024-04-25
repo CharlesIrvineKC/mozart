@@ -1,6 +1,6 @@
 # Mozart
 
-Mozart will be a open source BPM engine. It is written in Elixir and is in the early stages of development. It's distinguishing characteristic will be that it is targeted for use exclusively by software engineers. It will offer a text-based BPM modelling language that is highly readable. 
+Mozart will be a open source BPM engine. It is written in Elixir and is in the early stages of development. It's distinguishing characteristic will be that it is targeted for use exclusively by software engineers. It will offer a text-based BPM modelling language that is highly readable by process experts with no programming experience.
 
 ## Installation
 
