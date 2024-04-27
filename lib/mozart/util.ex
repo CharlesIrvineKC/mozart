@@ -2,24 +2,15 @@ defmodule Mozart.Util do
   alias Mozart.Data.Task
   alias Mozart.Data.ProcessModel
 
-  def get_choice_process_models do
+  def get_parallel_process_models do
     [
       %ProcessModel{
-        name: :choice_process_model,
+        name: :parallel_process_model,
         tasks: [
           %Task{
             name: :choice_task,
-            type: :choice,
-            choices: [
-              %{
-                expression: fn data -> data.value < 10 end,
-                next: :foo
-              },
-              %{
-                expression: fn data -> data.value >= 10 end,
-                next: :bar
-              }
-            ]
+            type: :parallel,
+            multi_next: [:foo, :bar],
           },
           %Task{
             name: :foo,
@@ -37,8 +28,14 @@ defmodule Mozart.Util do
             name: :join_task,
             type: :join,
             inputs: [:foo, :bar],
-            next: nil
-          }
+            next: :final_service
+          },
+          %Task{
+            name: :final_service,
+            type: :service,
+            function: fn data -> Map.merge(data, %{final: :final}) end,
+            next: :nil
+          },
         ],
         initial_task: :choice_task
       },

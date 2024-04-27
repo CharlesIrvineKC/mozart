@@ -5,6 +5,7 @@ defmodule Mozart.Data.Task do
     :function,
     :next,
     :sub_process,
+    multi_next: [],
     inputs: [],
     choices: [],
     assigned_groups: [],
@@ -13,6 +14,10 @@ defmodule Mozart.Data.Task do
   ]
 
   def complete_able(t) when t.type == :service do
+    true
+  end
+
+  def complete_able(t) when t.type == :parallel do
     true
   end
 

@@ -70,9 +70,51 @@ defmodule Mozart.ProcessEngine do
     {:ok, state}
   end
 
-  defp process_next_task(state, task_name) do
-    task_i = get_task_def(task_name, state)
-    state = Map.put(state, :task_instances, [task_i | state.task_instances])
+  defp process_next_task_list(state, [], _parent_name) do
+    state
+  end
+
+  defp process_next_task_list(state, [task_name | rest], parent_name) do
+    state = process_next_task(state, task_name, parent_name)
+    process_next_task_list(state, rest, parent_name)
+  end
+
+  defp get_existing_task_instance(state, task_name) do
+    Enum.find(state.task_instances, fn ti -> ti.name == task_name end)
+  end
+
+  defp process_next_task(state, next_task_name, previous_task_name \\ nil) do
+    existing_task_i = get_existing_task_instance(state, next_task_name)
+    task_i = get_task_def(next_task_name, state)
+
+    state =
+      if existing_task_i && existing_task_i.type == :join do
+        ## delete previous task name from inputs
+        existing_task_i =
+          Map.put(
+            existing_task_i,
+            :inputs,
+            List.delete(existing_task_i.inputs, previous_task_name)
+          )
+
+        ## Update existing task instance in state
+        Map.put(
+          state,
+          :task_instances,
+          Enum.map(
+            state.task_instances,
+            fn ti -> if ti.name == existing_task_i.name, do: existing_task_i, else: ti end
+          )
+        )
+      else
+        task_i =
+          Map.put(
+            task_i,
+            :inputs,
+            List.delete(task_i.inputs, previous_task_name)
+          )
+        Map.put(state, :task_instances, [task_i | state.task_instances])
+      end
 
     if task_i.type == :user, do: UserTaskService.insert_user_task(task_i)
 
@@ -84,6 +126,7 @@ defmodule Mozart.ProcessEngine do
     else
       state
     end
+
   end
 
   def handle_call(:is_complete, _from, state) do
@@ -124,7 +167,7 @@ defmodule Mozart.ProcessEngine do
         task_def = get_task_def(task_name, state)
 
         state =
-          if task_def.next, do: process_next_task(state, task_def.next), else: state
+          if task_def.next, do: process_next_task(state, task_def.next, task_def.name), else: state
 
         execute_process(state)
       else
@@ -171,7 +214,31 @@ defmodule Mozart.ProcessEngine do
 
     state = Map.put(state, :task_instances, task_instances)
 
-    state = if task.next, do: process_next_task(state, task.next), else: state
+    state = if task.next, do: process_next_task(state, task.next, task.name), else: state
+    execute_process(state)
+  end
+
+  defp complete_parallel_task_i(task_i, state) do
+    task_instances =
+      Enum.reject(state.task_instances, fn ti -> ti.name == task_i.name end)
+
+    state = Map.put(state, :task_instances, task_instances)
+
+    next_states = task_i.multi_next
+
+    state = process_next_task_list(state, next_states, task_i.name)
+
+    execute_process(state)
+  end
+
+  defp complete_joint_task(task_i, state) do
+    task_instances =
+      Enum.reject(state.task_instances, fn ti -> ti.name == task_i.name end)
+
+    state = Map.put(state, :task_instances, task_instances)
+
+    state = process_next_task(state, task_i.next, task_i.name)
+
     execute_process(state)
   end
 
@@ -182,7 +249,7 @@ defmodule Mozart.ProcessEngine do
         fn choice -> if choice.expression.(state.data), do: choice.next end
       )
 
-    state = process_next_task(state, next_task_name)
+    state = process_next_task(state, next_task_name, task.name)
 
     task_instances =
       Enum.reject(state.task_instances, fn task_i -> task_i.name == task.name end)
@@ -200,7 +267,7 @@ defmodule Mozart.ProcessEngine do
 
     state = Map.put(state, :task_instances, task_instances)
 
-    state = if task_i.next, do: process_next_task(state, task_i.next), else: state
+    state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
     execute_process(state)
   end
 
@@ -230,6 +297,12 @@ defmodule Mozart.ProcessEngine do
 
           complete_able_task_i.type == :sub_process ->
             complete_subprocess_task_i(complete_able_task_i, state)
+
+          complete_able_task_i.type == :parallel ->
+            complete_parallel_task_i(complete_able_task_i, state)
+
+          complete_able_task_i.type == :join ->
+            complete_joint_task(complete_able_task_i, state)
         end
       else
         state

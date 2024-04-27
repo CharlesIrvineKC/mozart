@@ -58,6 +58,17 @@ defmodule Mozart.ProcessEngineTest do
 
   end
 
+  test "execute process with choice and join" do
+    load_process_models(Util.get_parallel_process_models())
+    model = PMS.get_process_model(:parallel_process_model)
+    data = %{value: 1}
+    {:ok, ppid} = PE.start_link(model, data)
+
+    assert PE.get_task_instances(ppid) == []
+    assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar, final: :final}
+    assert PE.is_complete(ppid) == true
+  end
+
   test "execute process with choice returning :foo" do
     load_process_models(Util.get_testing_process_models())
     model = PMS.get_process_model(:choice_process_model)
