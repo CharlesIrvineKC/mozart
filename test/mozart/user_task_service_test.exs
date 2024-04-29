@@ -15,7 +15,7 @@ defmodule Mozart.UserTaskServiceTest do
   end
 
   test "initial tasks is empty" do
-    assert UTS.get_user_tasks() == []
+    assert UTS.get_user_tasks() == %{}
   end
 
   test "get tasks for groups" do
@@ -33,7 +33,7 @@ defmodule Mozart.UserTaskServiceTest do
   test "add a human task" do
     task = %Task{assigned_groups: ["admin"]}
     UTS.insert_user_task(task)
-    assert UTS.get_user_tasks() != []
+    assert UTS.get_user_tasks() != %{}
   end
 
   test "complete a user task" do
@@ -54,7 +54,6 @@ defmodule Mozart.UserTaskServiceTest do
 
     user = %User{name: "cirvine", groups: ["admin"]}
     assert UTS.get_tasks_for_groups(user.groups) != []
-    UTS.get_user_tasks()
 
     PE.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
     assert PE.get_data(process_pid) == %{foobar: "foobar", foo: :foo}

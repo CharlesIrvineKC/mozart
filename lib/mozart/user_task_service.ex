@@ -3,8 +3,8 @@ defmodule Mozart.UserTaskService do
 
   ## Client API
 
-  def start_link(user_tasks) do
-    GenServer.start_link(__MODULE__, user_tasks, name: __MODULE__)
+  def start_link(_init_arg) do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   def get_user_tasks() do
@@ -14,6 +14,10 @@ defmodule Mozart.UserTaskService do
   def insert_user_task(task) do
     GenServer.cast(__MODULE__, {:insert_user_task, task})
   end
+
+  # def complete_user_task(task) do
+  #   GenServer.cast(__MODULE__, {:complete_user_task, task})
+  # end
 
   def get_tasks_for_groups(groups) do
     GenServer.call(__MODULE__, {:get_tasks_for_groups, groups})
@@ -25,8 +29,8 @@ defmodule Mozart.UserTaskService do
 
   ## Callbacks
 
-  def init(tasks) do
-    {:ok, %{user_tasks: tasks}}
+  def init(_init_arg) do
+    {:ok, %{user_tasks: %{}}}
   end
 
   def handle_call(:get_user_tasks, _from, state) do
@@ -34,17 +38,29 @@ defmodule Mozart.UserTaskService do
   end
 
   def handle_call({:get_tasks_for_groups, groups}, _from, state) do
-    intersection = fn grp1, grp2 -> temp = grp1 -- grp2; grp1 -- temp end
-    tasks = Enum.filter(state.user_tasks, fn task -> intersection.(task.assigned_groups, groups) != [] end)
+    intersection = fn grp1, grp2 ->
+      temp = grp1 -- grp2
+      grp1 -- temp
+    end
+
+    tasks =
+      Enum.filter(Map.values(state.user_tasks), fn task ->
+        intersection.(task.assigned_groups, groups) != []
+      end)
+
     {:reply, tasks, state}
   end
 
+  # def handle_cast({:complete_user_task, task}, state) do
+
+  # end
+
   def handle_cast(:clear_user_tasks, _state) do
-    {:noreply, %{user_tasks: []}}
+    {:noreply, %{user_tasks: %{}}}
   end
 
   def handle_cast({:insert_user_task, task}, state) do
-    user_tasks = [task | state.user_tasks]
+    user_tasks = Map.put(state.user_tasks, task.uid, task)
     state = Map.put(state, :user_tasks, user_tasks)
     {:noreply, state}
   end

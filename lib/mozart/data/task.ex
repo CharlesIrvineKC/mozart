@@ -4,6 +4,8 @@ defmodule Mozart.Data.Task do
     :type,
     :function,
     :next,
+    :uid,
+    :process_uid,
     :sub_process,
     multi_next: [],
     inputs: [],

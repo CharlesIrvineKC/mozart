@@ -92,7 +92,8 @@ defmodule Mozart.ProcessEngineTest do
     task_instances = PE.get_task_instances(ppid)
     assert Enum.map(task_instances, fn t_i -> t_i.name end) == [:foo]
     assert PE.is_complete(ppid) == false
-    assert UTS.get_user_tasks() != []
+    [task] = Map.values(UTS.get_user_tasks())
+    assert task.uid != nil
   end
 
   test "complete one user task" do

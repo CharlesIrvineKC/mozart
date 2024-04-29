@@ -7,7 +7,7 @@ defmodule Mozart.Application do
       {Mozart.ProcessService, nil},
       {Mozart.ProcessModelService, nil},
       {Mozart.UserService, nil},
-      {Mozart.UserTaskService, []}
+      {Mozart.UserTaskService, nil}
     ]
 
     opts = [strategy: :one_for_one, name: Mozart.Supervisor]
