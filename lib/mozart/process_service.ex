@@ -3,6 +3,8 @@ defmodule Mozart.ProcessService do
 
   alias Mozart.UserService
   alias Mozart.UserTaskService
+  alias Mozart.ProcessModelService, as: PMS
+  alias Mozart.ProcessEngine, as: PE
 
   ## Client API
 
@@ -24,6 +26,10 @@ defmodule Mozart.ProcessService do
 
   def register_process_instance(uid, pid) do
     GenServer.cast(__MODULE__, {:register_process_instance, uid, pid})
+  end
+
+  def start_process(model_name, data) do
+    GenServer.call(__MODULE__, {:start_process, model_name, data})
   end
 
   def get_state() do
@@ -52,6 +58,12 @@ defmodule Mozart.ProcessService do
     member_groups = UserService.get_assigned_groups(user_id)
     tasks = UserTaskService.get_tasks_for_groups(member_groups)
     {:reply, tasks, state}
+  end
+
+  def handle_call({:start_process, model_name, data}, _from, state) do
+    model = PMS.get_process_model(model_name)
+    {:ok, pid} = PE.start_link(model, data)
+    {:reply, pid, state}
   end
 
   def handle_cast({:register_process_instance, uid, pid}, state) do

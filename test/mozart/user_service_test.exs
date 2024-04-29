@@ -5,7 +5,6 @@ defmodule Mozart.UserServiceTest do
   alias Mozart.Data.User
 
   setup do
-    {:ok, _pid} = UserService.start_link(nil)
     %{user: %User{name: "Irvine", groups: [:admin]}}
   end
 

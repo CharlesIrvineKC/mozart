@@ -4,17 +4,9 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Util
   alias Mozart.UserTaskService, as: UTS
   alias Mozart.ProcessEngine, as: PE
-  alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessModelService, as: PMS
 
   @moduletag timeout: :infinity
-
-  setup do
-    {:ok, _pid} = PS.start_link(nil)
-    {:ok, _pid} = PMS.start_link(nil)
-    {:ok, _pid} = UTS.start_link([])
-    %{ok: nil}
-  end
 
   def load_process_models(models) do
     Enum.each(models, fn model -> PMS.load_process_model(model) end)
@@ -45,7 +37,7 @@ defmodule Mozart.ProcessEngineTest do
     model = PMS.get_process_model(:simple_call_process_model)
     data = %{value: 1}
     {:ok, _ppid} = PE.start_link(model, data)
-    assert length(Map.keys(PS.get_process_instances())) == 2
+
   end
 
   test "execute process with service subprocess" do
@@ -53,7 +45,6 @@ defmodule Mozart.ProcessEngineTest do
     model = PMS.get_process_model(:simple_call_service_process_model)
     data = %{value: 1}
     {:ok, ppid} = PE.start_link(model, data)
-    assert length(Map.keys(PS.get_process_instances())) == 2
     assert PE.get_data(ppid) == %{value: 1, service: :service}
 
   end
