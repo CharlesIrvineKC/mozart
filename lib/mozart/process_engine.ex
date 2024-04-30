@@ -2,10 +2,9 @@ defmodule Mozart.ProcessEngine do
   use GenServer
 
   alias Mozart.ProcessEngine
-  alias Mozart.ProcessService
+  alias Mozart.ProcessService, as: PS
   alias Mozart.Data.ProcessState
   alias Mozart.Data.Task
-  alias Mozart.UserTaskService
   alias Mozart.ProcessModelService
   alias Ecto.UUID
 
@@ -65,7 +64,7 @@ defmodule Mozart.ProcessEngine do
     }
 
     state = process_next_task(state, state.model.initial_task)
-    ProcessService.register_process_instance(uid, self())
+    PS.register_process_instance(uid, self())
     state = execute_process(state)
     {:ok, state}
   end
@@ -119,7 +118,7 @@ defmodule Mozart.ProcessEngine do
 
     state = Map.put(state, :task_instances, [new_task_i | state.task_instances])
 
-    if new_task_i.type == :user, do: UserTaskService.insert_user_task(new_task_i)
+    if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
 
     if new_task_i.type == :sub_process do
       sub_process_model = ProcessModelService.get_process_model(new_task_i.sub_process)
@@ -183,7 +182,7 @@ defmodule Mozart.ProcessEngine do
           if task_instance.next,
             do: process_next_task(state, task_instance.next, task_instance.name),
             else: state
-        
+
         execute_process(state)
       else
         state

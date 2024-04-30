@@ -1,10 +1,9 @@
 defmodule Mozart.ProcessService do
   use GenServer
 
-  alias Mozart.UserService
-  alias Mozart.UserTaskService
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessEngine, as: PE
+  alias Mozart.UserService, as: US
 
   ## Client API
 
@@ -40,10 +39,18 @@ defmodule Mozart.ProcessService do
     GenServer.cast(__MODULE__, {:complete_user_task, user_task, data})
   end
 
+  def insert_user_task(task) do
+    GenServer.cast(__MODULE__, {:insert_user_task, task})
+  end
+
+  def clear_user_tasks() do
+    GenServer.cast(__MODULE__, :clear_user_tasks)
+  end
+
   ## Callbacks
 
   def init(_init_arg) do
-    {:ok, %{process_instances: %{}}}
+    {:ok, %{process_instances: %{}, user_tasks: %{}}}
   end
 
   def handle_call(:get_state, _from, state) do
@@ -59,8 +66,8 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_call({:get_user_tasks, user_id}, _from, state) do
-    member_groups = UserService.get_assigned_groups(user_id)
-    tasks = UserTaskService.get_tasks_for_groups(member_groups)
+    member_groups = US.get_assigned_groups(user_id)
+    tasks = get_tasks_for_groups(member_groups, state)
     {:reply, tasks, state}
   end
 
@@ -79,5 +86,26 @@ defmodule Mozart.ProcessService do
     pid = Map.get(state.process_instances, user_task_uid)
     PE.complete_user_task(pid, user_task_uid, data)
     {:noreply, state}
+  end
+
+  def handle_cast(:clear_user_tasks, _state) do
+    {:noreply, %{user_tasks: %{}}}
+  end
+
+  def handle_cast({:insert_user_task, task}, state) do
+    user_tasks = Map.put(state.user_tasks, task.uid, task)
+    state = Map.put(state, :user_tasks, user_tasks)
+    {:noreply, state}
+  end
+
+  def get_tasks_for_groups(groups, state) do
+    intersection = fn grp1, grp2 ->
+      temp = grp1 -- grp2
+      grp1 -- temp
+    end
+
+      Enum.filter(Map.values(state.user_tasks), fn task ->
+        intersection.(task.assigned_groups, groups) != []
+      end)
   end
 end

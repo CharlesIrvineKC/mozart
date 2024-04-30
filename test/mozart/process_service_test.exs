@@ -4,13 +4,13 @@ defmodule Mozart.ProcessServiceTest do
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.UserService, as: US
   alias Mozart.ProcessEngine, as: PE
-  alias Mozart.UserTaskService, as: UTS
   alias Mozart.ProcessService, as: PS
   alias Mozart.Util
   alias Mozart.Data.User
 
   setup do
-    UTS.clear_user_tasks()
+    PMS.clear_then_load_process_models(Util.get_testing_process_models())
+    PS.clear_user_tasks()
   end
 
   test "get user tasks for person" do

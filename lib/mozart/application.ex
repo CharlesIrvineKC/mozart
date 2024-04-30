@@ -6,8 +6,7 @@ defmodule Mozart.Application do
     children = [
       {Mozart.ProcessService, nil},
       {Mozart.ProcessModelService, nil},
-      {Mozart.UserService, nil},
-      {Mozart.UserTaskService, nil}
+      {Mozart.UserService, nil}
     ]
 
     opts = [strategy: :one_for_one, name: Mozart.Supervisor]
