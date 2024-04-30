@@ -109,7 +109,7 @@ defmodule Mozart.Util do
           %Task{
             name: :call_process_task,
             type: :sub_process,
-            sub_process: :user_subprocess_model,
+            sub_process: :one_user_task_process,
             next: nil
           }
         ],
@@ -128,7 +128,7 @@ defmodule Mozart.Util do
         initial_task: :call_process_task
       },
       %ProcessModel{
-        name: :user_subprocess_model,
+        name: :one_user_task_process,
         tasks: [
           %Task{
             name: :user_task,
