@@ -1,6 +1,8 @@
 defmodule Mozart.UserTaskService do
   use GenServer
 
+  alias Mozart.ProcessService, as: PS
+
   ## Client API
 
   def start_link(_init_arg) do
@@ -15,9 +17,9 @@ defmodule Mozart.UserTaskService do
     GenServer.cast(__MODULE__, {:insert_user_task, task})
   end
 
-  # def complete_user_task(task) do
-  #   GenServer.cast(__MODULE__, {:complete_user_task, task})
-  # end
+  def complete_user_task(task) do
+    GenServer.cast(__MODULE__, {:complete_user_task, task})
+  end
 
   def get_tasks_for_groups(groups) do
     GenServer.call(__MODULE__, {:get_tasks_for_groups, groups})
@@ -51,9 +53,10 @@ defmodule Mozart.UserTaskService do
     {:reply, tasks, state}
   end
 
-  # def handle_cast({:complete_user_task, task}, state) do
-
-  # end
+  def handle_cast({:complete_user_task, task, data}, state) do
+    PS.complete_user_task(task.uid, data)
+    {:noreply, state}
+  end
 
   def handle_cast(:clear_user_tasks, _state) do
     {:noreply, %{user_tasks: %{}}}

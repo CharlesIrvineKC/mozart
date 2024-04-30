@@ -42,7 +42,8 @@ defmodule Mozart.UserTaskServiceTest do
 
     assert PE.is_complete(process_pid) == false
 
-    PE.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
+    [task] = PE.get_task_instances(process_pid)
+    PE.complete_user_task(process_pid, task.uid, %{foobar: "foobar"})
     assert PE.is_complete(process_pid) == true
   end
 
@@ -55,7 +56,8 @@ defmodule Mozart.UserTaskServiceTest do
     user = %User{name: "cirvine", groups: ["admin"]}
     assert UTS.get_tasks_for_groups(user.groups) != []
 
-    PE.complete_user_task(process_pid, :foo, %{foobar: "foobar"})
+    [task] = PE.get_task_instances(process_pid)
+    PE.complete_user_task(process_pid, task.uid, %{foobar: "foobar"})
     assert PE.get_data(process_pid) == %{foobar: "foobar", foo: :foo}
     assert PE.is_complete(process_pid) == true
   end

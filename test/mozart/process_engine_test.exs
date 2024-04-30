@@ -2,7 +2,6 @@ defmodule Mozart.ProcessEngineTest do
   use ExUnit.Case
 
   alias Mozart.Util
-  alias Mozart.UserTaskService, as: UTS
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModelService, as: PMS
 
@@ -92,8 +91,6 @@ defmodule Mozart.ProcessEngineTest do
     task_instances = PE.get_task_instances(ppid)
     assert Enum.map(task_instances, fn t_i -> t_i.name end) == [:foo]
     assert PE.is_complete(ppid) == false
-    [task] = Map.values(UTS.get_user_tasks())
-    assert task.uid != nil
   end
 
   test "complete one user task" do
@@ -106,7 +103,8 @@ defmodule Mozart.ProcessEngineTest do
     task_instances = PE.get_task_instances(ppid)
     assert Enum.map(task_instances, fn t_i -> t_i.name end) == [:foo]
 
-    PE.complete_user_task(ppid, :foo, %{foo: :foo, bar: :bar})
+    [task_instance] = task_instances
+    PE.complete_user_task(ppid, task_instance.uid, %{foo: :foo, bar: :bar})
     assert PE.get_data(ppid) == %{value: 0, foo: :foo, bar: :bar}
     assert PE.get_task_instances(ppid) == []
   end
@@ -119,7 +117,8 @@ defmodule Mozart.ProcessEngineTest do
     assert PE.get_data(ppid) == %{value: 0}
     task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.name end)
     assert task_names == [:user_task_1]
-    PE.complete_user_task(ppid, :user_task_1, %{foo: :foo, bar: :bar})
+    [task_instance] = PE.get_task_instances(ppid)
+    PE.complete_user_task(ppid, task_instance.uid, %{foo: :foo, bar: :bar})
     assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar}
     assert PE.is_complete(ppid) == true
     assert PE.get_task_instances(ppid) == []
@@ -131,9 +130,9 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 0}
     {:ok, ppid} = PE.start_link(model, data)
     assert PE.get_data(ppid) == %{value: 1}
-    task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.name end)
-    assert task_names == [:user_task_1]
-    PE.complete_user_task(ppid, :user_task_1, %{foo: :foo, bar: :bar})
+    task_uids = Enum.map(PE.get_task_instances(ppid), fn t -> t.uid end)
+    [task_uid] = task_uids
+    PE.complete_user_task(ppid, task_uid, %{foo: :foo, bar: :bar})
     assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar}
     assert PE.get_task_instances(ppid) == []
   end

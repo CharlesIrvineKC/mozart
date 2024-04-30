@@ -35,8 +35,8 @@ defmodule Mozart.ProcessEngine do
     GenServer.call(ppid, :get_task_instances)
   end
 
-  def complete_user_task(ppid, task_id, data) do
-    GenServer.cast(ppid, {:complete_user_task, task_id, data})
+  def complete_user_task(ppid, task_uid, data) do
+    GenServer.cast(ppid, {:complete_user_task, task_uid, data})
   end
 
   def set_data(ppid, data) do
@@ -104,7 +104,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp process_new_next_task(state, next_task_name, previous_task_name) do
-    new_task_i = get_new_task_def(next_task_name, state)
+    new_task_i = get_new_task_instance(next_task_name, state)
 
     new_task_i =
       if new_task_i.type == :join do
@@ -167,24 +167,23 @@ defmodule Mozart.ProcessEngine do
     {:reply, state.task_instances, state}
   end
 
-  def handle_cast({:complete_user_task, task_name, return_data}, state) do
+  def handle_cast({:complete_user_task, task_uid, return_data}, state) do
+    task_instance = get_task_instance(task_uid, state)
     state =
-      if Enum.find(state.task_instances, fn t_i -> t_i.name == task_name end) do
+      if task_instance do
         data = Map.merge(state.data, return_data)
         state = Map.put(state, :data, data)
 
         task_instances =
-          Enum.reject(state.task_instances, fn task -> task.name == task_name end)
+          Enum.reject(state.task_instances, fn task -> task.uid == task_uid end)
 
         state = Map.put(state, :task_instances, task_instances)
 
-        task_def = get_task_def(task_name, state)
-
         state =
-          if task_def.next,
-            do: process_next_task(state, task_def.next, task_def.name),
+          if task_instance.next,
+            do: process_next_task(state, task_instance.next, task_instance.name),
             else: state
-
+        
         execute_process(state)
       else
         state
@@ -291,7 +290,11 @@ defmodule Mozart.ProcessEngine do
     Enum.find(state.model.tasks, fn task -> task.name == task_name end)
   end
 
-  defp get_new_task_def(task_name, state) do
+  defp get_task_instance(task_uid, state) do
+    Enum.find(state.task_instances, fn ti -> ti.uid == task_uid end)
+  end
+
+  defp get_new_task_instance(task_name, state) do
     get_task_def(task_name, state)
     |> Map.put(:uid, Ecto.UUID.generate())
     |> Map.put(:process_uid, state.uid)
