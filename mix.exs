@@ -22,6 +22,9 @@ defmodule Mozart.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:tesla, "~> 1.9"},
+      {:hackney, "~> 1.20"},
+      {:jason, "~> 1.4"},
       {:ecto_sql, "~> 3.10"},
     ]
   end
