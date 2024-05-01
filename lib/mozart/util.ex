@@ -9,7 +9,7 @@ defmodule Mozart.Util do
         name: :call_external_services,
         tasks: [
           %Task{
-            name: :get_user_repos,
+            name: :get_cat_facts,
             type: :service,
             function: fn data ->
               facts = RestService.get_cat_facts()
@@ -18,7 +18,7 @@ defmodule Mozart.Util do
             next: nil
           }
         ],
-        initial_task: :get_user_repos
+        initial_task: :get_cat_facts
       }
     ]
   end
