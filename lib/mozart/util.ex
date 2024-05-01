@@ -1,6 +1,27 @@
 defmodule Mozart.Util do
   alias Mozart.Data.Task
   alias Mozart.Data.ProcessModel
+  alias Mozart.Services.RestService
+
+  def call_exteral_services do
+    [
+      %ProcessModel{
+        name: :call_external_services,
+        tasks: [
+          %Task{
+            name: :get_user_repos,
+            type: :service,
+            function: fn data ->
+              facts = RestService.get_cat_facts()
+              Map.merge(data, %{cat_facts: facts})
+            end,
+            next: nil
+          }
+        ],
+        initial_task: :get_user_repos
+      }
+    ]
+  end
 
   def get_parallel_process_models do
     [
@@ -8,9 +29,9 @@ defmodule Mozart.Util do
         name: :parallel_process_model,
         tasks: [
           %Task{
-            name: :choice_task,
+            name: :parallel_task,
             type: :parallel,
-            multi_next: [:foo, :bar],
+            multi_next: [:foo, :bar]
           },
           %Task{
             name: :foo,
@@ -22,23 +43,29 @@ defmodule Mozart.Util do
             name: :bar,
             type: :service,
             function: fn data -> Map.merge(data, %{bar: :bar}) end,
+            next: :foo_bar
+          },
+          %Task{
+            name: :foo_bar,
+            type: :service,
+            function: fn data -> Map.merge(data, %{foo_bar: :foo_bar}) end,
             next: :join_task
           },
           %Task{
             name: :join_task,
             type: :join,
-            inputs: [:foo, :bar],
+            inputs: [:foo, :foo_bar],
             next: :final_service
           },
           %Task{
             name: :final_service,
             type: :service,
             function: fn data -> Map.merge(data, %{final: :final}) end,
-            next: :nil
-          },
+            next: nil
+          }
         ],
-        initial_task: :choice_task
-      },
+        initial_task: :parallel_task
+      }
     ]
   end
 
@@ -70,7 +97,7 @@ defmodule Mozart.Util do
             type: :service,
             function: fn data -> Map.put(data, :value, data.value + 1) end,
             next: nil
-          },
+          }
         ],
         initial_task: :call_process_task
       },
@@ -94,10 +121,10 @@ defmodule Mozart.Util do
             type: :service,
             function: fn data -> Map.put(data, :value, data.value + 1) end,
             next: nil
-          },
+          }
         ],
         initial_task: :service_task1
-      },
+      }
     ]
   end
 
