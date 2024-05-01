@@ -11,6 +11,15 @@ defmodule Mozart.ProcessEngineTest do
     Enum.each(models, fn model -> PMS.load_process_model(model) end)
   end
 
+  test "call an external service" do
+    load_process_models(Util.call_exteral_services())
+    model = PMS.get_process_model(:call_external_services)
+    data = %{}
+
+    {:ok, ppid} = PE.start_link(model, data)
+    assert PE.get_data(ppid) != %{}
+  end
+
   test "complex process model" do
     load_process_models(Util.get_complex_process_models())
     model = PMS.get_process_model(:call_process_model)
@@ -55,7 +64,7 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, ppid} = PE.start_link(model, data)
 
     assert PE.get_task_instances(ppid) == []
-    assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar, final: :final}
+    assert PE.get_data(ppid) == %{value: 1, foo: :foo, bar: :bar, foo_bar: :foo_bar, final: :final}
     assert PE.is_complete(ppid) == true
   end
 

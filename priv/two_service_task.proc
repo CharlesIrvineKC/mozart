@@ -1,0 +1,4 @@
+defprocess one_service_task do
+  call_service add_one do value = value + 1 end
+  call_service add_two do value = value + 2 end
+end

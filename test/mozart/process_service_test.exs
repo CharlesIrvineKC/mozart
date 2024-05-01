@@ -35,6 +35,6 @@ defmodule Mozart.ProcessServiceTest do
     PMS.clear_then_load_process_models(Util.get_parallel_process_models())
     pid = PS.start_process(:parallel_process_model, %{value: 1})
     assert PE.is_complete(pid) == true
-    assert PE.get_data(pid) == %{value: 1, final: :final, foo: :foo, bar: :bar}
+    assert PE.get_data(pid) == %{value: 1, final: :final, foo: :foo, bar: :bar, foo_bar: :foo_bar}
   end
 end
