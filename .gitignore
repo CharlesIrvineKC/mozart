@@ -24,3 +24,6 @@ mozart-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Apple system files
+.DS_Store
