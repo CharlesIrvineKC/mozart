@@ -11,10 +11,7 @@ defmodule Mozart.Util do
           %Task{
             name: :get_cat_facts,
             type: :service,
-            function: fn data ->
-              facts = RestService.get_cat_facts()
-              Map.merge(data, %{cat_facts: facts})
-            end,
+            function: fn data -> Map.merge(data, %{cat_facts: RestService.get_cat_facts()}) end,
             next: nil
           }
         ],
