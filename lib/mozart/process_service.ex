@@ -1,7 +1,6 @@
 defmodule Mozart.ProcessService do
   use GenServer
 
-  alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.UserService, as: US
 
@@ -89,8 +88,7 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_call({:start_process, model_name, data}, _from, state) do
-    model = PMS.get_process_model(model_name)
-    {:ok, pid, uid} = PE.start(model, data)
+    {:ok, pid, uid} = PE.start(model_name, data)
     {:reply, {pid, uid}, state}
   end
 

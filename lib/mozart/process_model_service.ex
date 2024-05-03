@@ -26,9 +26,7 @@ defmodule Mozart.ProcessModelService do
   end
 
   def handle_call({:get_process_model, name}, _from, state) do
-    process_models = state.process_models
-    process_model = Map.get(process_models, name)
-    {:reply, process_model, state}
+    {:reply, Map.get(state.process_models, name), state}
   end
 
   def handle_cast({:load_process_model, process_model}, state) do

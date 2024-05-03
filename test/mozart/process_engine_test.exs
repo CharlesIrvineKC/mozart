@@ -24,10 +24,9 @@ defmodule Mozart.ProcessEngineTest do
 
   test "complex process model" do
     load_process_models(Util.get_complex_process_models())
-    model = PMS.get_process_model(:call_process_model)
     data = %{value: 1}
 
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:call_process_model, data)
     Process.sleep(10)
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 7}
@@ -36,10 +35,9 @@ defmodule Mozart.ProcessEngineTest do
 
   test "start server and get id" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:simple_process_model)
     data = %{foo: "foo"}
 
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:simple_process_model, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -49,16 +47,14 @@ defmodule Mozart.ProcessEngineTest do
 
   test "execute process with subprocess" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:simple_call_process_model)
     data = %{value: 1}
-    {:ok, _ppid, _uid} = PE.start(model, data)
+    {:ok, _ppid, _uid} = PE.start(:simple_call_process_model, data)
   end
 
   test "execute process with service subprocess" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:simple_call_service_process_model)
     data = %{value: 1}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:simple_call_service_process_model, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -68,9 +64,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "execute process with choice and join" do
     load_process_models(Util.get_parallel_process_models())
-    model = PMS.get_process_model(:parallel_process_model)
     data = %{value: 1}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:parallel_process_model, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -88,9 +83,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "execute process with choice returning :foo" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:choice_process_model)
     data = %{value: 1}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:choice_process_model, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -100,9 +94,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "execute process with choice returning :bar" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:choice_process_model)
     data = %{value: 11}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:choice_process_model, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -112,9 +105,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "one user task" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:user_task_process_model)
     data = %{value: 0}
-    {:ok, ppid, _uid} = PE.start(model, data)
+    {:ok, ppid, _uid} = PE.start(:user_task_process_model, data)
     Process.sleep(10)
 
     assert PE.get_data(ppid) == %{value: 0}
@@ -125,9 +117,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "complete one user task" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:user_task_process_model)
     data = %{value: 0}
-    {:ok, ppid, uid} = PE.start(model, data)
+    {:ok, ppid, uid} = PE.start(:user_task_process_model, data)
 
     assert PE.get_data(ppid) == %{value: 0}
     task_instances = PE.get_task_instances(ppid)
@@ -144,9 +135,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "complete one user task then sevice task" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:user_task_then_service)
     data = %{value: 0}
-    {:ok, ppid, uid} = PE.start(model, data)
+    {:ok, ppid, uid} = PE.start(:user_task_then_service, data)
     assert PE.get_data(ppid) == %{value: 0}
     task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.name end)
     assert task_names == [:user_task_1]
@@ -162,9 +152,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "complete one servuce task then user task" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:service_then_user_task)
     data = %{value: 0}
-    {:ok, ppid, uid} = PE.start(model, data)
+    {:ok, ppid, uid} = PE.start(:service_then_user_task, data)
     assert PE.get_data(ppid) == %{value: 1}
     task_uids = Enum.map(PE.get_task_instances(ppid), fn t -> t.uid end)
     [task_uid] = task_uids
@@ -179,21 +168,19 @@ defmodule Mozart.ProcessEngineTest do
 
   test "set and get process state model" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:simple_process_model)
     data = %{foo: :foo}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:simple_process_model, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.complete == true
-    assert completed_process.model == model
+    assert completed_process.model_name ==:simple_process_model
   end
 
   test "set and get data" do
     load_process_models(Util.get_testing_process_models())
     data = %{value: 1}
-    model = PMS.get_process_model(:simple_process_model)
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:simple_process_model, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -203,9 +190,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "get process model open tasks" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:simple_process_model)
     data = %{value: 1}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:simple_process_model, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -215,9 +201,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "complete increment by one task" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:increment_by_one_process)
     data = %{value: 0}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:increment_by_one_process, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -227,9 +212,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "two increment tasks in a row" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:increment_by_one_twice_process)
     data = %{value: 0}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:increment_by_one_twice_process, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
@@ -239,9 +223,8 @@ defmodule Mozart.ProcessEngineTest do
 
   test "Three increment tasks in a row" do
     load_process_models(Util.get_testing_process_models())
-    model = PMS.get_process_model(:three_increment_by_one_process)
     data = %{value: 0}
-    {:ok, _ppid, uid} = PE.start(model, data)
+    {:ok, _ppid, uid} = PE.start(:three_increment_by_one_process, data)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)

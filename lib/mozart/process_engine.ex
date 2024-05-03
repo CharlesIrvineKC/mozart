@@ -3,20 +3,20 @@ defmodule Mozart.ProcessEngine do
 
   alias Mozart.ProcessEngine
   alias Mozart.ProcessService, as: PS
+  alias Mozart.ProcessModelService, as: PMS
   alias Mozart.Data.ProcessState
   alias Mozart.Data.Task
-  alias Mozart.ProcessModelService
   alias Ecto.UUID
 
   ## Client API
 
-  def start_link(model, data, parent \\ nil) do
-    GenServer.start_link(__MODULE__, {model, data, parent})
+  def start_link(model_name, data, parent \\ nil) do
+    GenServer.start_link(__MODULE__, {model_name, data, parent})
   end
 
-  def start(model, data, parent \\ nil) do
+  def start(model_name, data, parent \\ nil) do
     uid = UUID.generate()
-    {:ok, pid} = GenServer.start(__MODULE__, {uid, model, data, parent})
+    {:ok, pid} = GenServer.start(__MODULE__, {uid, model_name, data, parent})
     {:ok, pid, uid}
   end
 
@@ -58,17 +58,17 @@ defmodule Mozart.ProcessEngine do
 
   ## GenServer callbacks
 
-  def init({uid, model, data, parent}) do
+  def init({uid, model_name, data, parent}) do
 
     state = %ProcessState{
-      model: model,
+      model_name: model_name,
       data: data,
       uid: uid,
       task_instances: [],
       parent: parent
     }
-
-    state = process_next_task(state, state.model.initial_task)
+    model = PMS.get_process_model(state.model_name)
+    state = process_next_task(state, model.initial_task)
     PS.register_process_instance(uid, self())
     state = execute_process(state)
     {:ok, state}
@@ -126,9 +126,8 @@ defmodule Mozart.ProcessEngine do
     if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
 
     if new_task_i.type == :sub_process do
-      sub_process_model = ProcessModelService.get_process_model(new_task_i.sub_process)
       data = state.data
-      {:ok, process_pid, _uid} = start(sub_process_model, data, self())
+      {:ok, process_pid, _uid} = start(new_task_i.sub_process, data, self())
       Map.put(state, :children, [process_pid | state.children])
     else
       state
@@ -153,10 +152,6 @@ defmodule Mozart.ProcessEngine do
 
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
-  end
-
-  def handle_call(:get_model, _from, state) do
-    {:reply, state.model, state}
   end
 
   def handle_call(:get_uid, _from, state) do
@@ -212,10 +207,6 @@ defmodule Mozart.ProcessEngine do
 
     state = execute_process(state)
     {:noreply, state}
-  end
-
-  def handle_cast({:set_model, model}, state) do
-    {:noreply, Map.put(state, :model, model)}
   end
 
   def handle_cast({:set_data, data}, state) do
@@ -291,7 +282,8 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_task_def(task_name, state) do
-    Enum.find(state.model.tasks, fn task -> task.name == task_name end)
+    model = PMS.get_process_model(state.model_name)
+    Enum.find(model.tasks, fn task -> task.name == task_name end)
   end
 
   defp get_task_instance(task_uid, state) do
@@ -339,7 +331,8 @@ defmodule Mozart.ProcessEngine do
     else
       ## no work remaining so process is complete
       if state.parent do
-        ProcessEngine.notify_child_complete(state.parent, state.model.name, state.data)
+        model = PMS.get_process_model(state.model_name)
+        ProcessEngine.notify_child_complete(state.parent, model.name, state.data)
       end
       state = Map.put(state, :complete, true)
       PS.process_completed_process_instance(state)
