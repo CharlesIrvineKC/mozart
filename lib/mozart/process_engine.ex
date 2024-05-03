@@ -14,6 +14,12 @@ defmodule Mozart.ProcessEngine do
     GenServer.start_link(__MODULE__, {model, data, parent})
   end
 
+  def start(model, data, parent \\ nil) do
+    uid = UUID.generate()
+    {:ok, pid} = GenServer.start(__MODULE__, {uid, model, data, parent})
+    {:ok, pid, uid}
+  end
+
   def get_state(ppid) do
     GenServer.call(ppid, :get_state)
   end
@@ -52,8 +58,7 @@ defmodule Mozart.ProcessEngine do
 
   ## GenServer callbacks
 
-  def init({model, data, parent}) do
-    uid = UUID.generate()
+  def init({uid, model, data, parent}) do
 
     state = %ProcessState{
       model: model,
@@ -123,7 +128,7 @@ defmodule Mozart.ProcessEngine do
     if new_task_i.type == :sub_process do
       sub_process_model = ProcessModelService.get_process_model(new_task_i.sub_process)
       data = state.data
-      {:ok, process_pid} = start_link(sub_process_model, data, self())
+      {:ok, process_pid, _uid} = start(sub_process_model, data, self())
       Map.put(state, :children, [process_pid | state.children])
     else
       state
@@ -332,12 +337,13 @@ defmodule Mozart.ProcessEngine do
         state
       end
     else
-      ## process is complete
+      ## no work remaining so process is complete
       if state.parent do
         ProcessEngine.notify_child_complete(state.parent, state.model.name, state.data)
       end
-
-      Map.put(state, :complete, true)
+      state = Map.put(state, :complete, true)
+      PS.process_completed_process_instance(state)
+      state
     end
   end
 end

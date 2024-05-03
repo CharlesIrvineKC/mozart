@@ -11,6 +11,10 @@ defmodule Mozart.ProcessService do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  def get_completed_process(uid) do
+    GenServer.call(__MODULE__, {:get_completed_process, uid})
+  end
+
   def get_process_instances() do
     GenServer.call(__MODULE__, :get_process_instances)
   end
@@ -25,6 +29,10 @@ defmodule Mozart.ProcessService do
 
   def register_process_instance(uid, pid) do
     GenServer.cast(__MODULE__, {:register_process_instance, uid, pid})
+  end
+
+  def process_completed_process_instance(uid) do
+    GenServer.cast(__MODULE__, {:process_completed_process_instance, uid})
   end
 
   def start_process(model_name, data) do
@@ -54,7 +62,7 @@ defmodule Mozart.ProcessService do
   ## Callbacks
 
   def init(_init_arg) do
-    {:ok, %{process_instances: %{}, user_tasks: %{}}}
+    {:ok, %{process_instances: %{}, user_tasks: %{}, completed_processes: %{}}}
   end
 
   def handle_call(:get_state, _from, state) do
@@ -69,6 +77,10 @@ defmodule Mozart.ProcessService do
     {:reply, Map.get(state.process_instances, process_uid), state}
   end
 
+  def handle_call({:get_completed_process, uid}, _from, state) do
+    {:reply, Map.get(state.completed_processes, uid), state}
+  end
+
   def handle_call({:get_user_tasks, user_id}, _from, state) do
     member_groups = US.get_assigned_groups(user_id)
     tasks = get_tasks_for_groups(member_groups, state)
@@ -77,13 +89,31 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:start_process, model_name, data}, _from, state) do
     model = PMS.get_process_model(model_name)
-    {:ok, pid} = PE.start_link(model, data)
+    {:ok, pid, _uid} = PE.start(model, data)
     {:reply, pid, state}
   end
 
   def handle_cast({:register_process_instance, uid, pid}, state) do
     process_instances = Map.put(state.process_instances, uid, pid)
     {:noreply, Map.put(state, :process_instances, process_instances)}
+  end
+
+  def handle_cast({:process_completed_process_instance, child_state}, state) do
+    pid = Map.get(state.process_instances, child_state.uid)
+
+    state =
+      Map.put(
+        state,
+        :completed_processes,
+        Map.put(state.completed_processes, child_state.uid, child_state)
+      )
+
+    state =
+      Map.put(state, :process_instances, Map.delete(state.process_instances, child_state.uid))
+
+    Process.exit(pid, :shutdown)
+
+    {:noreply, state}
   end
 
   def handle_cast({:complete_user_task, user_task_uid, data}, state) do
@@ -114,8 +144,8 @@ defmodule Mozart.ProcessService do
       grp1 -- temp
     end
 
-      Enum.filter(Map.values(state.user_tasks), fn task ->
-        intersection.(task.assigned_groups, groups) != []
-      end)
+    Enum.filter(Map.values(state.user_tasks), fn task ->
+      intersection.(task.assigned_groups, groups) != []
+    end)
   end
 end
