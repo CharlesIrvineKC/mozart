@@ -52,7 +52,6 @@ defmodule Mozart.ProcessEngineTest do
     model = PMS.get_process_model(:simple_call_process_model)
     data = %{value: 1}
     {:ok, _ppid, _uid} = PE.start(model, data)
-
   end
 
   test "execute process with service subprocess" do
@@ -65,7 +64,6 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 1, service: :service}
     assert completed_process.complete == true
-
   end
 
   test "execute process with choice and join" do
@@ -76,7 +74,15 @@ defmodule Mozart.ProcessEngineTest do
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{value: 1, foo: :foo, bar: :bar, foo_bar: :foo_bar, final: :final}
+
+    assert completed_process.data == %{
+             value: 1,
+             foo: :foo,
+             bar: :bar,
+             foo_bar: :foo_bar,
+             final: :final
+           }
+
     assert completed_process.complete == true
   end
 
@@ -150,7 +156,7 @@ defmodule Mozart.ProcessEngineTest do
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data ==%{value: 1, foo: :foo, bar: :bar}
+    assert completed_process.data == %{value: 1, foo: :foo, bar: :bar}
     assert completed_process.complete == true
   end
 
@@ -167,7 +173,7 @@ defmodule Mozart.ProcessEngineTest do
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data ==%{value: 1, foo: :foo, bar: :bar}
+    assert completed_process.data == %{value: 1, foo: :foo, bar: :bar}
     assert completed_process.complete == true
   end
 

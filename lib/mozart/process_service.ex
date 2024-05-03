@@ -62,7 +62,8 @@ defmodule Mozart.ProcessService do
   ## Callbacks
 
   def init(_init_arg) do
-    {:ok, %{process_instances: %{}, user_tasks: %{}, completed_processes: %{}}}
+    initial_state = %{process_instances: %{}, user_tasks: %{}, completed_processes: %{}}
+    {:ok, initial_state}
   end
 
   def handle_call(:get_state, _from, state) do
@@ -89,8 +90,8 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:start_process, model_name, data}, _from, state) do
     model = PMS.get_process_model(model_name)
-    {:ok, pid, _uid} = PE.start(model, data)
-    {:reply, pid, state}
+    {:ok, pid, uid} = PE.start(model, data)
+    {:reply, {pid, uid}, state}
   end
 
   def handle_cast({:register_process_instance, uid, pid}, state) do
@@ -100,7 +101,6 @@ defmodule Mozart.ProcessService do
 
   def handle_cast({:process_completed_process_instance, child_state}, state) do
     pid = Map.get(state.process_instances, child_state.uid)
-
     state =
       Map.put(
         state,
@@ -128,8 +128,8 @@ defmodule Mozart.ProcessService do
     {:noreply, state}
   end
 
-  def handle_cast(:clear_user_tasks, _state) do
-    {:noreply, %{process_instances: %{}, user_tasks: %{}}}
+  def handle_cast(:clear_user_tasks, state) do
+    {:noreply, Map.put(state, :user_tasks, %{})}
   end
 
   def handle_cast({:insert_user_task, task}, state) do
