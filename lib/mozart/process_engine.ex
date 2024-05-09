@@ -20,12 +20,17 @@ defmodule Mozart.ProcessEngine do
     {:ok, pid, uid}
   end
 
-  def start_supervised_pe(model_name, data) do
+  def execute(ppid) do
+    GenServer.cast(ppid, :execute)
+  end
+
+  def start_supervised_pe(model_name, data, parent \\ nil) do
     child_spec = %{
       id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start, [model_name, data]}
+      start: {Mozart.ProcessEngine, :start, [model_name, data, parent]}
     }
     DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
+
   end
 
   def get_state(ppid) do
@@ -197,6 +202,10 @@ defmodule Mozart.ProcessEngine do
       end
 
     {:noreply, state}
+  end
+
+  def handle_cast(:execute, state) do
+    execute_process(state)
   end
 
   def handle_cast({:notify_child_complete, sub_process_name, child_data}, state) do
