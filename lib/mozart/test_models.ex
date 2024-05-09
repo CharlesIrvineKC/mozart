@@ -1,4 +1,4 @@
-defmodule Mozart.Util do
+defmodule Mozart.TestModels do
   alias Mozart.Data.Task
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
