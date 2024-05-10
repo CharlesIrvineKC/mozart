@@ -83,7 +83,7 @@ defmodule Mozart.ProcessEngine do
     model = PMS.get_process_model(state.model_name)
     state = process_next_task(state, model.initial_task)
     PS.register_process_instance(uid, self())
-    state = execute_process(state)
+    # state = execute_process(state)
     {:ok, state}
   end
 
@@ -141,6 +141,7 @@ defmodule Mozart.ProcessEngine do
     if new_task_i.type == :sub_process do
       data = state.data
       {:ok, process_pid, _uid} = start(new_task_i.sub_process, data, self())
+      execute(process_pid)
       Map.put(state, :children, [process_pid | state.children])
     else
       state
@@ -205,7 +206,8 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast(:execute, state) do
-    execute_process(state)
+    state = execute_process(state)
+    {:noreply, state}
   end
 
   def handle_cast({:notify_child_complete, sub_process_name, child_data}, state) do

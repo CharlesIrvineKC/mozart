@@ -4,6 +4,7 @@ defmodule Mozart.ProcessServiceTest do
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.UserService, as: US
   alias Mozart.ProcessService, as: PS
+  alias Mozart.ProcessEngine, as: PE
   alias Mozart.TestModels
   alias Mozart.Data.User
 
@@ -32,7 +33,8 @@ defmodule Mozart.ProcessServiceTest do
 
   test "start a process engine" do
     PMS.clear_then_load_process_models(TestModels.get_parallel_process_models())
-    {_pid, uid} = PS.start_process(:parallel_process_model, %{value: 1})
+    {ppid, uid} = PS.start_process(:parallel_process_model, %{value: 1})
+    PE.execute(ppid)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
