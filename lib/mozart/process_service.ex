@@ -3,11 +3,23 @@ defmodule Mozart.ProcessService do
 
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.UserService, as: US
+  alias Ecto.UUID
 
   ## Client API
 
   def start_link(_init_arg) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
+  def start_supervised_pe(model_name, data, parent \\ nil) do
+    uid = UUID.generate()
+    child_spec = %{
+      id: MyProcessEngine,
+      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent]},
+      restart: :transient
+    }
+    DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
+
   end
 
   def get_completed_process(uid) do
@@ -32,10 +44,6 @@ defmodule Mozart.ProcessService do
 
   def process_completed_process_instance(uid) do
     GenServer.cast(__MODULE__, {:process_completed_process_instance, uid})
-  end
-
-  def start_process(model_name, data) do
-    GenServer.call(__MODULE__, {:start_process, model_name, data})
   end
 
   def get_state() do
@@ -85,11 +93,6 @@ defmodule Mozart.ProcessService do
     member_groups = US.get_assigned_groups(user_id)
     tasks = get_tasks_for_groups(member_groups, state)
     {:reply, tasks, state}
-  end
-
-  def handle_call({:start_process, model_name, data}, _from, state) do
-    {:ok, pid, uid} = PE.start(model_name, data)
-    {:reply, {pid, uid}, state}
   end
 
   def handle_cast({:register_process_instance, uid, pid}, state) do
