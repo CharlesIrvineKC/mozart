@@ -203,7 +203,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_supervised_pe(:simple_process_model, data)
-    #Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
 
