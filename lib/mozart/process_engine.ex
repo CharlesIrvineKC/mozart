@@ -82,79 +82,6 @@ defmodule Mozart.ProcessEngine do
     {:ok, state}
   end
 
-  defp process_next_task_list(state, [], _parent_name) do
-    state
-  end
-
-  defp process_next_task_list(state, [task_name | rest], parent_name) do
-    state = process_next_task(state, task_name, parent_name)
-    process_next_task_list(state, rest, parent_name)
-  end
-
-  defp get_existing_task_instance(state, task_name) do
-    Enum.find(state.task_instances, fn ti -> ti.name == task_name end)
-  end
-
-  defp process_existing_join_next_task(state, existing_task_i, previous_task_name) do
-    ## delete previous task name from inputs
-    existing_task_i =
-      Map.put(
-        existing_task_i,
-        :inputs,
-        List.delete(existing_task_i.inputs, previous_task_name)
-      )
-
-    ## Update existing task instance in state
-    Map.put(
-      state,
-      :task_instances,
-      Enum.map(
-        state.task_instances,
-        fn ti -> if ti.name == existing_task_i.name, do: existing_task_i, else: ti end
-      )
-    )
-  end
-
-  defp process_new_next_task(state, next_task_name, previous_task_name) do
-    new_task_i = get_new_task_instance(next_task_name, state)
-
-    new_task_i =
-      if new_task_i.type == :join do
-        Map.put(
-          new_task_i,
-          :inputs,
-          List.delete(new_task_i.inputs, previous_task_name)
-        )
-      else
-        new_task_i
-      end
-
-    state = Map.put(state, :task_instances, [new_task_i | state.task_instances])
-
-    if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
-
-    if new_task_i.type == :sub_process do
-      data = state.data
-      {:ok, process_pid, _uid} = start_supervised_pe(new_task_i.sub_process, data, self())
-      execute(process_pid)
-      Map.put(state, :children, [process_pid | state.children])
-    else
-      state
-    end
-
-    state
-  end
-
-  def process_next_task(state, next_task_name, previous_task_name \\ nil) do
-    existing_task_i = get_existing_task_instance(state, next_task_name)
-
-    if existing_task_i && existing_task_i.type == :join do
-      process_existing_join_next_task(state, existing_task_i, previous_task_name)
-    else
-      process_new_next_task(state, next_task_name, previous_task_name)
-    end
-  end
-
   def handle_call(:is_complete, _from, state) do
     {:reply, state.complete, state}
   end
@@ -230,6 +157,79 @@ defmodule Mozart.ProcessEngine do
   end
 
   ## callback utilities
+
+  defp process_new_next_task(state, next_task_name, previous_task_name) do
+    new_task_i = get_new_task_instance(next_task_name, state)
+
+    new_task_i =
+      if new_task_i.type == :join do
+        Map.put(
+          new_task_i,
+          :inputs,
+          List.delete(new_task_i.inputs, previous_task_name)
+        )
+      else
+        new_task_i
+      end
+
+    state = Map.put(state, :task_instances, [new_task_i | state.task_instances])
+
+    if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
+
+    if new_task_i.type == :sub_process do
+      data = state.data
+      {:ok, process_pid, _uid} = start_supervised_pe(new_task_i.sub_process, data, self())
+      execute(process_pid)
+      Map.put(state, :children, [process_pid | state.children])
+    else
+      state
+    end
+
+    state
+  end
+
+  def process_next_task(state, next_task_name, previous_task_name \\ nil) do
+    existing_task_i = get_existing_task_instance(state, next_task_name)
+
+    if existing_task_i && existing_task_i.type == :join do
+      process_existing_join_next_task(state, existing_task_i, previous_task_name)
+    else
+      process_new_next_task(state, next_task_name, previous_task_name)
+    end
+  end
+
+  defp process_next_task_list(state, [], _parent_name) do
+    state
+  end
+
+  defp process_next_task_list(state, [task_name | rest], parent_name) do
+    state = process_next_task(state, task_name, parent_name)
+    process_next_task_list(state, rest, parent_name)
+  end
+
+  defp get_existing_task_instance(state, task_name) do
+    Enum.find(state.task_instances, fn ti -> ti.name == task_name end)
+  end
+
+  defp process_existing_join_next_task(state, existing_task_i, previous_task_name) do
+    ## delete previous task name from inputs
+    existing_task_i =
+      Map.put(
+        existing_task_i,
+        :inputs,
+        List.delete(existing_task_i.inputs, previous_task_name)
+      )
+
+    ## Update existing task instance in state
+    Map.put(
+      state,
+      :task_instances,
+      Enum.map(
+        state.task_instances,
+        fn ti -> if ti.name == existing_task_i.name, do: existing_task_i, else: ti end
+      )
+    )
+  end
 
   defp complete_service_task(task, state) do
     data = task.function.(state.data)
