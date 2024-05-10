@@ -22,7 +22,6 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 1}
 
     {:ok, ppid, uid} = PE.start_supervised_pe(:call_process_model, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
     completed_process = PS.get_completed_process(uid)
@@ -55,7 +54,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_supervised_pe(:simple_call_service_process_model, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
 
@@ -68,7 +66,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_parallel_process_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_supervised_pe(:parallel_process_model, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
 
@@ -89,7 +86,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_supervised_pe(:choice_process_model, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(20)
     completed_process = PS.get_completed_process(uid)
@@ -101,7 +97,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 11}
     {:ok, ppid, uid} = PE.start_supervised_pe(:choice_process_model, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
 
@@ -127,7 +122,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
     {:ok, ppid, uid} = PE.start_supervised_pe(:user_task_process_model, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
 
@@ -148,7 +142,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
     {:ok, ppid, uid} = PE.start_supervised_pe(:user_task_then_service, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
     assert PE.get_data(ppid) == %{value: 0}
@@ -168,7 +161,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
     {:ok, ppid, uid} = PE.start_supervised_pe(:service_then_user_task, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
     assert PE.get_data(ppid) == %{value: 1}
@@ -187,7 +179,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{foo: :foo}
     {:ok, ppid, uid} = PE.start_supervised_pe(:simple_process_model, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
 
@@ -200,7 +191,6 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_supervised_pe(:simple_process_model, data)
-    Process.sleep(10)
     PE.execute(ppid)
     Process.sleep(10)
 
