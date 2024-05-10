@@ -83,7 +83,6 @@ defmodule Mozart.ProcessEngine do
     model = PMS.get_process_model(state.model_name)
     state = process_next_task(state, model.initial_task)
     PS.register_process_instance(uid, self())
-    # state = execute_process(state)
     {:ok, state}
   end
 
