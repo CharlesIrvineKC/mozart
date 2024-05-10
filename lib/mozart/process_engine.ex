@@ -10,13 +10,8 @@ defmodule Mozart.ProcessEngine do
 
   ## Client API
 
-  def start_link(model_name, data, parent \\ nil) do
-    GenServer.start_link(__MODULE__, {model_name, data, parent})
-  end
-
-  def start(model_name, data, parent \\ nil) do
-    uid = UUID.generate()
-    {:ok, pid} = GenServer.start(__MODULE__, {uid, model_name, data, parent})
+  def start_link(uid, model_name, data, parent \\ nil) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, parent})
     {:ok, pid, uid}
   end
 
@@ -25,9 +20,11 @@ defmodule Mozart.ProcessEngine do
   end
 
   def start_supervised_pe(model_name, data, parent \\ nil) do
+    uid = UUID.generate()
     child_spec = %{
       id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start, [model_name, data, parent]}
+      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent]},
+      restart: :transient
     }
     DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
 
@@ -80,8 +77,7 @@ defmodule Mozart.ProcessEngine do
       task_instances: [],
       parent: parent
     }
-    model = PMS.get_process_model(state.model_name)
-    state = process_next_task(state, model.initial_task)
+
     PS.register_process_instance(uid, self())
     {:ok, state}
   end
@@ -139,7 +135,7 @@ defmodule Mozart.ProcessEngine do
 
     if new_task_i.type == :sub_process do
       data = state.data
-      {:ok, process_pid, _uid} = start(new_task_i.sub_process, data, self())
+      {:ok, process_pid, _uid} = start_supervised_pe(new_task_i.sub_process, data, self())
       execute(process_pid)
       Map.put(state, :children, [process_pid | state.children])
     else
@@ -205,6 +201,8 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast(:execute, state) do
+    model = PMS.get_process_model(state.model_name)
+    state = process_next_task(state, model.initial_task)
     state = execute_process(state)
     {:noreply, state}
   end
