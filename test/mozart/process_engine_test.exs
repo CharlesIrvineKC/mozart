@@ -223,6 +223,24 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.data == %{value: 1}
   end
 
+  test "test correcting bad data and re-executing" do
+    PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
+    data = %{value: "foobar"}
+    {:ok, ppid, uid} = PE.start_supervised_pe(:increment_by_one_process, data)
+
+    PE.execute(ppid)
+    Process.sleep(50)
+
+    new_pid = PS.get_process_ppid(uid)
+    PE.set_data(new_pid, %{value: 1})
+    PE.execute(new_pid)
+    Process.sleep(50)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.complete == true
+    assert completed_process.data == %{value: 2}
+  end
+
   test "two increment tasks in a row" do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
