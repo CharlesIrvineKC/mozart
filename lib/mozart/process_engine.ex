@@ -162,7 +162,6 @@ defmodule Mozart.ProcessEngine do
   end
 
   def terminate(_reason, state) do
-    IO.puts "terminating cacheing"
     PS.cache_pe_state(state.uid, state)
   end
 
