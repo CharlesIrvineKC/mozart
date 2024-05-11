@@ -1,6 +1,8 @@
 defmodule Mozart.ProcessEngine do
   use GenServer
 
+  require Logger
+
   alias Mozart.ProcessEngine
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessModelService, as: PMS
@@ -70,10 +72,10 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   def init({uid, model_name, data, parent}) do
-    pe_state = PS.get_cached_state(uid)
+    pe_recovered_state = PS.get_cached_state(uid)
 
     state =
-      pe_state ||
+      pe_recovered_state ||
         %ProcessState{
           model_name: model_name,
           data: data,
@@ -83,6 +85,13 @@ defmodule Mozart.ProcessEngine do
         }
 
     PS.register_process_instance(uid, self())
+
+    if pe_recovered_state do
+      Logger.warning("Restart process instance [#{model_name}][#{uid}]")
+    else
+      Logger.info("Start process instance [#{model_name}][#{uid}]")
+    end
+
     {:ok, state}
   end
 
@@ -124,6 +133,7 @@ defmodule Mozart.ProcessEngine do
             do: process_next_task(state, task_instance.next, task_instance.name),
             else: state
 
+        Logger.info("Complete user task [#{task_instance.name}][#{task_instance.uid}]")
         execute_process(state)
       else
         state
@@ -161,7 +171,9 @@ defmodule Mozart.ProcessEngine do
     {:noreply, Map.put(state, :data, data)}
   end
 
-  def terminate(_reason, state) do
+  def terminate(reason, state) do
+    {reason_code, _stack} = reason
+    Logger.warn("Process instance terminated [#{reason_code}][#{state.model_name}][#{state.uid}]")
     PS.cache_pe_state(state.uid, state)
   end
 
@@ -193,6 +205,8 @@ defmodule Mozart.ProcessEngine do
     else
       state
     end
+
+    Logger.info("New task instance [#{new_task_i.name}][#{new_task_i.uid}]")
 
     state
   end
@@ -250,6 +264,9 @@ defmodule Mozart.ProcessEngine do
     state = Map.put(state, :task_instances, task_instances)
 
     state = if task.next, do: process_next_task(state, task.next, task.name), else: state
+
+    Logger.info("Complete service task [#{task.name}[#{task.uid}]")
+
     execute_process(state)
   end
 
@@ -263,6 +280,8 @@ defmodule Mozart.ProcessEngine do
 
     state = process_next_task_list(state, next_states, task_i.name)
 
+    Logger.info("Complete parallel task [#{task_i.name}]")
+
     execute_process(state)
   end
 
@@ -273,6 +292,8 @@ defmodule Mozart.ProcessEngine do
     state = Map.put(state, :task_instances, task_instances)
 
     state = process_next_task(state, task_i.next, task_i.name)
+
+    Logger.info("Complete join task [#{task_i.name}]")
 
     execute_process(state)
   end
@@ -290,6 +311,9 @@ defmodule Mozart.ProcessEngine do
       Enum.reject(state.task_instances, fn task_i -> task_i.name == task.name end)
 
     state = Map.put(state, :task_instances, task_instances)
+
+    Logger.info("Complete choice task [#{task.name}][#{task.uid}]")
+
     execute_process(state)
   end
 
@@ -303,6 +327,9 @@ defmodule Mozart.ProcessEngine do
     state = Map.put(state, :task_instances, task_instances)
 
     state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
+
+    Logger.info("Complete subprocess task [#{task_i.name}][#{task_i.uid}]")
+
     execute_process(state)
   end
 
@@ -361,6 +388,9 @@ defmodule Mozart.ProcessEngine do
       end
 
       state = Map.put(state, :complete, true)
+
+      Logger.info("Process complete [#{state.model_name}][#{state.uid}]")
+
       PS.process_completed_process_instance(state)
       state
     end

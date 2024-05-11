@@ -3,24 +3,13 @@ defmodule Mozart.ProcessService do
 
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.UserService, as: US
-  alias Ecto.UUID
+
+  require Logger
 
   ## Client API
 
   def start_link(_init_arg) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-  end
-
-  def start_supervised_pe(model_name, data, parent \\ nil) do
-    uid = UUID.generate()
-
-    child_spec = %{
-      id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent]},
-      restart: :transient
-    }
-
-    DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
   end
 
   def get_cached_state(uid) do
@@ -84,6 +73,8 @@ defmodule Mozart.ProcessService do
       completed_processes: %{},
       restart_state_cache: %{}
     }
+
+    Logger.info("Process service initialized")
 
     {:ok, initial_state}
   end
