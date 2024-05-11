@@ -173,7 +173,7 @@ defmodule Mozart.ProcessEngine do
 
   def terminate(reason, state) do
     {reason_code, _stack} = reason
-    Logger.warn("Process instance terminated [#{reason_code}][#{state.model_name}][#{state.uid}]")
+    Logger.warning("Process instance terminated [#{reason_code}][#{state.model_name}][#{state.uid}]")
     PS.cache_pe_state(state.uid, state)
   end
 
