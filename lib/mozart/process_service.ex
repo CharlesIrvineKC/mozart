@@ -13,13 +13,18 @@ defmodule Mozart.ProcessService do
 
   def start_supervised_pe(model_name, data, parent \\ nil) do
     uid = UUID.generate()
+
     child_spec = %{
       id: MyProcessEngine,
       start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent]},
       restart: :transient
     }
-    DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
 
+    DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
+  end
+
+  def get_cached_state(uid) do
+    GenServer.call(__MODULE__, {:get_cached_state, uid})
   end
 
   def get_completed_process(uid) do
@@ -66,10 +71,20 @@ defmodule Mozart.ProcessService do
     GenServer.cast(__MODULE__, :clear_user_tasks)
   end
 
+  def cache_pe_state(uid, pe_state) do
+    GenServer.call(__MODULE__, {:cache_pe_state, uid, pe_state})
+  end
+
   ## Callbacks
 
   def init(_init_arg) do
-    initial_state = %{process_instances: %{}, user_tasks: %{}, completed_processes: %{}}
+    initial_state = %{
+      process_instances: %{},
+      user_tasks: %{},
+      completed_processes: %{},
+      restart_state_cache: %{}
+    }
+
     {:ok, initial_state}
   end
 
@@ -95,6 +110,17 @@ defmodule Mozart.ProcessService do
     {:reply, tasks, state}
   end
 
+  def handle_call({:get_cached_state, uid}, _from, state) do
+    {pe_state, new_cache} = Map.pop(state.restart_state_cache, uid)
+    state = if pe_state, do: Map.put(state, :restart_state_cache, new_cache), else: state
+    {:reply, pe_state, state}
+  end
+
+  def handle_call({:cache_pe_state, uid, pe_state}, _from, state) do
+    state = Map.put(state, :restart_state_cache, Map.put(state.restart_state_cache, uid, pe_state))
+    {:reply, pe_state, state}
+  end
+
   def handle_cast({:register_process_instance, uid, pid}, state) do
     process_instances = Map.put(state.process_instances, uid, pid)
     {:noreply, Map.put(state, :process_instances, process_instances)}
@@ -102,6 +128,7 @@ defmodule Mozart.ProcessService do
 
   def handle_cast({:process_completed_process_instance, child_state}, state) do
     pid = Map.get(state.process_instances, child_state.uid)
+
     state =
       Map.put(
         state,

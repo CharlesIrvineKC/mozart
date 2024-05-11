@@ -21,13 +21,14 @@ defmodule Mozart.ProcessEngine do
 
   def start_supervised_pe(model_name, data, parent \\ nil) do
     uid = UUID.generate()
+
     child_spec = %{
       id: MyProcessEngine,
       start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent]},
       restart: :transient
     }
-    DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
 
+    DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
   end
 
   def get_state(ppid) do
@@ -69,14 +70,17 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   def init({uid, model_name, data, parent}) do
+    pe_state = PS.get_cached_state(uid)
 
-    state = %ProcessState{
-      model_name: model_name,
-      data: data,
-      uid: uid,
-      task_instances: [],
-      parent: parent
-    }
+    state =
+      pe_state ||
+        %ProcessState{
+          model_name: model_name,
+          data: data,
+          uid: uid,
+          task_instances: [],
+          parent: parent
+        }
 
     PS.register_process_instance(uid, self())
     {:ok, state}
@@ -104,6 +108,7 @@ defmodule Mozart.ProcessEngine do
 
   def handle_cast({:complete_user_task, task_uid, return_data}, state) do
     task_instance = get_task_instance(task_uid, state)
+
     state =
       if task_instance do
         data = Map.merge(state.data, return_data)
@@ -156,8 +161,9 @@ defmodule Mozart.ProcessEngine do
     {:noreply, Map.put(state, :data, data)}
   end
 
-  def terminate(reason, state) do
-    IO.inspect({reason, state}, label: "terminate")
+  def terminate(_reason, state) do
+    IO.puts "terminating cacheing"
+    PS.cache_pe_state(state.uid, state)
   end
 
   ## callback utilities
@@ -354,6 +360,7 @@ defmodule Mozart.ProcessEngine do
         model = PMS.get_process_model(state.model_name)
         ProcessEngine.notify_child_complete(state.parent, model.name, state.data)
       end
+
       state = Map.put(state, :complete, true)
       PS.process_completed_process_instance(state)
       state
