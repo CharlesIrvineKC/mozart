@@ -232,6 +232,30 @@ defmodule Mozart.TestModels do
         initial_task: :foo
       },
       %ProcessModel{
+        name: :two_user_tasks_then_service,
+        tasks: [
+          %Task{
+            name: :user_task_1,
+            type: :user,
+            assigned_groups: ["admin"],
+            next: :user_task_2
+          },
+          %Task{
+            name: :user_task_2,
+            type: :user,
+            assigned_groups: ["admin"],
+            next: :increment_by_one_task
+          },
+          %Task{
+            name: :increment_by_one_task,
+            type: :service,
+            function: fn map -> Map.put(map, :value, map.value + 1) end,
+            next: nil
+          }
+        ],
+        initial_task: :user_task_1
+      },
+      %ProcessModel{
         name: :user_task_then_service,
         tasks: [
           %Task{

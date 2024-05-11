@@ -138,6 +138,25 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.complete == true
   end
 
+  test "recover lost state" do
+    PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
+    data = %{value: "foobar"}
+    {:ok, ppid, uid} = PE.start_supervised_pe(:two_user_tasks_then_service, data)
+    PE.execute(ppid)
+    Process.sleep(10)
+
+    [task_instance] = PE.get_task_instances(ppid)
+    PE.complete_user_task(ppid, task_instance.uid, %{foo: :foo, bar: :bar})
+    Process.sleep(10)
+
+    [task_instance] = PE.get_task_instances(ppid)
+    PE.complete_user_task(ppid, task_instance.uid, %{foobar: :foobar})
+    Process.sleep(10)
+
+    new_pid = PS.get_process_ppid(uid)
+    assert PE.get_data(new_pid) == %{value: "foobar"}
+  end
+
   test "complete one user task then sevice task" do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}

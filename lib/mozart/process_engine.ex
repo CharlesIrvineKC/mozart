@@ -156,6 +156,10 @@ defmodule Mozart.ProcessEngine do
     {:noreply, Map.put(state, :data, data)}
   end
 
+  def terminate(reason, state) do
+    IO.inspect({reason, state}, label: "terminate")
+  end
+
   ## callback utilities
 
   defp process_new_next_task(state, next_task_name, previous_task_name) do
