@@ -1,5 +1,5 @@
 %ProcessModel{
-  name: :one_service_task,
+  name: :two_service_tasks,
   tasks: [
     %Task{
       name: :add_one,
