@@ -1,6 +1,3 @@
-alias Mozart.Data.ProcessModel
-alias Mozart.Data.Task
-
 %ProcessModel{
   name: :one_service_task,
   tasks: [
