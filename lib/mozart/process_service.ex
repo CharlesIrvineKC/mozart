@@ -28,6 +28,10 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_process_ppid, process_uid})
   end
 
+  def get_user_tasks() do
+    GenServer.call(__MODULE__, :get_user_tasks)
+  end
+
   def get_user_tasks(user_id) do
     GenServer.call(__MODULE__, {:get_user_tasks, user_id})
   end
@@ -99,6 +103,10 @@ defmodule Mozart.ProcessService do
     member_groups = US.get_assigned_groups(user_id)
     tasks = get_tasks_for_groups(member_groups, state)
     {:reply, tasks, state}
+  end
+
+  def handle_call(:get_user_tasks, _from, state) do
+    {:reply, state.user_tasks, state}
   end
 
   def handle_call({:get_cached_state, uid}, _from, state) do

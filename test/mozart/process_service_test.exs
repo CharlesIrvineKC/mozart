@@ -32,6 +32,8 @@ defmodule Mozart.ProcessServiceTest do
     PS.complete_user_task(ppid, task_instance.uid, %{user_task_complete: true})
     Process.sleep(50)
     assert PS.get_completed_process(uid) != nil
+    # not working, need refactor maybe
+    # assert PS.get_user_tasks() == %{}
   end
 
   test "assign a task to a user" do
