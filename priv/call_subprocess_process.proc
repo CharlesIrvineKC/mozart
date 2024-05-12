@@ -1,0 +1,8 @@
+defprocess call_process_model do
+  call_subprocess subprocess_model
+  call_service service_task do value = value + 1 end
+end
+
+defprocess subprocess_model do
+    call_service service_task1 do value = value + 1 end
+end

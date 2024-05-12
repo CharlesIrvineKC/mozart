@@ -11,17 +11,20 @@ alias Mozart.Data.Task
     },
     %Task{
       name: :add_one,
+      type: :service,
       function: fn data -> Map.put(data, :value, data.value + 1) end,
       next: :add_two
     },
     %Task{
       name: :add_two,
+      type: :service,
       function: fn data -> Map.put(data, :value, data.value + 2) end,
       next: nil
     },
     %Task{
       name: :add_three,
-      function: fn data -> Map.put(data, :value, data.value + 1) end,
+      type: :service,
+      function: fn data -> Map.put(data, :value, data.value + 3) end,
       next: nil
     }
   ]
