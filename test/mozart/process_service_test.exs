@@ -9,7 +9,6 @@ defmodule Mozart.ProcessServiceTest do
   alias Mozart.Data.User
 
   setup do
-    PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     PS.clear_user_tasks()
   end
 
@@ -20,6 +19,19 @@ defmodule Mozart.ProcessServiceTest do
   test "get user tasks for person" do
     tasks = PS.get_user_tasks("crirvine")
     assert tasks == []
+  end
+
+  test "complete a user task" do
+    PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
+    data = %{value: 0}
+    {:ok, ppid, uid} = PE.start_supervised_pe(:user_task_process_model, data)
+    PE.execute(ppid)
+
+    [task_instance] = IO.inspect(Map.values(PE.get_task_instances(ppid)))
+
+    PS.complete_user_task(ppid, task_instance.uid, %{user_task_complete: true})
+    Process.sleep(50)
+    assert PS.get_completed_process(uid) != nil
   end
 
   test "assign a task to a user" do

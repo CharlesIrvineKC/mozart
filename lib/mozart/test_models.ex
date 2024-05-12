@@ -223,13 +223,13 @@ defmodule Mozart.TestModels do
         name: :user_task_process_model,
         tasks: [
           %Task{
-            name: :foo,
+            name: :user_task,
             type: :user,
             assigned_groups: ["admin"],
             next: nil
           }
         ],
-        initial_task: :foo
+        initial_task: :user_task
       },
       %ProcessModel{
         name: :two_user_tasks_then_service,
