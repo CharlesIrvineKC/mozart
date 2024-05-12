@@ -113,7 +113,7 @@ defmodule Mozart.ProcessEngineTest do
     Process.sleep(10)
 
     assert PE.get_data(ppid) == %{value: 0}
-    task_instances = PE.get_task_instances(ppid)
+    task_instances = Map.values(PE.get_task_instances(ppid))
     assert Enum.map(task_instances, fn t_i -> t_i.name end) == [:foo]
     assert PE.is_complete(ppid) == false
   end
@@ -127,9 +127,9 @@ defmodule Mozart.ProcessEngineTest do
 
     assert PE.get_data(ppid) == %{value: 0}
     task_instances = PE.get_task_instances(ppid)
-    assert Enum.map(task_instances, fn t_i -> t_i.name end) == [:foo]
+    assert Enum.map(Map.values(task_instances), fn t_i -> t_i.name end) == [:foo]
 
-    [task_instance] = task_instances
+    [task_instance] = Map.values(task_instances)
     PE.complete_user_task(ppid, task_instance.uid, %{value: 0, foo: :foo, bar: :bar})
     Process.sleep(10)
 
@@ -143,23 +143,24 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: "foobar"}
     {:ok, ppid, uid} = PE.start_supervised_pe(:two_user_tasks_then_service, data)
     PE.execute(ppid)
-    Process.sleep(10)
+    Process.sleep(100)
 
-    [task_instance] = PE.get_task_instances(ppid)
-    PE.complete_user_task(ppid, task_instance.uid, %{foo: :foo, bar: :bar})
-    Process.sleep(10)
-
-    [task_instance] = PE.get_task_instances(ppid)
-    PE.complete_user_task(ppid, task_instance.uid, %{foobar: :foobar})
+    [task_instance] = Map.values(PE.get_task_instances(ppid))
+    PE.complete_user_task(ppid, task_instance.uid, %{user_task_1: true})
     Process.sleep(50)
+    assert PE.get_data(ppid) ==  %{value: "foobar", user_task_1: true}
+
+    [task_instance] = Map.values(PE.get_task_instances(ppid))
+    PE.complete_user_task(ppid, task_instance.uid, %{user_task_2: true})
+    Process.sleep(100)
 
     new_pid = PS.get_process_ppid(uid)
-    assert PE.get_data(new_pid) ==  %{value: "foobar", bar: :bar, foo: :foo}
+    assert PE.get_data(new_pid) ==  %{value: "foobar", user_task_1: true}
 
-    [task_instance] = PE.get_task_instances(new_pid)
+    [task_instance] = Map.values(PE.get_task_instances(new_pid))
     PE.set_data(new_pid, %{value: 1, bar: :bar, foo: :foo})
     PE.complete_user_task(new_pid, task_instance.uid, %{foobar: :foobar})
-    Process.sleep(50)
+    Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 2, foo: :foo, bar: :bar, foobar: :foobar}
@@ -173,9 +174,9 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute(ppid)
     Process.sleep(10)
     assert PE.get_data(ppid) == %{value: 0}
-    task_names = Enum.map(PE.get_task_instances(ppid), fn t -> t.name end)
+    task_names = Enum.map(Map.values(PE.get_task_instances(ppid)), fn t -> t.name end)
     assert task_names == [:user_task_1]
-    [task_instance] = PE.get_task_instances(ppid)
+    [task_instance] = Map.values(PE.get_task_instances(ppid))
 
     PE.complete_user_task(ppid, task_instance.uid, %{foo: :foo, bar: :bar})
     Process.sleep(10)
@@ -192,7 +193,7 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute(ppid)
     Process.sleep(10)
     assert PE.get_data(ppid) == %{value: 1}
-    task_uids = Enum.map(PE.get_task_instances(ppid), fn t -> t.uid end)
+    task_uids = Map.keys(PE.get_task_instances(ppid))
     [task_uid] = task_uids
 
     PE.complete_user_task(ppid, task_uid, %{foo: :foo, bar: :bar})
@@ -255,9 +256,8 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: "foobar"}
     {:ok, ppid, uid} = PE.start_supervised_pe(:increment_by_one_process, data)
-
     PE.execute(ppid)
-    Process.sleep(50)
+    Process.sleep(100)
 
     new_pid = PS.get_process_ppid(uid)
     PE.set_data(new_pid, %{value: 1})
@@ -291,6 +291,6 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.complete == true
     assert completed_process.data == %{value: 6}
-    assert completed_process.task_instances == []
+    assert completed_process.task_instances == %{}
   end
 end

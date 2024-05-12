@@ -3,8 +3,8 @@ defmodule Mozart.Data.ProcessState do
   defstruct [
     :uid,
     :parent,
-    :task_instances,
     :model_name,
+    task_instances: %{},
     data: %{},
     complete: false,
     children: []

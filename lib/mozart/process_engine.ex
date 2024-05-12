@@ -80,7 +80,6 @@ defmodule Mozart.ProcessEngine do
           model_name: model_name,
           data: data,
           uid: uid,
-          task_instances: [],
           parent: parent
         }
 
@@ -123,8 +122,7 @@ defmodule Mozart.ProcessEngine do
         data = Map.merge(state.data, return_data)
         state = Map.put(state, :data, data)
 
-        task_instances =
-          Enum.reject(state.task_instances, fn task -> task.uid == task_uid end)
+        task_instances = Map.delete(state.task_instances, task_uid)
 
         state = Map.put(state, :task_instances, task_instances)
 
@@ -150,15 +148,12 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast({:notify_child_complete, sub_process_name, child_data}, state) do
-    task_instance =
-      Enum.find(state.task_instances, fn ti -> ti.sub_process == sub_process_name end)
+    {_uid, task_instance} =
+      Enum.find(state.task_instances, fn {_uid, ti} -> ti.sub_process == sub_process_name end)
 
     task_instance = Map.put(task_instance, :complete, true)
 
-    task_instances =
-      Enum.map(state.task_instances, fn ti ->
-        if ti.name == task_instance.name, do: task_instance, else: ti
-      end)
+    task_instances = Map.put(state.task_instances, task_instance.uid, task_instance)
 
     state =
       state |> Map.put(:task_instances, task_instances) |> Map.put(:data, child_data)
@@ -173,8 +168,13 @@ defmodule Mozart.ProcessEngine do
 
   def terminate(reason, state) do
     {reason_code, _stack} = reason
-    Logger.warning("Process instance terminated [#{reason_code}][#{state.model_name}][#{state.uid}]")
+
+    Logger.warning(
+      "Process instance terminated [#{reason_code}][#{state.model_name}][#{state.uid}]"
+    )
+
     PS.cache_pe_state(state.uid, state)
+    Process.sleep(50)
   end
 
   ## callback utilities
@@ -193,7 +193,9 @@ defmodule Mozart.ProcessEngine do
         new_task_i
       end
 
-    state = Map.put(state, :task_instances, [new_task_i | state.task_instances])
+    # state = Map.put(state, :task_instances, [new_task_i | state.task_instances])
+    state =
+      Map.put(state, :task_instances, Map.put(state.task_instances, new_task_i.uid, new_task_i))
 
     if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
 
@@ -231,7 +233,13 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_existing_task_instance(state, task_name) do
-    Enum.find(state.task_instances, fn ti -> ti.name == task_name end)
+    result =
+      Enum.find(state.task_instances, fn {_uid, task_i} -> task_i.name == task_name end)
+
+    if result do
+      {_uid, task_instance} = result
+      task_instance
+    end
   end
 
   defp process_existing_join_next_task(state, existing_task_i, previous_task_name) do
@@ -247,10 +255,7 @@ defmodule Mozart.ProcessEngine do
     Map.put(
       state,
       :task_instances,
-      Enum.map(
-        state.task_instances,
-        fn ti -> if ti.name == existing_task_i.name, do: existing_task_i, else: ti end
-      )
+      Map.put(state.task_instances, existing_task_i.uid, existing_task_i)
     )
   end
 
@@ -258,8 +263,7 @@ defmodule Mozart.ProcessEngine do
     data = task.function.(state.data)
     state = Map.put(state, :data, data)
 
-    task_instances =
-      Enum.reject(state.task_instances, fn task_i -> task_i.name == task.name end)
+    task_instances = Map.delete(state.task_instances, task.uid)
 
     state = Map.put(state, :task_instances, task_instances)
 
@@ -271,8 +275,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp complete_parallel_task_i(task_i, state) do
-    task_instances =
-      Enum.reject(state.task_instances, fn ti -> ti.name == task_i.name end)
+    task_instances = Map.delete(state.task_instances, task_i.uid)
 
     state = Map.put(state, :task_instances, task_instances)
 
@@ -286,8 +289,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp complete_joint_task(task_i, state) do
-    task_instances =
-      Enum.reject(state.task_instances, fn ti -> ti.name == task_i.name end)
+    task_instances = Map.delete(state.task_instances, task_i.uid)
 
     state = Map.put(state, :task_instances, task_instances)
 
@@ -307,8 +309,7 @@ defmodule Mozart.ProcessEngine do
 
     state = process_next_task(state, next_task_name, task.name)
 
-    task_instances =
-      Enum.reject(state.task_instances, fn task_i -> task_i.name == task.name end)
+    task_instances = Map.delete(state.task_instances, task.uid)
 
     state = Map.put(state, :task_instances, task_instances)
 
@@ -321,8 +322,7 @@ defmodule Mozart.ProcessEngine do
     data = Map.merge(task_i.data, state.data)
     state = Map.put(state, :data, data)
 
-    task_instances =
-      Enum.reject(state.task_instances, fn ti -> task_i.name == ti.name end)
+    task_instances = Map.delete(state.task_instances, task_i.uid)
 
     state = Map.put(state, :task_instances, task_instances)
 
@@ -339,7 +339,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_task_instance(task_uid, state) do
-    Enum.find(state.task_instances, fn ti -> ti.uid == task_uid end)
+    Map.get(state.task_instances, task_uid)
   end
 
   defp get_new_task_instance(task_name, state) do
@@ -349,11 +349,16 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_complete_able_task(state) do
-    Enum.find(state.task_instances, fn ti -> Task.complete_able(ti) end)
+    result = Enum.find(state.task_instances, fn {_uid, task_i} -> Task.complete_able(task_i) end)
+
+    if result do
+      {_uid, task_i} = result
+      task_i
+    end
   end
 
   defp work_remaining(state) do
-    state.task_instances != []
+    state.task_instances != %{}
   end
 
   defp execute_process(state) do
@@ -382,9 +387,9 @@ defmodule Mozart.ProcessEngine do
       end
     else
       ## no work remaining so process is complete
+      # if process instance has a parent process
       if state.parent do
-        model = PMS.get_process_model(state.model_name)
-        ProcessEngine.notify_child_complete(state.parent, model.name, state.data)
+        ProcessEngine.notify_child_complete(state.parent, state.model_name, state.data)
       end
 
       state = Map.put(state, :complete, true)
