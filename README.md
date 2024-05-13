@@ -17,7 +17,7 @@ Business Process Managemnt is implemented with the aid of a BPM platform of some
 
 # When is BPM Applicable
 
-BPM is applicable when:
+This is difficult to answer exactly, but BPM may be applicable when:
 
 * Processes are performed on a regular basis.
 * Process are well defined.
