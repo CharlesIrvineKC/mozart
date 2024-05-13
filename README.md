@@ -1,6 +1,31 @@
+# What is a Business Process?
+
+Companies large and small have business processes ("processes", for short) that they regularly execute. Insurance companies have processes to process a claim. Banks have processes to approve loans. The government have processes to award contracts. 
+
+# What is Business Process Management (BPM)?
+
+The goals of Business Process Management are:
+
+* More Reliablibility
+* Faster Process Execugtion
+* Require Less Training
+* Incremental Improvement
+* Provide Process Metrics
+* Cost Savings
+
+Business Process Managemnt is implemented with the aid of a BPM platform of some sort. There are are dozens of commerical BPM platforms and they can be quite expensive.
+
+# When is BPM Applicable
+
+BPM is applicable when:
+
+* Processes are performed on a regular basis.
+* Process are well defined.
+* Multiple business groups and people participate in process execution.
+
 # Mozart
 
-Mozart will be a open source BPM engine. It is written in Elixir and is in the early stages of development. It's distinguishing characteristic will be that it is targeted for use exclusively by software engineers. It will offer a text-based BPM modelling language that is highly readable by process experts with no programming experience.
+Mozart will be a open source BPM platform. It is written in Elixir and is in the early stages of development. It's distinguishing characteristic will be that it is targeted for use by software engineers. It will offer a text-based BPM modelling language that is highly readable by process experts with no programming experience.
 
 ## Current Status
 
