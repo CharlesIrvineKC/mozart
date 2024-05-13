@@ -1,6 +1,6 @@
 # What is a Business Process?
 
-Companies large and small have business processes ("processes", for short) that they regularly execute. Insurance companies have processes to process a claim. Banks have processes to approve loans. The government have processes to award contracts. 
+Companies large and small have business processes that they regularly execute. Let's just call them "processes" for brevity's sake. Insurance companies have processes to process a claim. Banks have processes to approve loans. The government have processes to award contracts. 
 
 # What is Business Process Management (BPM)?
 
@@ -8,12 +8,12 @@ The goals of Business Process Management are:
 
 * More Reliablibility
 * Faster Process Execugtion
-* Require Less Training
-* Incremental Improvement
+* Reduced Training Requirements
+* Incremental Process Improvement
 * Provide Process Metrics
 * Cost Savings
 
-Business Process Managemnt is implemented with the aid of a BPM platform of some sort. There are are dozens of commerical BPM platforms and they can be quite expensive.
+Business Process Managemnt is implemented with the aid of a BPM platform of some sort. There are are dozens of commerical BPM platforms and they can be quite expensive, potentially costing millions of dollars a year.
 
 # When is BPM Applicable
 
