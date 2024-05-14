@@ -51,6 +51,7 @@ The modeling elements currently supported are:
 * Implement send event task.
 * Implement receive event task.
 * Implementg decision task.
+* Publish 0.1 release to hex.
 * Develop a textual business processs modeling language with will be translated at runtime into native Elixir data structures. The language will be highly readable to process modeler with no programming experience.
 * Develop GUIs for:
   * Runtime trouble shooting and monitoring.
