@@ -8,6 +8,8 @@ defmodule Mozart.Data.Task do
     :process_uid,
     :sub_process,
     :assignee,
+    :timer_duration,
+    expired: false,
     multi_next: [],
     inputs: [],
     choices: [],
@@ -18,6 +20,10 @@ defmodule Mozart.Data.Task do
 
   def complete_able(t) when t.type == :service do
     true
+  end
+
+  def complete_able(t) when t.type == :timer do
+    t.expired
   end
 
   def complete_able(t) when t.type == :parallel do

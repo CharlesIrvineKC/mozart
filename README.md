@@ -32,6 +32,7 @@ The modeling elements currently supported are:
 * User Tasks
 * Service Tasks
 * Subprocess Tasks
+* Timer Tasks
 * Exclusive Gates
 * Parallel Gates
 * Parallel Joins
@@ -47,10 +48,9 @@ The modeling elements currently supported are:
 
 ## Todo
 
-* Implement timer task.
 * Implement send event task.
 * Implement receive event task.
-* Implementg decision task.
+* Implement decision task.
 * Publish 0.1 release to hex.
 * Develop a textual business processs modeling language with will be translated at runtime into native Elixir data structures. The language will be highly readable to process modeler with no programming experience.
 * Develop GUIs for:

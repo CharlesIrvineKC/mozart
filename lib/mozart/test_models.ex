@@ -3,6 +3,29 @@ defmodule Mozart.TestModels do
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
 
+  def call_timer_tasks do
+    [
+      %ProcessModel{
+        name: :call_timer_task,
+        tasks: [
+          %Task{
+            name: :wait_1_seconds,
+            type: :timer,
+            timer_duration: 1000,
+            next: :wait_3_seconds
+          },
+          %Task{
+            name: :wait_3_seconds,
+            type: :timer,
+            timer_duration: 3000,
+            next: nil
+          }
+        ],
+        initial_task: :wait_1_seconds
+      }
+    ]
+  end
+
   def call_exteral_services do
     [
       %ProcessModel{

@@ -166,18 +166,37 @@ defmodule Mozart.ProcessEngine do
     {:noreply, Map.put(state, :data, data)}
   end
 
-  def terminate(reason, state) do
-    {reason_code, _stack} = reason
+  def handle_info({:timer_expired, timer_task_uid}, state) do
+    timer_task = Map.get(state.task_instances, timer_task_uid)
+    timer_task = Map.put(timer_task, :expired, true)
 
-    Logger.warning(
-      "Process instance terminated [#{reason_code}][#{state.model_name}][#{state.uid}]"
-    )
+    state =
+      Map.put(state, :task_instances, Map.put(state.task_instances, timer_task_uid, timer_task))
+
+    state = execute_process(state)
+    {:noreply, state}
+  end
+
+  def terminate(reason, state) do
+    IO.puts("Process engine terminated with reason:")
+    IO.inspect(reason, label: "reason")
+    IO.inspect(state, label: "state")
 
     PS.cache_pe_state(state.uid, state)
     Process.sleep(50)
   end
 
   ## callback utilities
+
+  defp set_timer_for(task_uid, timer_duration) do
+    self = self()
+    spawn(fn -> wait_and_notify(self, task_uid, timer_duration) end)
+  end
+
+  defp wait_and_notify(parent_pe, task_uid, timer_duration) do
+    Process.sleep(timer_duration)
+    send(parent_pe, {:timer_expired, task_uid})
+  end
 
   defp process_new_next_task(state, next_task_name, previous_task_name) do
     new_task_i = get_new_task_instance(next_task_name, state)
@@ -196,6 +215,8 @@ defmodule Mozart.ProcessEngine do
     # state = Map.put(state, :task_instances, [new_task_i | state.task_instances])
     state =
       Map.put(state, :task_instances, Map.put(state.task_instances, new_task_i.uid, new_task_i))
+
+    if new_task_i.type == :timer, do: set_timer_for(new_task_i.uid, new_task_i.timer_duration)
 
     if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
 
@@ -300,6 +321,18 @@ defmodule Mozart.ProcessEngine do
     execute_process(state)
   end
 
+  defp complete_timer_task(task_i, state) do
+    task_instances = Map.delete(state.task_instances, task_i.uid)
+
+    state = Map.put(state, :task_instances, task_instances)
+
+    state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
+
+    Logger.info("Complete timer task [#{task_i.name}]")
+
+    execute_process(state)
+  end
+
   defp complete_choice_task(task, state) do
     next_task_name =
       Enum.find_value(
@@ -381,6 +414,9 @@ defmodule Mozart.ProcessEngine do
 
           complete_able_task_i.type == :join ->
             complete_joint_task(complete_able_task_i, state)
+
+          complete_able_task_i.type == :timer ->
+            complete_timer_task(complete_able_task_i, state)
         end
       else
         state

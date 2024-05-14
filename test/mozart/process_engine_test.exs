@@ -6,6 +6,18 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
 
+  test "call process with one timer task" do
+    PMS.clear_then_load_process_models(TestModels.call_timer_tasks())
+    data = %{}
+
+    {:ok, ppid, uid} = PE.start_supervised_pe(:call_timer_task, data)
+    PE.execute(ppid)
+    Process.sleep(5000)
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+  end
+
   test "call an external service" do
     PMS.clear_then_load_process_models(TestModels.call_exteral_services())
     data = %{}
