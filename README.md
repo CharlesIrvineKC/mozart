@@ -29,13 +29,14 @@ Mozart will be a open source BPM platform. It is written in Elixir and is in the
 
 The modeling elements currently supported are:
 
-* User Tasks
-* Service Tasks
-* Subprocess Tasks
-* Timer Tasks
-* Exclusive Gates
-* Parallel Gates
-* Parallel Joins
+* User Task
+* Service Task
+* Subprocess Task
+* Timer Task
+* Receive Event Task
+* Exclusive Gate
+* Parallel Gate
+* Parallel Join
 
 ## Current Development Status
 
@@ -49,7 +50,6 @@ The modeling elements currently supported are:
 ## Todo
 
 * Implement send event task.
-* Implement receive event task.
 * Implement decision task.
 * Publish 0.1 release to hex.
 * Develop a textual business processs modeling language with will be translated at runtime into native Elixir data structures. The language will be highly readable to process modeler with no programming experience.

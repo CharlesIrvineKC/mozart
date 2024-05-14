@@ -10,6 +10,7 @@ defmodule Mozart.Data.Task do
     :assignee,
     :timer_duration,
     expired: false,
+    event_received: false,
     multi_next: [],
     inputs: [],
     choices: [],
@@ -20,6 +21,14 @@ defmodule Mozart.Data.Task do
 
   def complete_able(t) when t.type == :service do
     true
+  end
+
+  def complete_able(t) when t.type == :send_event do
+    true
+  end
+
+  def complete_able(t) when t.type == :receive_event do
+    t.event_received
   end
 
   def complete_able(t) when t.type == :timer do
