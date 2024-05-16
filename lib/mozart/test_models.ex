@@ -14,14 +14,14 @@ defmodule Mozart.TestModels do
   def single_send_event_task do
     [
       %ProcessModel{
-        name: :process_with_single_service_task,
+        name: :process_with_single_send_evet_task,
         tasks: [
           %SendEvent{
             name: :send_event_task,
-            function: fn data -> Map.merge(data, %{single_service: true}) end
+            message: :foobar
           },
         ],
-        initial_task: :service_task
+        initial_task: :send_event_task
       }
     ]
   end

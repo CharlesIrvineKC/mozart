@@ -7,6 +7,19 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Phoenix.PubSub
 
+  test "process with single send event task" do
+    PMS.clear_then_load_process_models(TestModels.single_send_event_task())
+    data = %{value: 0}
+
+    {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_single_send_evet_task, data)
+    PE.execute(ppid)
+    Process.sleep(1000)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{value: 0}
+    assert completed_process.complete == true
+  end
+
   test "process with a single service task" do
     PMS.clear_then_load_process_models(TestModels.single_service_task())
     data = %{value: 0}

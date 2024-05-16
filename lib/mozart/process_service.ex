@@ -40,8 +40,8 @@ defmodule Mozart.ProcessService do
     GenServer.cast(__MODULE__, {:register_process_instance, uid, pid})
   end
 
-  def process_completed_process_instance(uid) do
-    GenServer.cast(__MODULE__, {:process_completed_process_instance, uid})
+  def process_completed_process_instance(process_state) do
+    GenServer.cast(__MODULE__, {:process_completed_process_instance, process_state})
   end
 
   def get_state() do
@@ -125,18 +125,18 @@ defmodule Mozart.ProcessService do
     {:noreply, Map.put(state, :process_instances, process_instances)}
   end
 
-  def handle_cast({:process_completed_process_instance, child_state}, state) do
-    pid = Map.get(state.process_instances, child_state.uid)
+  def handle_cast({:process_completed_process_instance, pe_state}, state) do
+    pid = Map.get(state.process_instances, pe_state.uid)
 
     state =
       Map.put(
         state,
         :completed_processes,
-        Map.put(state.completed_processes, child_state.uid, child_state)
+        Map.put(state.completed_processes, pe_state.uid, pe_state)
       )
 
     state =
-      Map.put(state, :process_instances, Map.delete(state.process_instances, child_state.uid))
+      Map.put(state, :process_instances, Map.delete(state.process_instances, pe_state.uid))
 
     Process.exit(pid, :shutdown)
 

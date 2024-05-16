@@ -7,6 +7,7 @@ defmodule Mozart.ProcessEngine do
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.Data.ProcessState
+  alias Phoenix.PubSub
   alias Ecto.UUID
 
   ## Client API
@@ -197,7 +198,7 @@ defmodule Mozart.ProcessEngine do
   def terminate(reason, state) do
     IO.puts("Process engine terminated with reason:")
     IO.inspect(reason, label: "terminate reason")
-    #IO.inspect(state, label: "terminate state")
+    IO.inspect(state, label: "terminate state")
 
     PS.cache_pe_state(state.uid, state)
     Process.sleep(50)
@@ -247,11 +248,14 @@ defmodule Mozart.ProcessEngine do
 
     if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
 
+    if new_task_i.type == :send_event, do: PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task_i.message})
+
     if new_task_i.type == :sub_process do
       data = state.data
       {:ok, process_pid, _uid} = start_supervised_pe(new_task_i.sub_process, data, self())
       execute(process_pid)
       Map.put(state, :children, [process_pid | state.children])
+
     else
       state
     end
@@ -305,6 +309,19 @@ defmodule Mozart.ProcessEngine do
       :task_instances,
       Map.put(state.task_instances, existing_task_i.uid, existing_task_i)
     )
+  end
+
+  defp complete_send_event_task(task, state) do
+
+    task_instances = Map.delete(state.task_instances, task.uid)
+
+    state = Map.put(state, :task_instances, task_instances)
+
+    state = if task.next, do: process_next_task(state, task.next, task.name), else: state
+
+    Logger.info("Complete send event task [#{task.name}[#{task.uid}]")
+
+    execute_process(state)
   end
 
   defp complete_service_task(task, state) do
@@ -436,10 +453,13 @@ defmodule Mozart.ProcessEngine do
 
   defp execute_process(state) do
 
+    IO.puts "* Enter execute_process *"
+
     if work_remaining(state) do
       complete_able_task_i = get_complete_able_task(state)
 
       if complete_able_task_i do
+
         cond do
           complete_able_task_i.type == :service ->
             complete_service_task(complete_able_task_i, state)
@@ -461,6 +481,9 @@ defmodule Mozart.ProcessEngine do
 
           complete_able_task_i.type == :receive_event ->
             complete_receive_event_task(complete_able_task_i, state)
+
+          complete_able_task_i.type == :send_event ->
+            complete_send_event_task(complete_able_task_i, state)
         end
       else
         state
@@ -482,6 +505,10 @@ defmodule Mozart.ProcessEngine do
   end
 
   def complete_able(t) when t.type == :service do
+    true
+  end
+
+  def complete_able(t) when t.type == :send_event do
     true
   end
 
