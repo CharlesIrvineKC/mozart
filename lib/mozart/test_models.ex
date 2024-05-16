@@ -1,9 +1,12 @@
 defmodule Mozart.TestModels do
-  alias Mozart.Task.Task
   alias Mozart.Task.Service
   alias Mozart.Task.Subscribe
   alias Mozart.Task.Timer
   alias Mozart.Task.Parallel
+  alias Mozart.Task.Subprocess
+  alias Mozart.Task.Join
+  alias Mozart.Task.User
+  alias Mozart.Task.Choice
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
 
@@ -114,7 +117,7 @@ defmodule Mozart.TestModels do
             function: fn data -> Map.merge(data, %{foo_bar: :foo_bar}) end,
             next: :join_task
           },
-          %Task{
+          %Join{
             name: :join_task,
             type: :join,
             inputs: [:foo, :foo_bar],
@@ -137,7 +140,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :call_process_model,
         tasks: [
-          %Task{
+          %Subprocess{
             name: :call_process_task,
             type: :sub_process,
             sub_process: :service_subprocess_model,
@@ -196,7 +199,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :simple_call_process_model,
         tasks: [
-          %Task{
+          %Subprocess{
             name: :call_process_task,
             type: :sub_process,
             sub_process: :one_user_task_process,
@@ -208,7 +211,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :simple_call_service_process_model,
         tasks: [
-          %Task{
+          %Subprocess{
             name: :call_process_task,
             type: :sub_process,
             sub_process: :service_subprocess_model,
@@ -220,7 +223,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :one_user_task_process,
         tasks: [
-          %Task{
+          %User{
             name: :user_task,
             type: :user,
             assigned_groups: ["admin"],
@@ -244,7 +247,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :choice_process_model,
         tasks: [
-          %Task{
+          %Choice{
             name: :choice_task,
             type: :choice,
             choices: [
@@ -288,7 +291,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :user_task_process_model,
         tasks: [
-          %Task{
+          %User{
             name: :user_task,
             type: :user,
             assigned_groups: ["admin"],
@@ -300,13 +303,13 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :two_user_tasks_then_service,
         tasks: [
-          %Task{
+          %User{
             name: :user_task_1,
             type: :user,
             assigned_groups: ["admin"],
             next: :user_task_2
           },
-          %Task{
+          %User{
             name: :user_task_2,
             type: :user,
             assigned_groups: ["admin"],
@@ -324,7 +327,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :user_task_then_service,
         tasks: [
-          %Task{
+          %User{
             name: :user_task_1,
             type: :user,
             assigned_groups: ["admin"],
@@ -348,7 +351,7 @@ defmodule Mozart.TestModels do
             function: fn map -> Map.put(map, :value, map.value + 1) end,
             next: :user_task_1
           },
-          %Task{
+          %User{
             name: :user_task_1,
             type: :user,
             assigned_groups: ["admin"],
