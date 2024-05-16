@@ -181,8 +181,8 @@ defmodule Mozart.ProcessEngine do
   def handle_info({:message, payload}, state) do
     task_instances =
       Enum.into(state.task_instances, %{}, fn {uid, task} ->
-        if task.type == :subscribe do
-          {uid, update_subscribed_task(task, payload)}
+        if task.type == :receive_event do
+          {uid, update_receive_event_task(task, payload)}
         else
           {uid, task}
         end
@@ -205,7 +205,7 @@ defmodule Mozart.ProcessEngine do
 
   ## callback utilities
 
-  defp update_subscribed_task(s_task, payload) do
+  defp update_receive_event_task(s_task, payload) do
     select_result = s_task.message_selector.(payload)
 
     if select_result do
@@ -359,7 +359,7 @@ defmodule Mozart.ProcessEngine do
     execute_process(state)
   end
 
-  defp complete_subscribe_task(task_i, state) do
+  defp complete_receive_event_task(task_i, state) do
     task_instances = Map.delete(state.task_instances, task_i.uid)
 
     state =
@@ -368,7 +368,7 @@ defmodule Mozart.ProcessEngine do
 
     state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
 
-    Logger.info("Complete subscribe task [#{task_i.name}]")
+    Logger.info("Complete receive event task [#{task_i.name}]")
 
     execute_process(state)
   end
@@ -459,8 +459,8 @@ defmodule Mozart.ProcessEngine do
           complete_able_task_i.type == :timer ->
             complete_timer_task(complete_able_task_i, state)
 
-          complete_able_task_i.type == :subscribe ->
-            complete_subscribe_task(complete_able_task_i, state)
+          complete_able_task_i.type == :receive_event ->
+            complete_receive_event_task(complete_able_task_i, state)
         end
       else
         state
@@ -485,7 +485,7 @@ defmodule Mozart.ProcessEngine do
     true
   end
 
-  def complete_able(t) when t.type == :subscribe do
+  def complete_able(t) when t.type == :receive_event do
     t.complete
   end
 

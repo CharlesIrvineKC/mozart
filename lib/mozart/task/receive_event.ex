@@ -1,4 +1,4 @@
-defmodule Mozart.Task.Subscribe do
+defmodule Mozart.Task.ReceiveEvent do
   defstruct [
     :name,
     :type,

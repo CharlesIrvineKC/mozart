@@ -16,11 +16,11 @@ defmodule Mozart.ProcessEngineTest do
     Process.sleep(50)
   end
 
-  test "call process with a subscribe task" do
-    PMS.clear_then_load_process_models(TestModels.call_process_subscribe_task())
+  test "call process with a receive event task" do
+    PMS.clear_then_load_process_models(TestModels.call_process_receive_event_task())
     data = %{value: 0}
 
-    {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_subscribe_task, data)
+    {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_receive_event_task, data)
     PE.execute(ppid)
     Process.sleep(50)
     PubSub.broadcast(:pubsub, "pe_topic", {:message, {2, 2}})
