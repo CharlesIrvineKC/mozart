@@ -1,11 +1,11 @@
-defmodule Mozart.Task.Service do
+defmodule Mozart.Task.User do
   defstruct [
     :name,
     :type,
     :function,
     :next,
     :uid,
-    complete: false,
-    data: %{}
+    assigned_groups: [],
+    complete: false
   ]
 end

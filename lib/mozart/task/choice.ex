@@ -1,11 +1,10 @@
-defmodule Mozart.Task.Service do
+defmodule Mozart.Task.Choice do
   defstruct [
     :name,
     :type,
     :function,
     :next,
     :uid,
-    complete: false,
-    data: %{}
+    choices: []
   ]
 end
