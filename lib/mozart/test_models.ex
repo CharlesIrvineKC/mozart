@@ -1,6 +1,9 @@
 defmodule Mozart.TestModels do
   alias Mozart.Task.Task
   alias Mozart.Task.Service
+  alias Mozart.Task.Subscribe
+  alias Mozart.Task.Timer
+  alias Mozart.Task.Parallel
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
 
@@ -26,7 +29,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :process_with_subscribe_task,
         tasks: [
-          %Task{
+          %Subscribe{
             name: :subscribe_task,
             type: :subscribe,
             message_selector: fn msg ->
@@ -48,13 +51,13 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :call_timer_task,
         tasks: [
-          %Task{
+          %Timer{
             name: :wait_1_seconds,
             type: :timer,
             timer_duration: 1000,
             next: :wait_3_seconds
           },
-          %Task{
+          %Timer{
             name: :wait_3_seconds,
             type: :timer,
             timer_duration: 3000,
@@ -88,7 +91,7 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :parallel_process_model,
         tasks: [
-          %Task{
+          %Parallel{
             name: :parallel_task,
             type: :parallel,
             multi_next: [:foo, :bar]
