@@ -1,10 +1,10 @@
 defmodule Mozart.Task.Join do
   defstruct [
     :name,
-    :type,
     :function,
     :next,
     :uid,
-    inputs: []
+    inputs: [],
+    type: :join
   ]
 end

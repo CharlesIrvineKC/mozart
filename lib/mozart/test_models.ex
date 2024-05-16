@@ -7,8 +7,24 @@ defmodule Mozart.TestModels do
   alias Mozart.Task.Join
   alias Mozart.Task.User
   alias Mozart.Task.Choice
+  alias Mozart.Task.SendEvent
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
+
+  def single_send_event_task do
+    [
+      %ProcessModel{
+        name: :process_with_single_service_task,
+        tasks: [
+          %SendEvent{
+            name: :send_event_task,
+            function: fn data -> Map.merge(data, %{single_service: true}) end
+          },
+        ],
+        initial_task: :service_task
+      }
+    ]
+  end
 
   def single_service_task do
     [
@@ -17,9 +33,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :service_task,
-            type: :service,
-            function: fn data -> Map.merge(data, %{single_service: true}) end,
-            next: nil
+            function: fn data -> Map.merge(data, %{single_service: true}) end
           },
         ],
         initial_task: :service_task
@@ -34,14 +48,12 @@ defmodule Mozart.TestModels do
         tasks: [
           %ReceiveEvent{
             name: :receive_event_task,
-            type: :receive_event,
             message_selector: fn msg ->
               case msg do
                 {a, b} -> %{value: a + b}
                 _ -> false
               end
-            end,
-            next: nil
+            end
           }
         ],
         initial_task: :receive_event_task
@@ -56,15 +68,12 @@ defmodule Mozart.TestModels do
         tasks: [
           %Timer{
             name: :wait_1_seconds,
-            type: :timer,
             timer_duration: 1000,
             next: :wait_3_seconds
           },
           %Timer{
             name: :wait_3_seconds,
-            type: :timer,
-            timer_duration: 3000,
-            next: nil
+            timer_duration: 3000
           }
         ],
         initial_task: :wait_1_seconds
@@ -79,9 +88,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :get_cat_facts,
-            type: :service,
-            function: fn data -> Map.merge(data, %{cat_facts: RestService.get_cat_facts()}) end,
-            next: nil
+            function: fn data -> Map.merge(data, %{cat_facts: RestService.get_cat_facts()}) end
           }
         ],
         initial_task: :get_cat_facts
@@ -96,38 +103,31 @@ defmodule Mozart.TestModels do
         tasks: [
           %Parallel{
             name: :parallel_task,
-            type: :parallel,
             multi_next: [:foo, :bar]
           },
           %Service{
             name: :foo,
-            type: :service,
             function: fn data -> Map.merge(data, %{foo: :foo}) end,
             next: :join_task
           },
           %Service{
             name: :bar,
-            type: :service,
             function: fn data -> Map.merge(data, %{bar: :bar}) end,
             next: :foo_bar
           },
           %Service{
             name: :foo_bar,
-            type: :service,
             function: fn data -> Map.merge(data, %{foo_bar: :foo_bar}) end,
             next: :join_task
           },
           %Join{
             name: :join_task,
-            type: :join,
             inputs: [:foo, :foo_bar],
             next: :final_service
           },
           %Service{
             name: :final_service,
-            type: :service,
-            function: fn data -> Map.merge(data, %{final: :final}) end,
-            next: nil
+            function: fn data -> Map.merge(data, %{final: :final}) end
           }
         ],
         initial_task: :parallel_task
@@ -142,27 +142,22 @@ defmodule Mozart.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            type: :sub_process,
             sub_process: :service_subprocess_model,
             next: :service_task1
           },
           %Service{
             name: :service_task1,
-            type: :service,
             function: fn data -> Map.put(data, :value, data.value + 1) end,
             next: :service_task2
           },
           %Service{
             name: :service_task2,
-            type: :service,
             function: fn data -> Map.put(data, :value, data.value + 1) end,
             next: :service_task3
           },
           %Service{
             name: :service_task3,
-            type: :service,
-            function: fn data -> Map.put(data, :value, data.value + 1) end,
-            next: nil
+            function: fn data -> Map.put(data, :value, data.value + 1) end
           }
         ],
         initial_task: :call_process_task
@@ -172,21 +167,17 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :service_task1,
-            type: :service,
             function: fn data -> Map.put(data, :value, data.value + 1) end,
             next: :service_task2
           },
           %Service{
             name: :service_task2,
-            type: :service,
             function: fn data -> Map.put(data, :value, data.value + 1) end,
             next: :service_task3
           },
           %Service{
             name: :service_task3,
-            type: :service,
-            function: fn data -> Map.put(data, :value, data.value + 1) end,
-            next: nil
+            function: fn data -> Map.put(data, :value, data.value + 1) end
           }
         ],
         initial_task: :service_task1
@@ -201,9 +192,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            type: :sub_process,
-            sub_process: :one_user_task_process,
-            next: nil
+            sub_process: :one_user_task_process
           }
         ],
         initial_task: :call_process_task
@@ -213,9 +202,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            type: :sub_process,
-            sub_process: :service_subprocess_model,
-            next: nil
+            sub_process: :service_subprocess_model
           }
         ],
         initial_task: :call_process_task
@@ -225,9 +212,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %User{
             name: :user_task,
-            type: :user,
-            assigned_groups: ["admin"],
-            next: nil
+            assigned_groups: ["admin"]
           }
         ],
         initial_task: :user_task
@@ -237,9 +222,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :service_task,
-            type: :service,
-            function: fn data -> Map.merge(data, %{service: :service}) end,
-            next: nil
+            function: fn data -> Map.merge(data, %{service: :service}) end
           }
         ],
         initial_task: :service_task
@@ -249,7 +232,6 @@ defmodule Mozart.TestModels do
         tasks: [
           %Choice{
             name: :choice_task,
-            type: :choice,
             choices: [
               %{
                 expression: fn data -> data.value < 10 end,
@@ -263,15 +245,11 @@ defmodule Mozart.TestModels do
           },
           %Service{
             name: :foo,
-            type: :service,
-            function: fn data -> Map.merge(data, %{foo: :foo}) end,
-            next: nil
+            function: fn data -> Map.merge(data, %{foo: :foo}) end
           },
           %Service{
             name: :bar,
-            type: :service,
-            function: fn data -> Map.merge(data, %{bar: :bar}) end,
-            next: nil
+            function: fn data -> Map.merge(data, %{bar: :bar}) end
           }
         ],
         initial_task: :choice_task
@@ -281,9 +259,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :foo,
-            type: :service,
-            function: fn data -> Map.merge(data, %{bar: :bar}) end,
-            next: nil
+            function: fn data -> Map.merge(data, %{bar: :bar}) end
           }
         ],
         initial_task: :foo
@@ -293,9 +269,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %User{
             name: :user_task,
-            type: :user,
-            assigned_groups: ["admin"],
-            next: nil
+            assigned_groups: ["admin"]
           }
         ],
         initial_task: :user_task
@@ -305,21 +279,17 @@ defmodule Mozart.TestModels do
         tasks: [
           %User{
             name: :user_task_1,
-            type: :user,
             assigned_groups: ["admin"],
             next: :user_task_2
           },
           %User{
             name: :user_task_2,
-            type: :user,
             assigned_groups: ["admin"],
             next: :increment_by_one_task
           },
           %Service{
             name: :increment_by_one_task,
-            type: :service,
-            function: fn map -> Map.put(map, :value, map.value + 1) end,
-            next: nil
+            function: fn map -> Map.put(map, :value, map.value + 1) end
           }
         ],
         initial_task: :user_task_1
@@ -329,15 +299,12 @@ defmodule Mozart.TestModels do
         tasks: [
           %User{
             name: :user_task_1,
-            type: :user,
             assigned_groups: ["admin"],
             next: :increment_by_one_task
           },
           %Service{
             name: :increment_by_one_task,
-            type: :service,
-            function: fn map -> Map.put(map, :value, map.value + 1) end,
-            next: nil
+            function: fn map -> Map.put(map, :value, map.value + 1) end
           }
         ],
         initial_task: :user_task_1
@@ -347,15 +314,12 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :increment_by_one_task,
-            type: :service,
             function: fn map -> Map.put(map, :value, map.value + 1) end,
             next: :user_task_1
           },
           %User{
             name: :user_task_1,
-            type: :user,
-            assigned_groups: ["admin"],
-            next: nil
+            assigned_groups: ["admin"]
           }
         ],
         initial_task: :increment_by_one_task
@@ -365,9 +329,7 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :increment_by_one_task,
-            type: :service,
-            function: fn map -> Map.put(map, :value, map.value + 1) end,
-            next: nil
+            function: fn map -> Map.put(map, :value, map.value + 1) end
           }
         ],
         initial_task: :increment_by_one_task
@@ -377,15 +339,12 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :increment_by_one_task,
-            type: :service,
             function: fn map -> Map.put(map, :value, map.value + 1) end,
             next: :increment_by_two_task
           },
           %Service{
             name: :increment_by_two_task,
-            type: :service,
-            function: fn map -> Map.put(map, :value, map.value + 2) end,
-            next: nil
+            function: fn map -> Map.put(map, :value, map.value + 2) end
           }
         ],
         initial_task: :increment_by_one_task
@@ -395,21 +354,17 @@ defmodule Mozart.TestModels do
         tasks: [
           %Service{
             name: :increment_by_one_task,
-            type: :service,
             function: fn map -> Map.put(map, :value, map.value + 1) end,
             next: :increment_by_two_task
           },
           %Service{
             name: :increment_by_two_task,
-            type: :service,
             function: fn map -> Map.put(map, :value, map.value + 2) end,
             next: :increment_by_three_task
           },
           %Service{
             name: :increment_by_three_task,
-            type: :service,
-            function: fn map -> Map.put(map, :value, map.value + 3) end,
-            next: nil
+            function: fn map -> Map.put(map, :value, map.value + 3) end
           }
         ],
         initial_task: :increment_by_one_task

@@ -1,12 +1,12 @@
 defmodule Mozart.Task.Subprocess do
   defstruct [
     :name,
-    :type,
     :function,
     :next,
     :uid,
     :sub_process,
     complete: false,
-    data: %{}
+    data: %{},
+    type: :sub_process
   ]
 end
