@@ -9,6 +9,7 @@ defmodule Mozart.Data.Task do
     :sub_process,
     :assignee,
     :timer_duration,
+    :message_selector,
     expired: false,
     event_received: false,
     multi_next: [],
@@ -21,6 +22,10 @@ defmodule Mozart.Data.Task do
 
   def complete_able(t) when t.type == :service do
     true
+  end
+
+  def complete_able(t) when t.type == :subscribe do
+    t.complete
   end
 
   def complete_able(t) when t.type == :send_event do

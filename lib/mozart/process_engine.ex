@@ -85,6 +85,8 @@ defmodule Mozart.ProcessEngine do
 
     PS.register_process_instance(uid, self())
 
+    Phoenix.PubSub.subscribe(:pubsub, "pe_topic")
+
     if pe_recovered_state do
       Logger.warning("Restart process instance [#{model_name}][#{uid}]")
     else
@@ -182,7 +184,11 @@ defmodule Mozart.ProcessEngine do
     receive_event_task = Map.put(receive_event_task, :event_received, true)
 
     state =
-      Map.put(state, :task_instances, Map.put(state.task_instances, receive_event_task_uid, receive_event_task))
+      Map.put(
+        state,
+        :task_instances,
+        Map.put(state.task_instances, receive_event_task_uid, receive_event_task)
+      )
 
     state = Map.put(state, :data, Map.merge(state.data, data))
 
@@ -190,16 +196,43 @@ defmodule Mozart.ProcessEngine do
     {:noreply, state}
   end
 
+  def handle_info({:message, payload}, state) do
+    task_instances =
+      Enum.into(state.task_instances, %{}, fn {uid, task} ->
+        if task.type == :subscribe do
+          {uid, update_subscribed_task(task, payload)}
+        else
+          {uid, task}
+        end
+      end)
+
+    state = Map.put(state, :task_instances, task_instances)
+
+    state = execute_process(state)
+    {:noreply, state}
+  end
+
   def terminate(reason, state) do
     IO.puts("Process engine terminated with reason:")
-    IO.inspect(reason, label: "reason")
-    IO.inspect(state, label: "state")
+    IO.inspect(reason, label: "terminate reason")
+    IO.inspect(state, label: "terminate state")
 
     PS.cache_pe_state(state.uid, state)
     Process.sleep(50)
   end
 
   ## callback utilities
+
+  defp update_subscribed_task(s_task, payload) do
+    select_result = s_task.message_selector.(payload)
+
+    if select_result do
+      Map.put(s_task, :data, select_result)
+      |> Map.put(:complete, true)
+    else
+      s_task
+    end
+  end
 
   defp set_timer_for(task_uid, timer_duration) do
     self = self()
@@ -225,7 +258,6 @@ defmodule Mozart.ProcessEngine do
         new_task_i
       end
 
-    # state = Map.put(state, :task_instances, [new_task_i | state.task_instances])
     state =
       Map.put(state, :task_instances, Map.put(state.task_instances, new_task_i.uid, new_task_i))
 
@@ -336,7 +368,6 @@ defmodule Mozart.ProcessEngine do
 
   defp complete_timer_task(task_i, state) do
     task_instances = Map.delete(state.task_instances, task_i.uid)
-
     state = Map.put(state, :task_instances, task_instances)
 
     state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
@@ -348,12 +379,25 @@ defmodule Mozart.ProcessEngine do
 
   defp complete_receive_event_task(task_i, state) do
     task_instances = Map.delete(state.task_instances, task_i.uid)
-
     state = Map.put(state, :task_instances, task_instances)
 
     state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
 
     Logger.info("Complete timer task [#{task_i.name}]")
+
+    execute_process(state)
+  end
+
+  defp complete_subscribe_task(task_i, state) do
+    task_instances = Map.delete(state.task_instances, task_i.uid)
+
+    state =
+      Map.put(state, :task_instances, task_instances)
+      |> Map.put(:data, Map.merge(state.data, task_i.data))
+
+    state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
+
+    Logger.info("Complete subscribe task [#{task_i.name}]")
 
     execute_process(state)
   end
@@ -420,6 +464,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp execute_process(state) do
+
     if work_remaining(state) do
       complete_able_task_i = get_complete_able_task(state)
 
@@ -443,8 +488,11 @@ defmodule Mozart.ProcessEngine do
           complete_able_task_i.type == :timer ->
             complete_timer_task(complete_able_task_i, state)
 
-            complete_able_task_i.type == :receive_event ->
-              complete_receive_event_task(complete_able_task_i, state)
+          complete_able_task_i.type == :receive_event ->
+            complete_receive_event_task(complete_able_task_i, state)
+
+          complete_able_task_i.type == :subscribe ->
+            complete_subscribe_task(complete_able_task_i, state)
         end
       else
         state

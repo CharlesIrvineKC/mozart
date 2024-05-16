@@ -8,7 +8,7 @@ defmodule Mozart.Application do
       {Mozart.ProcessService, nil},
       {Mozart.ProcessModelService, nil},
       {Mozart.UserService, nil},
-      {Phoenix.PubSub, name: Mozart.SubPub}
+      {Phoenix.PubSub, name: :pubsub}
     ]
 
     opts = [strategy: :one_for_one, name: Mozart.Supervisor]

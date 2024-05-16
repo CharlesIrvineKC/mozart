@@ -3,6 +3,28 @@ defmodule Mozart.TestModels do
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
 
+  def call_process_subscribe_task do
+    [
+      %ProcessModel{
+        name: :process_with_subscribe_task,
+        tasks: [
+          %Task{
+            name: :subscribe_task,
+            type: :subscribe,
+            message_selector: fn msg ->
+              case msg do
+                {a, b} -> %{value: a + b}
+                _ -> false
+              end
+            end,
+            next: nil
+          }
+        ],
+        initial_task: :subscribe_task
+      }
+    ]
+  end
+
   def call_process_receive_event_task do
     [
       %ProcessModel{
@@ -11,7 +33,7 @@ defmodule Mozart.TestModels do
           %Task{
             name: :receive_event_task,
             type: :receive_event,
-            next: :nil
+            next: nil
           }
         ],
         initial_task: :receive_event_task

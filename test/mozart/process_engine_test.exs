@@ -5,6 +5,22 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
+  alias Phoenix.PubSub
+
+  test "call process with a subscribe task" do
+    PMS.clear_then_load_process_models(TestModels.call_process_subscribe_task())
+    data = %{value: 0}
+
+    {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_subscribe_task, data)
+    PE.execute(ppid)
+    Process.sleep(50)
+    PubSub.broadcast(:pubsub, "pe_topic", {:message, {2, 2}})
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{value: 4}
+    assert completed_process.complete == true
+  end
 
   test "call process with an receive event task" do
     PMS.clear_then_load_process_models(TestModels.call_process_receive_event_task())
