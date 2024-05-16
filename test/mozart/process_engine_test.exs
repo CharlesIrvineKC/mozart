@@ -31,21 +31,6 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.complete == true
   end
 
-  test "call process with an receive event task" do
-    PMS.clear_then_load_process_models(TestModels.call_process_receive_event_task())
-    data = %{}
-
-    {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_receive_event_task, data)
-    PE.execute(ppid)
-    [task_instance] = Map.values(PE.get_task_instances(ppid))
-    send(ppid, {:event_received, task_instance.uid, %{income: 1000000}})
-    Process.sleep(50)
-
-    completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{income: 1000000}
-    assert completed_process.complete == true
-  end
-
   test "call process with one timer task" do
     PMS.clear_then_load_process_models(TestModels.call_timer_tasks())
     data = %{}

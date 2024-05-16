@@ -11,7 +11,6 @@ defmodule Mozart.Task.Task do
     :timer_duration,
     :message_selector,
     expired: false,
-    event_received: false,
     multi_next: [],
     inputs: [],
     choices: [],

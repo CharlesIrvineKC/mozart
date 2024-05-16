@@ -178,23 +178,6 @@ defmodule Mozart.ProcessEngine do
     {:noreply, state}
   end
 
-  def handle_info({:event_received, receive_event_task_uid, data}, state) do
-    receive_event_task = Map.get(state.task_instances, receive_event_task_uid)
-    receive_event_task = Map.put(receive_event_task, :event_received, true)
-
-    state =
-      Map.put(
-        state,
-        :task_instances,
-        Map.put(state.task_instances, receive_event_task_uid, receive_event_task)
-      )
-
-    state = Map.put(state, :data, Map.merge(state.data, data))
-
-    state = execute_process(state)
-    {:noreply, state}
-  end
-
   def handle_info({:message, payload}, state) do
     task_instances =
       Enum.into(state.task_instances, %{}, fn {uid, task} ->
@@ -376,17 +359,6 @@ defmodule Mozart.ProcessEngine do
     execute_process(state)
   end
 
-  defp complete_receive_event_task(task_i, state) do
-    task_instances = Map.delete(state.task_instances, task_i.uid)
-    state = Map.put(state, :task_instances, task_instances)
-
-    state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
-
-    Logger.info("Complete timer task [#{task_i.name}]")
-
-    execute_process(state)
-  end
-
   defp complete_subscribe_task(task_i, state) do
     task_instances = Map.delete(state.task_instances, task_i.uid)
 
@@ -487,9 +459,6 @@ defmodule Mozart.ProcessEngine do
           complete_able_task_i.type == :timer ->
             complete_timer_task(complete_able_task_i, state)
 
-          complete_able_task_i.type == :receive_event ->
-            complete_receive_event_task(complete_able_task_i, state)
-
           complete_able_task_i.type == :subscribe ->
             complete_subscribe_task(complete_able_task_i, state)
         end
@@ -522,10 +491,6 @@ defmodule Mozart.ProcessEngine do
 
   def complete_able(t) when t.type == :send_event do
     true
-  end
-
-  def complete_able(t) when t.type == :receive_event do
-    t.event_received
   end
 
   def complete_able(t) when t.type == :timer do

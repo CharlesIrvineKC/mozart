@@ -43,22 +43,6 @@ defmodule Mozart.TestModels do
     ]
   end
 
-  def call_process_receive_event_task do
-    [
-      %ProcessModel{
-        name: :process_with_receive_event_task,
-        tasks: [
-          %Task{
-            name: :receive_event_task,
-            type: :receive_event,
-            next: nil
-          }
-        ],
-        initial_task: :receive_event_task
-      }
-    ]
-  end
-
   def call_timer_tasks do
     [
       %ProcessModel{
