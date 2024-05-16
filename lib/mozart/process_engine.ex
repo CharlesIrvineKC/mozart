@@ -7,7 +7,6 @@ defmodule Mozart.ProcessEngine do
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.Data.ProcessState
-  alias Mozart.Data.Task
   alias Ecto.UUID
 
   ## Client API
@@ -215,7 +214,7 @@ defmodule Mozart.ProcessEngine do
   def terminate(reason, state) do
     IO.puts("Process engine terminated with reason:")
     IO.inspect(reason, label: "terminate reason")
-    IO.inspect(state, label: "terminate state")
+    #IO.inspect(state, label: "terminate state")
 
     PS.cache_pe_state(state.uid, state)
     Process.sleep(50)
@@ -451,7 +450,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_complete_able_task(state) do
-    result = Enum.find(state.task_instances, fn {_uid, task_i} -> Task.complete_able(task_i) end)
+    result = Enum.find(state.task_instances, fn {_uid, task_i} -> complete_able(task_i) end)
 
     if result do
       {_uid, task_i} = result
@@ -511,5 +510,45 @@ defmodule Mozart.ProcessEngine do
       PS.process_completed_process_instance(state)
       state
     end
+  end
+
+  def complete_able(t) when t.type == :service do
+    true
+  end
+
+  def complete_able(t) when t.type == :subscribe do
+    t.complete
+  end
+
+  def complete_able(t) when t.type == :send_event do
+    true
+  end
+
+  def complete_able(t) when t.type == :receive_event do
+    t.event_received
+  end
+
+  def complete_able(t) when t.type == :timer do
+    t.expired
+  end
+
+  def complete_able(t) when t.type == :parallel do
+    true
+  end
+
+  def complete_able(t) when t.type == :choice do
+    true
+  end
+
+  def complete_able(t) when t.type == :sub_process do
+    t.complete
+  end
+
+  def complete_able(t) when t.type == :join do
+    t.inputs == []
+  end
+
+  def complete_able(t) when t.type == :user do
+    t.complete
   end
 end

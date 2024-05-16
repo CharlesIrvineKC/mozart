@@ -1,5 +1,5 @@
 alias Mozart.Data.ProcessModel
-alias Mozart.Data.Task
+alias Mozart.Task.Task
 
 %ProcessModel{
   name: :paralled_process_model,
@@ -9,19 +9,19 @@ alias Mozart.Data.Task
       type: parallel,
       multi_next: [:add_one, :add_three]
     },
-    %Task{
+    %Service{
       name: :add_one,
       type: :service,
       function: fn data -> Map.put(data, :value, data.value + 1) end,
       next: :add_two
     },
-    %Task{
+    %Service{
       name: :add_two,
       type: :service,
       function: fn data -> Map.put(data, :value, data.value + 2) end,
       next: nil
     },
-    %Task{
+    %Service{
       name: :add_three,
       type: :service,
       function: fn data -> Map.put(data, :value, data.value + 3) end,

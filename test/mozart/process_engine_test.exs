@@ -7,6 +7,15 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Phoenix.PubSub
 
+  test "process with a single service task" do
+    PMS.clear_then_load_process_models(TestModels.single_service_task())
+    data = %{value: 0}
+
+    {:ok, ppid, _uid} = PE.start_supervised_pe(:process_with_single_service_task, data)
+    PE.execute(ppid)
+    Process.sleep(50)
+  end
+
   test "call process with a subscribe task" do
     PMS.clear_then_load_process_models(TestModels.call_process_subscribe_task())
     data = %{value: 0}
@@ -235,9 +244,9 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute(ppid)
     Process.sleep(10)
     assert PE.get_data(ppid) == %{value: 1}
+
     task_uids = Map.keys(PE.get_task_instances(ppid))
     [task_uid] = task_uids
-
     PE.complete_user_task(ppid, task_uid, %{foo: :foo, bar: :bar})
     Process.sleep(10)
 

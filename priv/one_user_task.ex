@@ -1,5 +1,5 @@
 alias Mozart.Data.ProcessModel
-alias Mozart.Data.Task
+alias Mozart.Task.Task
 
 %ProcessModel{
   name: :one_user_task,
