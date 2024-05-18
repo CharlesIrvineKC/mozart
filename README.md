@@ -29,7 +29,8 @@ Mozart will be a open source BPM platform. It is written in Elixir and is in the
 
 The modeling elements currently supported are:
 
-* User Task             Performed by a user.
+* User Task             
+Performed by a user.
 * Service Task          Performed by calling a service. 
 * Subprocess Task       Performed by calling a subprocess.
 * Timer Task            Waits for expiration of a timer.
