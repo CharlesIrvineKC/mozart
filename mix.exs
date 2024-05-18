@@ -7,8 +7,18 @@ defmodule Mozart.MixProject do
       version: "0.1.0",
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      name: "Mozart",
+      description: description(),
+      package: package()
     ]
+  end
+
+  defp description() do
+    """
+    Mozart is a BPM platform written in Elixir. It is currently in active development. The
+    target release date for version 0.1.0 is summer or fall of 2024.
+    """
   end
 
   # Run "mix help compile.app" to learn about applications.
@@ -28,6 +38,16 @@ defmodule Mozart.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:phoenix_pubsub, "~> 2.1"},
       {:tablex, "~> 0.3.1"}
+    ]
+  end
+
+  defp package() do
+    [
+      name: "mozart",
+      files: ~w(lib priv .formatter.exs mix.exs README* readme* LICENSE*
+                license* CHANGELOG* changelog* src),
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/CharlesIrvineKC/mozart"}
     ]
   end
 end
