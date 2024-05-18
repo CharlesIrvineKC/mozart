@@ -453,8 +453,6 @@ defmodule Mozart.ProcessEngine do
 
   defp execute_process(state) do
 
-    IO.puts "* Enter execute_process *"
-
     if work_remaining(state) do
       complete_able_task_i = get_complete_able_task(state)
 
