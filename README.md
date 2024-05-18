@@ -31,6 +31,7 @@ The modeling elements currently supported are:
 
 * User Task             
 Performed by a user.
+
 * Service Task          Performed by calling a service. 
 * Subprocess Task       Performed by calling a subprocess.
 * Timer Task            Waits for expiration of a timer.
