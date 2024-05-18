@@ -29,43 +29,25 @@ Mozart will be a open source BPM platform. It is written in Elixir and is in the
 
 The modeling elements currently supported are:
 
-* User Task
+| Task Type               |  Description |
+| User Task               | Performed by a user |
+| Service Task            | Performed by calling a service. |
 
-Performed by a user.
-
-* Service Task          
-
-Performed by calling a service. 
-
-* Subprocess Task       
-
+Subprocess Task       
 Performed by calling a subprocess.
-
-* Timer Task            
-
+Timer Task            
 Waits for expiration of a timer.
-
-* Receive Event Task    
-
+Receive Event Task    
 Waits for a subscribed PubSub event.
-* Send Event Task       
-
+Send Event Task       
 Sends a PubSub event.
-
-* Decision Task         
-
+Decision Task         
 Perform by evaluating a decision block (Tablex)
-
-* Exclusive Gate        
-
+Exclusive Gate        
 Selects one of many process paths.
-
-* Parallel Gate         
-
+Parallel Gate         
 Initiates two or more process paths.
-
-* Parallel Join         
-
+Parallel Join         
 Sychronizes on completion two or more process paths.
 
 ## Current Development Status
