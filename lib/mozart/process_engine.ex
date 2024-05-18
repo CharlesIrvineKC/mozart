@@ -340,8 +340,8 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp complete_decision_task(task, state) do
-    data = Tablex.decide(task.tablex, value: 20)
-    IO.inspect(data, label: "decision output")
+    data = Map.merge(state.data, Tablex.decide(task.tablex, value: state.data.value))
+    
     state = Map.put(state, :data, data)
 
     task_instances = Map.delete(state.task_instances, task.uid)

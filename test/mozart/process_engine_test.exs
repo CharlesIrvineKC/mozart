@@ -9,14 +9,14 @@ defmodule Mozart.ProcessEngineTest do
 
   test "process with one decision task" do
     PMS.clear_then_load_process_models(TestModels.one_decision_task())
-    data = %{}
+    data = %{value: 20}
 
     {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_single_decision_task, data)
     PE.execute(ppid)
     Process.sleep(1000)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{color: "green", season: "spring"}
+    assert completed_process.data == %{color: "green", season: "spring", value: 20}
     assert completed_process.complete == true
   end
 
