@@ -34,6 +34,7 @@ The modeling elements currently supported are:
 * Subprocess Task
 * Timer Task
 * Receive Event Task
+* Decision Task
 * Exclusive Gate
 * Parallel Gate
 * Parallel Join

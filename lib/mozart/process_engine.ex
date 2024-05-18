@@ -339,6 +339,22 @@ defmodule Mozart.ProcessEngine do
     execute_process(state)
   end
 
+  defp complete_decision_task(task, state) do
+    data = Tablex.decide(task.tablex, value: 20)
+    IO.inspect(data, label: "decision output")
+    state = Map.put(state, :data, data)
+
+    task_instances = Map.delete(state.task_instances, task.uid)
+
+    state = Map.put(state, :task_instances, task_instances)
+
+    state = if task.next, do: process_next_task(state, task.next, task.name), else: state
+
+    Logger.info("Complete decision task [#{task.name}[#{task.uid}]")
+
+    execute_process(state)
+  end
+
   defp complete_parallel_task_i(task_i, state) do
     task_instances = Map.delete(state.task_instances, task_i.uid)
 
@@ -482,6 +498,9 @@ defmodule Mozart.ProcessEngine do
 
           complete_able_task_i.type == :send_event ->
             complete_send_event_task(complete_able_task_i, state)
+
+          complete_able_task_i.type == :decision ->
+            complete_decision_task(complete_able_task_i, state)
         end
       else
         state
@@ -500,6 +519,10 @@ defmodule Mozart.ProcessEngine do
       PS.process_completed_process_instance(state)
       state
     end
+  end
+
+  def complete_able(t) when t.type == :decision do
+    true
   end
 
   def complete_able(t) when t.type == :service do

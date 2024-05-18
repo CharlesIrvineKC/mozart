@@ -8,8 +8,40 @@ defmodule Mozart.TestModels do
   alias Mozart.Task.User
   alias Mozart.Task.Choice
   alias Mozart.Task.SendEvent
+  alias Mozart.Task.Decision
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
+
+  def one_decision_task do
+    [
+    %ProcessModel{
+      name: :process_with_single_decision_task,
+      tasks: [
+        %Decision{
+          name: :decision_task,
+          tablex: Tablex.new("""
+          F  value  || color
+          1  >90    || red
+          2  80..90 || orange
+          3  20..79 || green
+          4  <20    || blue
+          """),
+          next: :identity_season
+        },
+        %Service{
+          name: :identity_season,
+          function: fn data ->
+            cond do
+              data.color == "green" -> Map.merge(data, %{season: "spring"})
+              data.color == "orange" -> Map.merge(data, %{season: "fall"})
+            end
+          end
+        },
+      ],
+      initial_task: :decision_task
+    }
+  ]
+  end
 
   def single_send_event_task do
     [

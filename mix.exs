@@ -26,7 +26,8 @@ defmodule Mozart.MixProject do
       {:hackney, "~> 1.20"},
       {:jason, "~> 1.4"},
       {:ecto_sql, "~> 3.10"},
-      {:phoenix_pubsub, "~> 2.1"}
+      {:phoenix_pubsub, "~> 2.1"},
+      {:tablex, "~> 0.3.1"}
     ]
   end
 end
