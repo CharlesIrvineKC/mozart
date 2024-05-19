@@ -227,7 +227,7 @@ defmodule Mozart.ProcessEngineTest do
     assert PE.get_data(new_pid) ==  %{value: "foobar", user_task_1: true}
 
     # Get the recoved second user task. Reset value to a numerical value, i.e. 1.
-    # Then complete the user task. This time when the service task will complete
+    # Then complete the user task. This time the service task will complete
     # without the exception.
     [task_instance] = Map.values(PE.get_task_instances(new_pid))
     data = PE.get_data(new_pid)
