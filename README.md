@@ -35,8 +35,8 @@ The modeling elements currently supported are:
 | Service Task            | Performed by calling a service. |
 | Subprocess Task         | Performed by calling a subprocess. |
 | Timer Task              | Waits for expiration of a timer. |
-| Receive Event Task      | Waits for a subscribed PubSub event. |
-| Send Event Task         | Sends a PubSub event. |
+| Receive Task            | Waits for a subscribed PubSub event. |
+| Send Task               | Sends a PubSub event. |
 | Decision Task           | Perform by evaluating a decision block (Tablex) |
 | Exclusive Gate          | Selects one of many process paths. |
 | Parallel Gate           | Initiates two or more process paths. |
@@ -54,7 +54,7 @@ The modeling elements currently supported are:
 ## Todo
 
 * Publish 0.1 release to hex.
-* Develop a textual business processs modeling language with will be translated at runtime into native Elixir data structures. The language will be highly readable to process modeler with no programming experience.
+* Develop a textual business processs modeling language with will be translated at runtime into native Elixir data structures. The language will be highly readable to process modelers with no programming experience.
 * Develop GUIs for:
   * Runtime trouble shooting and monitoring.
   * User and group administration.
