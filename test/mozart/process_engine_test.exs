@@ -26,7 +26,7 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_single_send_evet_task, data)
     PE.execute(ppid)
-    Process.sleep(1000)
+    Process.sleep(5000)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 0}

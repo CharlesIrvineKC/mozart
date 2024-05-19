@@ -130,7 +130,7 @@ defmodule Mozart.ProcessEngine do
 
         state =
           if task_instance.next,
-            do: process_next_task(state, task_instance.next, task_instance.name),
+            do: create_next_tasks(state, task_instance.next, task_instance.name),
             else: state
 
         Logger.info("Complete user task [#{task_instance.name}][#{task_instance.uid}]")
@@ -144,7 +144,7 @@ defmodule Mozart.ProcessEngine do
 
   def handle_cast(:execute, state) do
     model = PMS.get_process_model(state.model_name)
-    state = process_next_task(state, model.initial_task)
+    state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
     {:noreply, state}
   end
@@ -227,16 +227,12 @@ defmodule Mozart.ProcessEngine do
     send(parent_pe, {:timer_expired, task_uid})
   end
 
-  defp process_new_next_task(state, next_task_name, previous_task_name) do
+  defp create_new_next_task(state, next_task_name, previous_task_name) do
     new_task_i = get_new_task_instance(next_task_name, state)
 
     new_task_i =
       if new_task_i.type == :join do
-        Map.put(
-          new_task_i,
-          :inputs,
-          List.delete(new_task_i.inputs, previous_task_name)
-        )
+        Map.put(new_task_i, :inputs, List.delete(new_task_i.inputs, previous_task_name))
       else
         new_task_i
       end
@@ -248,14 +244,14 @@ defmodule Mozart.ProcessEngine do
 
     if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
 
-    if new_task_i.type == :send_event, do: PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task_i.message})
+    if new_task_i.type == :send_event,
+      do: PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task_i.message})
 
     if new_task_i.type == :sub_process do
       data = state.data
       {:ok, process_pid, _uid} = start_supervised_pe(new_task_i.sub_process, data, self())
       execute(process_pid)
       Map.put(state, :children, [process_pid | state.children])
-
     else
       state
     end
@@ -265,13 +261,13 @@ defmodule Mozart.ProcessEngine do
     state
   end
 
-  def process_next_task(state, next_task_name, previous_task_name \\ nil) do
-    existing_task_i = get_existing_task_instance(state, next_task_name)
+  def create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
+    existing_task = get_existing_task_instance(state, next_task_name)
 
-    if existing_task_i && existing_task_i.type == :join do
-      process_existing_join_next_task(state, existing_task_i, previous_task_name)
+    if existing_task && existing_task.type == :join do
+      process_existing_join_next_task(state, existing_task, previous_task_name)
     else
-      process_new_next_task(state, next_task_name, previous_task_name)
+      create_new_next_task(state, next_task_name, previous_task_name)
     end
   end
 
@@ -280,163 +276,98 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp process_next_task_list(state, [task_name | rest], parent_name) do
-    state = process_next_task(state, task_name, parent_name)
+    state = create_next_tasks(state, task_name, parent_name)
     process_next_task_list(state, rest, parent_name)
   end
 
   defp get_existing_task_instance(state, task_name) do
     result =
-      Enum.find(state.task_instances, fn {_uid, task_i} -> task_i.name == task_name end)
+      Enum.find(state.task_instances, fn {_uid, task} -> task.name == task_name end)
 
-    if result do
-      {_uid, task_instance} = result
-      task_instance
-    end
+    if result, do: ({_uid, task_instance} = result; task_instance)
   end
 
-  defp process_existing_join_next_task(state, existing_task_i, previous_task_name) do
+  defp process_existing_join_next_task(state, existing_task, previous_task_name) do
     ## delete previous task name from inputs
-    existing_task_i =
+    existing_task =
       Map.put(
-        existing_task_i,
+        existing_task,
         :inputs,
-        List.delete(existing_task_i.inputs, previous_task_name)
+        List.delete(existing_task.inputs, previous_task_name)
       )
 
     ## Update existing task instance in state
     Map.put(
       state,
       :task_instances,
-      Map.put(state.task_instances, existing_task_i.uid, existing_task_i)
+      Map.put(state.task_instances, existing_task.uid, existing_task)
     )
   end
 
-  defp complete_send_event_task(task, state) do
-
+  defp update_task_state(state, task) do
     task_instances = Map.delete(state.task_instances, task.uid)
-
     state = Map.put(state, :task_instances, task_instances)
+    if task.next, do: create_next_tasks(state, task.next, task.name), else: state
+  end
 
-    state = if task.next, do: process_next_task(state, task.next, task.name), else: state
-
+  defp complete_send_event_task(state, task) do
     Logger.info("Complete send event task [#{task.name}[#{task.uid}]")
-
-    execute_process(state)
+    update_task_state(state, task) |> execute_process()
   end
 
-  defp complete_service_task(task, state) do
-    data = task.function.(state.data)
-    state = Map.put(state, :data, data)
+  defp complete_join_task(state, task) do
+    Logger.info("Complete join task [#{task.name}]")
+    update_task_state(state, task) |> execute_process()
+  end
 
-    task_instances = Map.delete(state.task_instances, task.uid)
+  defp complete_timer_task(state, task) do
+    Logger.info("Complete timer task [#{task.name}]")
+    update_task_state(state, task) |> execute_process()
+  end
 
-    state = Map.put(state, :task_instances, task_instances)
-
-    state = if task.next, do: process_next_task(state, task.next, task.name), else: state
-
+  defp complete_service_task(state, task) do
     Logger.info("Complete service task [#{task.name}[#{task.uid}]")
-
-    execute_process(state)
+    data = task.function.(state.data)
+    Map.put(state, :data, data) |> update_task_state(task) |> execute_process()
   end
 
-  defp complete_decision_task(task, state) do
-    data = Map.merge(state.data, Tablex.decide(task.tablex, value: state.data.value))
-    
-    state = Map.put(state, :data, data)
-
-    task_instances = Map.delete(state.task_instances, task.uid)
-
-    state = Map.put(state, :task_instances, task_instances)
-
-    state = if task.next, do: process_next_task(state, task.next, task.name), else: state
-
+  defp complete_decision_task(state, task) do
     Logger.info("Complete decision task [#{task.name}[#{task.uid}]")
-
-    execute_process(state)
+    data = Map.merge(state.data, Tablex.decide(task.tablex, value: state.data.value))
+    Map.put(state, :data, data) |> update_task_state(task) |> execute_process()
   end
 
-  defp complete_parallel_task_i(task_i, state) do
-    task_instances = Map.delete(state.task_instances, task_i.uid)
-
+  defp complete_parallel_task_i(state, task) do
+    Logger.info("Complete parallel task [#{task.name}]")
+    task_instances = Map.delete(state.task_instances, task.uid)
     state = Map.put(state, :task_instances, task_instances)
-
-    next_states = task_i.multi_next
-
-    state = process_next_task_list(state, next_states, task_i.name)
-
-    Logger.info("Complete parallel task [#{task_i.name}]")
-
-    execute_process(state)
+    next_states = task.multi_next
+    process_next_task_list(state, next_states, task.name) |> execute_process()
   end
 
-  defp complete_joint_task(task_i, state) do
-    task_instances = Map.delete(state.task_instances, task_i.uid)
-
-    state = Map.put(state, :task_instances, task_instances)
-
-    state = process_next_task(state, task_i.next, task_i.name)
-
-    Logger.info("Complete join task [#{task_i.name}]")
-
-    execute_process(state)
+  defp complete_receive_event_task(state, task) do
+    Logger.info("Complete receive event task [#{task.name}]")
+    Map.put(state, :data, Map.merge(state.data, task.data))
+    |> update_task_state(task)
+    |> execute_process()
   end
 
-  defp complete_timer_task(task_i, state) do
-    task_instances = Map.delete(state.task_instances, task_i.uid)
-    state = Map.put(state, :task_instances, task_instances)
-
-    state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
-
-    Logger.info("Complete timer task [#{task_i.name}]")
-
-    execute_process(state)
-  end
-
-  defp complete_receive_event_task(task_i, state) do
-    task_instances = Map.delete(state.task_instances, task_i.uid)
-
-    state =
-      Map.put(state, :task_instances, task_instances)
-      |> Map.put(:data, Map.merge(state.data, task_i.data))
-
-    state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
-
-    Logger.info("Complete receive event task [#{task_i.name}]")
-
-    execute_process(state)
-  end
-
-  defp complete_choice_task(task, state) do
+  defp complete_choice_task(state, task) do
+    Logger.info("Complete choice task [#{task.name}][#{task.uid}]")
     next_task_name =
       Enum.find_value(
         task.choices,
         fn choice -> if choice.expression.(state.data), do: choice.next end
       )
-
-    state = process_next_task(state, next_task_name, task.name)
-
+    state = create_next_tasks(state, next_task_name, task.name)
     task_instances = Map.delete(state.task_instances, task.uid)
-
-    state = Map.put(state, :task_instances, task_instances)
-
-    Logger.info("Complete choice task [#{task.name}][#{task.uid}]")
-
-    execute_process(state)
+    Map.put(state, :task_instances, task_instances) |> execute_process()
   end
 
-  defp complete_subprocess_task_i(task_i, state) do
-    data = Map.merge(task_i.data, state.data)
-    state = Map.put(state, :data, data)
-
-    task_instances = Map.delete(state.task_instances, task_i.uid)
-
-    state = Map.put(state, :task_instances, task_instances)
-
-    state = if task_i.next, do: process_next_task(state, task_i.next, task_i.name), else: state
-
-    Logger.info("Complete subprocess task [#{task_i.name}][#{task_i.uid}]")
-
-    execute_process(state)
+  defp complete_subprocess_task_i(state, task) do
+    Logger.info("Complete subprocess task [#{task.name}][#{task.uid}]")
+    data = Map.merge(task.data, state.data)
+    Map.put(state, :data, data) |> update_task_state(task) |> execute_process()
   end
 
   defp get_task_def(task_name, state) do
@@ -455,11 +386,11 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_complete_able_task(state) do
-    result = Enum.find(state.task_instances, fn {_uid, task_i} -> complete_able(task_i) end)
+    result = Enum.find(state.task_instances, fn {_uid, task} -> complete_able(task) end)
 
     if result do
-      {_uid, task_i} = result
-      task_i
+      {_uid, task} = result
+      task
     end
   end
 
@@ -468,39 +399,37 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp execute_process(state) do
-
     if work_remaining(state) do
       complete_able_task_i = get_complete_able_task(state)
 
       if complete_able_task_i do
-
         cond do
           complete_able_task_i.type == :service ->
-            complete_service_task(complete_able_task_i, state)
+            complete_service_task(state, complete_able_task_i)
 
           complete_able_task_i.type == :choice ->
-            complete_choice_task(complete_able_task_i, state)
+            complete_choice_task(state, complete_able_task_i)
 
           complete_able_task_i.type == :sub_process ->
-            complete_subprocess_task_i(complete_able_task_i, state)
+            complete_subprocess_task_i(state, complete_able_task_i)
 
           complete_able_task_i.type == :parallel ->
-            complete_parallel_task_i(complete_able_task_i, state)
+            complete_parallel_task_i(state, complete_able_task_i)
 
           complete_able_task_i.type == :join ->
-            complete_joint_task(complete_able_task_i, state)
+            complete_join_task(state, complete_able_task_i)
 
           complete_able_task_i.type == :timer ->
-            complete_timer_task(complete_able_task_i, state)
+            complete_timer_task(state, complete_able_task_i)
 
           complete_able_task_i.type == :receive_event ->
-            complete_receive_event_task(complete_able_task_i, state)
+            complete_receive_event_task(state, complete_able_task_i)
 
           complete_able_task_i.type == :send_event ->
-            complete_send_event_task(complete_able_task_i, state)
+            complete_send_event_task(state, complete_able_task_i)
 
           complete_able_task_i.type == :decision ->
-            complete_decision_task(complete_able_task_i, state)
+            complete_decision_task(state, complete_able_task_i)
         end
       else
         state
