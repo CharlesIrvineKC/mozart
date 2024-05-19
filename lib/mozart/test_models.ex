@@ -46,13 +46,13 @@ defmodule Mozart.TestModels do
   def send_task_to_receive_task do
     [
       %ProcessModel{
-        name: :process_with_receive_event_task,
+        name: :process_with_receive_task,
         tasks: [
           %Receive{
             name: :receive_task,
             message_selector: fn msg ->
               case msg do
-                {a, b} -> %{value: a + b}
+                :message -> %{message: true}
                 _ -> false
               end
             end
@@ -61,11 +61,11 @@ defmodule Mozart.TestModels do
         initial_task: :receive_task
       },
       %ProcessModel{
-        name: :process_with_single_send_evet_task,
+        name: :process_with_single_send_task,
         tasks: [
           %Send{
             name: :send_task,
-            message: :foobar
+            message: :message
           },
         ],
         initial_task: :send_task

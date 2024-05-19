@@ -33,14 +33,23 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.complete == true
   end
 
-  # test "process with receive event and another with a send event" do
-  #   PMS.clear_then_load_process_models(TestModels.send_task_to_receive_task())
-  #   data = %{value: 0}
+  test "process with receive event and another with a send event" do
+    PMS.clear_then_load_process_models(TestModels.send_task_to_receive_task())
+    data = %{}
 
-  #   {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_receive_event_task, data)
-  #   PE.execute(ppid)
-  #   Process.sleep(50)
-  # end
+    {:ok, r_ppid, r_uid} = PE.start_supervised_pe(:process_with_receive_task, data)
+    PE.execute(r_ppid)
+    Process.sleep(50)
+
+    {:ok, s_ppid, s_uid} = PE.start_supervised_pe(:process_with_single_send_task, data)
+    PE.execute(s_ppid)
+    Process.sleep(4000)
+
+    ps_state = PS.get_state()
+    completed_processes = ps_state.completed_processes
+    assert completed_processes[r_uid].complete == true
+    assert completed_processes[s_uid].complete == true
+  end
 
   test "process with a single service task" do
     PMS.clear_then_load_process_models(TestModels.single_service_task())
