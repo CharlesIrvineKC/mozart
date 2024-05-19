@@ -104,7 +104,7 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.complete == true
   end
 
-  test "execute process with subprocess" do
+  test "execute process with subprocess with a user subprocess" do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
     {:ok, ppid, _uid} = PE.start_supervised_pe(:simple_call_process_model, data)
@@ -201,31 +201,42 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   test "recover lost state and proceed" do
+    # Start process with two user tasks and then a service task
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: "foobar"}
     {:ok, ppid, uid} = PE.start_supervised_pe(:two_user_tasks_then_service, data)
     PE.execute(ppid)
     Process.sleep(100)
 
+    # Get the first user task and complete it.
     [task_instance] = Map.values(PE.get_task_instances(ppid))
     PE.complete_user_task(ppid, task_instance.uid, %{user_task_1: true})
     Process.sleep(50)
     assert PE.get_data(ppid) ==  %{value: "foobar", user_task_1: true}
 
+    # Get the second user task and complete it. This will cause the service
+    # task to fail due to adding 1 to "foobar". The process will terminate and
+    # the supervisor will restart it recovering state including the data inserted
+    # by the first user task.
     [task_instance] = Map.values(PE.get_task_instances(ppid))
     PE.complete_user_task(ppid, task_instance.uid, %{user_task_2: true})
     Process.sleep(100)
 
+    # Get the restarted process pid from PS and make sure the state is as expected.
     new_pid = PS.get_process_ppid(uid)
     assert PE.get_data(new_pid) ==  %{value: "foobar", user_task_1: true}
 
+    # Get the recoved second user task. Reset value to a numerical value, i.e. 1.
+    # Then complete the user task. This time when the service task will complete
+    # without the exception.
     [task_instance] = Map.values(PE.get_task_instances(new_pid))
-    PE.set_data(new_pid, %{value: 1, bar: :bar, foo: :foo})
-    PE.complete_user_task(new_pid, task_instance.uid, %{foobar: :foobar})
+    data = PE.get_data(new_pid)
+    PE.set_data(new_pid, Map.merge(data, %{value: 1}))
+    PE.complete_user_task(new_pid, task_instance.uid, %{user_task_2: true})
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{value: 2, foo: :foo, bar: :bar, foobar: :foobar}
+    assert completed_process.data == %{value: 2, user_task_1: true, user_task_2: true}
     assert completed_process.complete == true
   end
 
