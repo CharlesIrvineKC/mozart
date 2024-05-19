@@ -1,13 +1,13 @@
 defmodule Mozart.TestModels do
   alias Mozart.Task.Service
-  alias Mozart.Task.ReceiveEvent
+  alias Mozart.Task.Receive
   alias Mozart.Task.Timer
   alias Mozart.Task.Parallel
   alias Mozart.Task.Subprocess
   alias Mozart.Task.Join
   alias Mozart.Task.User
   alias Mozart.Task.Choice
-  alias Mozart.Task.SendEvent
+  alias Mozart.Task.Send
   alias Mozart.Task.Decision
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
@@ -43,17 +43,47 @@ defmodule Mozart.TestModels do
   ]
   end
 
+  def send_task_to_receive_task do
+    [
+      %ProcessModel{
+        name: :process_with_receive_event_task,
+        tasks: [
+          %Receive{
+            name: :receive_task,
+            message_selector: fn msg ->
+              case msg do
+                {a, b} -> %{value: a + b}
+                _ -> false
+              end
+            end
+          }
+        ],
+        initial_task: :receive_task
+      },
+      %ProcessModel{
+        name: :process_with_single_send_evet_task,
+        tasks: [
+          %Send{
+            name: :send_task,
+            message: :foobar
+          },
+        ],
+        initial_task: :send_task
+      }
+    ]
+  end
+
   def single_send_event_task do
     [
       %ProcessModel{
         name: :process_with_single_send_evet_task,
         tasks: [
-          %SendEvent{
-            name: :send_event_task,
+          %Send{
+            name: :send_task,
             message: :foobar
           },
         ],
-        initial_task: :send_event_task
+        initial_task: :send_task
       }
     ]
   end
@@ -78,8 +108,8 @@ defmodule Mozart.TestModels do
       %ProcessModel{
         name: :process_with_receive_event_task,
         tasks: [
-          %ReceiveEvent{
-            name: :receive_event_task,
+          %Receive{
+            name: :receive_task,
             message_selector: fn msg ->
               case msg do
                 {a, b} -> %{value: a + b}
@@ -88,7 +118,7 @@ defmodule Mozart.TestModels do
             end
           }
         ],
-        initial_task: :receive_event_task
+        initial_task: :receive_task
       }
     ]
   end

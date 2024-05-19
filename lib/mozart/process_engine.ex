@@ -182,7 +182,7 @@ defmodule Mozart.ProcessEngine do
   def handle_info({:message, payload}, state) do
     task_instances =
       Enum.into(state.task_instances, %{}, fn {uid, task} ->
-        if task.type == :receive_event do
+        if task.type == :receive do
           {uid, update_receive_event_task(task, payload)}
         else
           {uid, task}
@@ -244,7 +244,7 @@ defmodule Mozart.ProcessEngine do
 
     if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
 
-    if new_task_i.type == :send_event,
+    if new_task_i.type == :send,
       do: PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task_i.message})
 
     if new_task_i.type == :sub_process do
@@ -422,10 +422,10 @@ defmodule Mozart.ProcessEngine do
           complete_able_task_i.type == :timer ->
             complete_timer_task(state, complete_able_task_i)
 
-          complete_able_task_i.type == :receive_event ->
+          complete_able_task_i.type == :receive ->
             complete_receive_event_task(state, complete_able_task_i)
 
-          complete_able_task_i.type == :send_event ->
+          complete_able_task_i.type == :send ->
             complete_send_event_task(state, complete_able_task_i)
 
           complete_able_task_i.type == :decision ->
@@ -458,15 +458,15 @@ defmodule Mozart.ProcessEngine do
     true
   end
 
-  def complete_able(t) when t.type == :send_event do
+  def complete_able(t) when t.type == :send do
     true
   end
 
-  def complete_able(t) when t.type == :receive_event do
+  def complete_able(t) when t.type == :receive do
     t.complete
   end
 
-  def complete_able(t) when t.type == :send_event do
+  def complete_able(t) when t.type == :send do
     true
   end
 

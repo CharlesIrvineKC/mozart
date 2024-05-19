@@ -1,4 +1,4 @@
-defmodule Mozart.Task.ReceiveEvent do
+defmodule Mozart.Task.Receive do
   defstruct [
     :name,
     :function,
@@ -7,6 +7,6 @@ defmodule Mozart.Task.ReceiveEvent do
     :message_selector,
     complete: false,
     data: %{},
-    type: :receive_event
+    type: :receive
   ]
 end

@@ -1,9 +1,9 @@
-defmodule Mozart.Task.SendEvent do
+defmodule Mozart.Task.Send do
   defstruct [
     :name,
     :next,
     :uid,
     :message,
-    type: :send_event
+    type: :send
   ]
 end
