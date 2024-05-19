@@ -450,47 +450,15 @@ defmodule Mozart.ProcessEngine do
     end
   end
 
-  def complete_able(t) when t.type == :decision do
-    true
-  end
-
-  def complete_able(t) when t.type == :service do
-    true
-  end
-
-  def complete_able(t) when t.type == :send do
-    true
-  end
-
-  def complete_able(t) when t.type == :receive do
-    t.complete
-  end
-
-  def complete_able(t) when t.type == :send do
-    true
-  end
-
-  def complete_able(t) when t.type == :timer do
-    t.expired
-  end
-
-  def complete_able(t) when t.type == :parallel do
-    true
-  end
-
-  def complete_able(t) when t.type == :choice do
-    true
-  end
-
-  def complete_able(t) when t.type == :sub_process do
-    t.complete
-  end
-
-  def complete_able(t) when t.type == :join do
-    t.inputs == []
-  end
-
-  def complete_able(t) when t.type == :user do
-    t.complete
-  end
+  defp complete_able(t) when t.type == :decision, do: true
+  defp complete_able(t) when t.type == :service, do: true
+  defp complete_able(t) when t.type == :send, do: true
+  defp complete_able(t) when t.type == :receive, do: t.complete
+  defp complete_able(t) when t.type == :send, do: true
+  defp complete_able(t) when t.type == :timer, do: t.expired
+  defp complete_able(t) when t.type == :parallel, do: true
+  defp complete_able(t) when t.type == :choice, do: true
+  defp complete_able(t) when t.type == :sub_process, do: t.complete
+  defp complete_able(t) when t.type == :join, do: t.inputs == []
+  defp complete_able(t) when t.type == :user, do: t.complete
 end
