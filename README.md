@@ -40,7 +40,7 @@ The modeling elements currently supported are:
 | Decision Task           | Perform by evaluating a decision block (Tablex) |
 | Exclusive Gate          | Selects one of many process paths. |
 | Parallel Gate           | Initiates two or more process paths. |
-| Parallel Join           | Sychronizes on completion two or more process paths. |
+| Parallel Join           | Sychronizes on completion of two or more process paths. |
 
 ## Current Development Status
 
