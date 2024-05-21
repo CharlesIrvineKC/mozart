@@ -50,6 +50,19 @@ The modeling elements currently supported are:
 * Business process models are, for now, written using Elxir data structues. (See Todo Section)
 * The examples can be run with "mix test".
 
+## Installation
+
+The package can be installed
+by adding `mozart` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:mozart, "~> 0.1.0"}
+  ]
+end
+```
+
 
 ## Todo
 
