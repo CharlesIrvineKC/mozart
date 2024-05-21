@@ -14,7 +14,7 @@ defmodule Mozart.Parser.ProcessParserTest do
 
   test "parse user task" do
     user_task = "user_task provide_loan_amount assigned_groups [\"under writing\"]"
-    {:ok, output, _, _, _, _} = UP.user_task_parser(user_task)
-    IO.inspect(output)
+    {:ok, _output, _, _, _, _} = UP.user_task_parser(user_task)
+    # IO.inspect(output)
   end
 end

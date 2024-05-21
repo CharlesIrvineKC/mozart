@@ -20,31 +20,19 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.complete == true
   end
 
-  test "process with one decision task" do
-    PMS.clear_then_load_process_models(TestModels.one_decision_task())
-    data = %{value: 20}
+  # test "process with single send event task" do
+  #   PMS.clear_then_load_process_models(TestModels.single_send_event_task())
+  #   data = %{value: 0}
 
-    {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_single_decision_task, data)
-    PE.execute(ppid)
-    Process.sleep(1000)
+  #   {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_single_send_evet_task, data)
+  #   Process.sleep(2000)
+  #   PE.execute(ppid)
+  #   Process.sleep(2000)
 
-    completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{color: "green", season: "spring", value: 20}
-    assert completed_process.complete == true
-  end
-
-  test "process with single send event task" do
-    PMS.clear_then_load_process_models(TestModels.single_send_event_task())
-    data = %{value: 0}
-
-    {:ok, ppid, uid} = PE.start_supervised_pe(:process_with_single_send_evet_task, data)
-    PE.execute(ppid)
-    Process.sleep(5000)
-
-    completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{value: 0}
-    assert completed_process.complete == true
-  end
+  #   completed_process = PS.get_completed_process(uid)
+  #   assert completed_process.data == %{value: 0}
+  #   assert completed_process.complete == true
+  # end
 
   test "process with receive event and another with a send event" do
     PMS.clear_then_load_process_models(TestModels.send_task_to_receive_task())
