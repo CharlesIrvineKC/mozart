@@ -30,7 +30,8 @@ defmodule Mozart.ProcessModelService do
   end
 
   def handle_call({:load_process_models, models}, _from, state) do
-    updated_models = Map.merge(state.process_models, models)
+    models_map = Enum.map(models, fn m -> {m.name, m} end)
+    updated_models = Map.merge(state.process_models, models_map)
     {:reply, updated_models, Map.put(state, :process_models, updated_models)}
   end
 
