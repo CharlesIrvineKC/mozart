@@ -1,4 +1,4 @@
-defmodule Mozart.TestModels do
+defmodule Mozart.Models.TestModels do
   alias Mozart.Task.Service
   alias Mozart.Task.Receive
   alias Mozart.Task.Timer
@@ -12,35 +12,25 @@ defmodule Mozart.TestModels do
   alias Mozart.Data.ProcessModel
   alias Mozart.Services.RestService
 
-  def one_decision_task do
+  def get_loan_models do
     [
-    %ProcessModel{
-      name: :process_with_single_decision_task,
-      tasks: [
-        %Decision{
-          name: :decision_task,
-          tablex: Tablex.new("""
-          F  value  || color
-          1  >90    || red
-          2  80..90 || orange
-          3  20..79 || green
-          4  <20    || blue
-          """),
-          next: :identity_season
-        },
-        %Service{
-          name: :identity_season,
-          function: fn data ->
-            cond do
-              data.color == "green" -> Map.merge(data, %{season: "spring"})
-              data.color == "orange" -> Map.merge(data, %{season: "fall"})
-            end
-          end
-        },
-      ],
-      initial_task: :decision_task
-    }
-  ]
+      %ProcessModel{
+        name: :load_approval_process,
+        tasks: [
+          %Decision{
+            name: :loan_decision,
+            decision_args: :loan_args,
+            tablex:
+              Tablex.new("""
+              F     income      || status
+              1     > 50000     || approved
+              2     <= 49999    || declined
+              """),
+          },
+        ],
+        initial_task: :loan_decision
+      }
+    ]
   end
 
   def send_task_to_receive_task do

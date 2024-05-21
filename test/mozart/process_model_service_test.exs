@@ -1,7 +1,7 @@
 defmodule Mozart.ProcessModelServiceTest do
   use ExUnit.Case
 
-  alias Mozart.TestModels
+  alias Mozart.Models.TestModels
   alias Mozart.ProcessModelService, as: PMS
 
   test "load a process model" do

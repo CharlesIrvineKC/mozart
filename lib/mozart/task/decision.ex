@@ -5,6 +5,7 @@ defmodule Mozart.Task.Decision do
     :next,
     :uid,
     :tablex,
+    :decision_args,
     type: :decision
   ]
 end

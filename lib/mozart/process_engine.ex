@@ -333,7 +333,7 @@ defmodule Mozart.ProcessEngine do
 
   defp complete_decision_task(state, task) do
     Logger.info("Complete decision task [#{task.name}[#{task.uid}]")
-    data = Map.merge(state.data, Tablex.decide(task.tablex, value: state.data.value))
+    data = Map.merge(state.data, Tablex.decide(task.tablex, state.data[task.decision_args]))
     Map.put(state, :data, data) |> update_task_state(task) |> execute_process()
   end
 

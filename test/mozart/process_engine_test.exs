@@ -1,11 +1,24 @@
 defmodule Mozart.ProcessEngineTest do
   use ExUnit.Case
 
-  alias Mozart.TestModels
+  alias Mozart.Models.TestModels
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
   alias Phoenix.PubSub
+
+  test "test for loan approval" do
+    PMS.clear_then_load_process_models(TestModels.get_loan_models())
+    data = %{loan_args: [income: 3000]}
+
+    {:ok, ppid, uid} = PE.start_supervised_pe(:load_approval_process, data)
+    PE.execute(ppid)
+    Process.sleep(1000)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{loan_args: [income: 3000], status: "declined"}
+    assert completed_process.complete == true
+  end
 
   test "process with one decision task" do
     PMS.clear_then_load_process_models(TestModels.one_decision_task())
