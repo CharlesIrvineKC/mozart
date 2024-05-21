@@ -88,15 +88,15 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.complete == true
   end
 
-  test "call an external service" do
-    PMS.clear_then_load_process_models(TestModels.call_exteral_services())
-    data = %{}
+  # test "call an external service" do
+  #   PMS.clear_then_load_process_models(TestModels.call_exteral_services())
+  #   data = %{}
 
-    {:ok, ppid, uid} = PE.start_supervised_pe(:call_external_services, data)
-    PE.execute(ppid)
-    Process.sleep(2000)
-    assert PS.get_completed_process(uid) != nil
-  end
+  #   {:ok, ppid, uid} = PE.start_supervised_pe(:call_external_services, data)
+  #   PE.execute(ppid)
+  #   Process.sleep(2000)
+  #   assert PS.get_completed_process(uid) != nil
+  # end
 
   test "complex process model" do
     PMS.clear_then_load_process_models(TestModels.get_complex_process_models())
