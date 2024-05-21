@@ -24,7 +24,7 @@ defmodule Mozart.ProcessServiceTest do
   test "complete a user task" do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
-    {:ok, ppid, uid} = PE.start_supervised_pe(:user_task_process_model, data)
+    {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
     PE.execute(ppid)
 
     [task_instance] = Map.values(PE.get_task_instances(ppid))
@@ -38,7 +38,7 @@ defmodule Mozart.ProcessServiceTest do
 
   test "assign a task to a user" do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
-    {:ok, ppid, _uid} = PE.start_supervised_pe(:one_user_task_process, %{value: 1})
+    {:ok, ppid, _uid} = PE.start_process(:one_user_task_process, %{value: 1})
     PE.execute(ppid)
     Process.sleep(10)
     [task] = PS.get_user_tasks("crirvine")
@@ -49,7 +49,7 @@ defmodule Mozart.ProcessServiceTest do
 
   test "start a process engine" do
     PMS.clear_then_load_process_models(TestModels.get_parallel_process_models())
-    {:ok, ppid, uid} = PE.start_supervised_pe(:parallel_process_model, %{value: 1})
+    {:ok, ppid, uid} = PE.start_process(:parallel_process_model, %{value: 1})
     PE.execute(ppid)
     Process.sleep(10)
 
