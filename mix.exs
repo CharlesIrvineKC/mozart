@@ -16,8 +16,10 @@ defmodule Mozart.MixProject do
 
   defp description() do
     """
-    Mozart is a BPM platform written in Elixir. It is currently in active development. The
-    target release date for version 0.1.0 is summer or fall of 2024.
+    Mozart is a BPM platform written in Elixir. It is currently in active development, but it has sufficient
+    functionality for at least experimental use. Before the end of the year, a programming language
+    independent process modeling language will be introduced. It will be much more readable than the
+    native Elixir struct-based modeling language.
     """
   end
 
