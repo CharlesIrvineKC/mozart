@@ -15,7 +15,7 @@ defmodule Mozart.Models.TestModels do
   def get_loan_models do
     [
       %ProcessModel{
-        name: :load_approval_process,
+        name: :load_approval,
         tasks: [
           %Decision{
             name: :loan_decision,

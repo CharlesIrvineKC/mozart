@@ -11,7 +11,7 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_loan_models())
     data = %{loan_args: [income: 3000]}
 
-    {:ok, ppid, uid} = PE.start_process(:load_approval_process, data)
+    {:ok, ppid, uid} = PE.start_process(:load_approval, data)
     PE.execute(ppid)
     Process.sleep(1000)
 
