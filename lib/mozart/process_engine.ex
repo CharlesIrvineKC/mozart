@@ -21,6 +21,10 @@ defmodule Mozart.ProcessEngine do
     GenServer.cast(ppid, :execute)
   end
 
+  def execute_and_wait(ppid) do
+    GenServer.call(ppid, :execute)
+  end
+
   def start_process(model_name, data, parent \\ nil) do
     uid = UUID.generate()
 
@@ -54,7 +58,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   def complete_user_task(ppid, task_uid, data) do
-    GenServer.cast(ppid, {:complete_user_task, task_uid, data})
+    GenServer.call(ppid, {:complete_user_task, task_uid, data})
   end
 
   def set_data(ppid, data) do
@@ -116,7 +120,7 @@ defmodule Mozart.ProcessEngine do
     {:reply, state.task_instances, state}
   end
 
-  def handle_cast({:complete_user_task, task_uid, return_data}, state) do
+  def handle_call({:complete_user_task, task_uid, return_data}, _from, state) do
     task_instance = get_task_instance(task_uid, state)
 
     state =
@@ -139,7 +143,14 @@ defmodule Mozart.ProcessEngine do
         state
       end
 
-    {:noreply, state}
+    {:reply, state, state}
+  end
+
+  def handle_call(:execute, _from, state) do
+    model = PMS.get_process_model(state.model_name)
+    state = create_next_tasks(state, model.initial_task)
+    state = execute_process(state)
+    {:reply, state, state}
   end
 
   def handle_cast(:execute, state) do
