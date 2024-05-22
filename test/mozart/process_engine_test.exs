@@ -13,7 +13,8 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, ppid, uid} = PE.start_process(:load_approval, data)
     PE.execute(ppid)
-    Process.sleep(1000)
+    Process.monitor(ppid)
+    assert_receive({:DOWN, _ref, :process, _object, _reason})
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{loan_args: [income: 3000], status: "declined"}
@@ -40,11 +41,18 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, r_ppid, r_uid} = PE.start_process(:process_with_receive_task, data)
     PE.execute(r_ppid)
-    Process.sleep(50)
+    Process.sleep(5000)
 
     {:ok, s_ppid, s_uid} = PE.start_process(:process_with_single_send_task, data)
     PE.execute(s_ppid)
-    Process.sleep(4000)
+
+    Process.monitor(s_ppid)
+    assert_receive(msg, 4000)
+    IO.inspect(msg, label: "send msg")
+
+    Process.monitor(r_ppid)
+    assert_receive(msg, 5000)
+    IO.inspect(msg, label: "receive msg")
 
     ps_state = PS.get_state()
     completed_processes = ps_state.completed_processes
@@ -58,7 +66,6 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, ppid, _uid} = PE.start_process(:process_with_single_service_task, data)
     PE.execute(ppid)
-    Process.sleep(50)
   end
 
   test "call process with a receive event task" do
@@ -82,7 +89,10 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, ppid, uid} = PE.start_process(:call_timer_task, data)
     PE.execute(ppid)
-    Process.sleep(5000)
+
+    Process.monitor(ppid)
+    assert_receive(_msg, 500)
+
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{}
     assert completed_process.complete == true
@@ -104,7 +114,10 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, ppid, uid} = PE.start_process(:call_process_model, data)
     PE.execute(ppid)
-    Process.sleep(10)
+
+    Process.monitor(ppid)
+    assert_receive(_msg, 500)
+
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 7}
     assert completed_process.complete == true
@@ -116,7 +129,9 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, ppid, uid} = PE.start_process(:simple_process_model, data)
     PE.execute(ppid)
-    Process.sleep(10)
+
+    Process.monitor(ppid)
+    assert_receive(_msg, 500)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{foo: "foo", bar: :bar}
@@ -128,7 +143,6 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 1}
     {:ok, ppid, _uid} = PE.start_process(:simple_call_process_model, data)
     PE.execute(ppid)
-    Process.sleep(10)
   end
 
   test "execute process with service subprocess" do
@@ -136,7 +150,9 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:simple_call_service_process_model, data)
     PE.execute(ppid)
-    Process.sleep(10)
+
+    Process.monitor(ppid)
+    assert_receive(_msg, 500)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 1, service: :service}
@@ -148,7 +164,9 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)
     PE.execute(ppid)
-    Process.sleep(10)
+
+    Process.monitor(ppid)
+    assert_receive(_msg, 500)
 
     completed_process = PS.get_completed_process(uid)
 
@@ -168,7 +186,10 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:choice_process_model, data)
     PE.execute(ppid)
-    Process.sleep(20)
+
+    Process.monitor(ppid)
+    assert_receive(_msg, 500)
+
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 1, foo: :foo}
     assert completed_process.complete == true
@@ -179,7 +200,9 @@ defmodule Mozart.ProcessEngineTest do
     data = %{value: 11}
     {:ok, ppid, uid} = PE.start_process(:choice_process_model, data)
     PE.execute(ppid)
-    Process.sleep(10)
+
+    Process.monitor(ppid)
+    assert_receive(_msg, 500)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 11, bar: :bar}

@@ -120,12 +120,12 @@ defmodule Mozart.Models.TestModels do
         tasks: [
           %Timer{
             name: :wait_1_seconds,
-            timer_duration: 1000,
+            timer_duration: 100,
             next: :wait_3_seconds
           },
           %Timer{
             name: :wait_3_seconds,
-            timer_duration: 3000
+            timer_duration: 300
           }
         ],
         initial_task: :wait_1_seconds
