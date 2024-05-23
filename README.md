@@ -70,7 +70,7 @@ by adding `mozart` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:mozart, "~> 0.1.0"}
+    {:mozart, "~> 0.1.1"}
   ]
 end
 ```
