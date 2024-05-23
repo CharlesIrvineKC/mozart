@@ -60,6 +60,10 @@ defmodule Mozart.ProcessEngine do
     GenServer.call(ppid, {:complete_user_task, task_uid, data})
   end
 
+  def complete_user_task_and_go(ppid, task_uid, data) do
+    GenServer.cast(ppid, {:complete_user_task, task_uid, data})
+  end
+
   def set_data(ppid, data) do
     GenServer.cast(ppid, {:set_data, data})
   end
@@ -165,6 +169,32 @@ defmodule Mozart.ProcessEngine do
 
     state = execute_process(state)
     {:reply, state, state}
+  end
+
+  def handle_cast({:complete_user_task, task_uid, return_data}, state) do
+    task_instance = get_task_instance(task_uid, state)
+
+    state =
+      if task_instance do
+        data = Map.merge(state.data, return_data)
+        state = Map.put(state, :data, data)
+
+        task_instances = Map.delete(state.task_instances, task_uid)
+
+        state = Map.put(state, :task_instances, task_instances)
+
+        state =
+          if task_instance.next,
+            do: create_next_tasks(state, task_instance.next, task_instance.name),
+            else: state
+
+        Logger.info("Complete user task [#{task_instance.name}][#{task_instance.uid}]")
+        execute_process(state)
+      else
+        state
+      end
+
+    {:noreply, state}
   end
 
   def handle_cast(:execute, state) do

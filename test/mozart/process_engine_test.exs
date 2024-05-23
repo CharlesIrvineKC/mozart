@@ -144,7 +144,7 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.complete == true
   end
 
-  test "execute process with choice and join" do
+  test "execute process with parallel task and join" do
     PMS.clear_then_load_process_models(TestModels.get_parallel_process_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)

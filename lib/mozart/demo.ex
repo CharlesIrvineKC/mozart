@@ -134,7 +134,7 @@ defmodule Mozart.Demo do
     completed_process = PS.get_completed_process(uid)
     IO.inspect(completed_process, label: "service process state")
 
-    IO.puts "finished"
+    IO.puts("finished")
   end
 
   ## Demo timer task
@@ -170,7 +170,7 @@ defmodule Mozart.Demo do
     completed_process = PS.get_completed_process(uid)
     IO.inspect(completed_process, label: "service process state")
 
-    IO.puts "finished"
+    IO.puts("finished")
   end
 
   ## Demo parallel tasks
@@ -224,7 +224,7 @@ defmodule Mozart.Demo do
     completed_process = PS.get_completed_process(uid)
     IO.inspect(completed_process, label: "parallel process state")
 
-    IO.puts "finished"
+    IO.puts("finished")
   end
 
   ## Demo subprocess model
@@ -259,45 +259,27 @@ defmodule Mozart.Demo do
     ]
   end
 
- def run_subprocess_process do
-  PMS.clear_then_load_process_models(subprocess_process_models())
-  data = %{value: 1}
+  def run_subprocess_process do
+    PMS.clear_then_load_process_models(subprocess_process_models())
+    data = %{value: 1}
 
-  {:ok, ppid, uid} = PE.start_process(:call_process_model, data)
+    {:ok, ppid, uid} = PE.start_process(:call_process_model, data)
 
-  PE.execute(ppid)
-  Process.sleep(1000)
+    PE.execute(ppid)
+    Process.sleep(1000)
 
-  completed_process = PS.get_completed_process(uid)
-  IO.inspect(completed_process, label: "subprocess process state")
+    completed_process = PS.get_completed_process(uid)
+    IO.inspect(completed_process, label: "subprocess process state")
 
-  IO.puts "finished"
- end
+    IO.puts("finished")
+  end
 
-  def get_testing_process_models do
+  ## User task demo
+
+  def user_task_process do
     [
       %ProcessModel{
-        name: :simple_call_process_model,
-        tasks: [
-          %Subprocess{
-            name: :call_process_task,
-            sub_process: :one_user_task_process
-          }
-        ],
-        initial_task: :call_process_task
-      },
-      %ProcessModel{
-        name: :simple_call_service_process_model,
-        tasks: [
-          %Subprocess{
-            name: :call_process_task,
-            sub_process: :service_subprocess_model
-          }
-        ],
-        initial_task: :call_process_task
-      },
-      %ProcessModel{
-        name: :one_user_task_process,
+        name: :user_task_process_model,
         tasks: [
           %User{
             name: :user_task,
@@ -305,17 +287,31 @@ defmodule Mozart.Demo do
           }
         ],
         initial_task: :user_task
-      },
-      %ProcessModel{
-        name: :service_subprocess_model,
-        tasks: [
-          %Service{
-            name: :service_task,
-            function: fn data -> Map.merge(data, %{service: :service}) end
-          }
-        ],
-        initial_task: :service_task
-      },
+      }
+    ]
+  end
+
+  def run_user_task_process do
+    PMS.clear_then_load_process_models(user_task_process())
+    data = %{value: 0}
+    {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
+    PE.execute(ppid)
+    Process.sleep(1000)
+
+    [task_instance] = Map.values(PE.get_task_instances(ppid))
+    PE.complete_user_task_and_go(ppid, task_instance.uid, %{user_task_complete: true})
+    Process.sleep(1000)
+
+    completed_process = PS.get_completed_process(uid)
+    IO.inspect(completed_process, label: "user task process state")
+
+    IO.puts("finished")
+  end
+
+  ## Demo choice task
+
+  def choice_process_model do
+    [
       %ProcessModel{
         name: :choice_process_model,
         tasks: [
@@ -343,121 +339,19 @@ defmodule Mozart.Demo do
         ],
         initial_task: :choice_task
       },
-      %ProcessModel{
-        name: :simple_process_model,
-        tasks: [
-          %Service{
-            name: :foo,
-            function: fn data -> Map.merge(data, %{bar: :bar}) end
-          }
-        ],
-        initial_task: :foo
-      },
-      %ProcessModel{
-        name: :user_task_process_model,
-        tasks: [
-          %User{
-            name: :user_task,
-            assigned_groups: ["admin"]
-          }
-        ],
-        initial_task: :user_task
-      },
-      %ProcessModel{
-        name: :two_user_tasks_then_service,
-        tasks: [
-          %User{
-            name: :user_task_1,
-            assigned_groups: ["admin"],
-            next: :user_task_2
-          },
-          %User{
-            name: :user_task_2,
-            assigned_groups: ["admin"],
-            next: :increment_by_one_task
-          },
-          %Service{
-            name: :increment_by_one_task,
-            function: fn map -> Map.put(map, :value, map.value + 1) end
-          }
-        ],
-        initial_task: :user_task_1
-      },
-      %ProcessModel{
-        name: :user_task_then_service,
-        tasks: [
-          %User{
-            name: :user_task_1,
-            assigned_groups: ["admin"],
-            next: :increment_by_one_task
-          },
-          %Service{
-            name: :increment_by_one_task,
-            function: fn map -> Map.put(map, :value, map.value + 1) end
-          }
-        ],
-        initial_task: :user_task_1
-      },
-      %ProcessModel{
-        name: :service_then_user_task,
-        tasks: [
-          %Service{
-            name: :increment_by_one_task,
-            function: fn map -> Map.put(map, :value, map.value + 1) end,
-            next: :user_task_1
-          },
-          %User{
-            name: :user_task_1,
-            assigned_groups: ["admin"]
-          }
-        ],
-        initial_task: :increment_by_one_task
-      },
-      %ProcessModel{
-        name: :increment_by_one_process,
-        tasks: [
-          %Service{
-            name: :increment_by_one_task,
-            function: fn map -> Map.put(map, :value, map.value + 1) end
-          }
-        ],
-        initial_task: :increment_by_one_task
-      },
-      %ProcessModel{
-        name: :increment_by_one_twice_process,
-        tasks: [
-          %Service{
-            name: :increment_by_one_task,
-            function: fn map -> Map.put(map, :value, map.value + 1) end,
-            next: :increment_by_two_task
-          },
-          %Service{
-            name: :increment_by_two_task,
-            function: fn map -> Map.put(map, :value, map.value + 2) end
-          }
-        ],
-        initial_task: :increment_by_one_task
-      },
-      %ProcessModel{
-        name: :three_increment_by_one_process,
-        tasks: [
-          %Service{
-            name: :increment_by_one_task,
-            function: fn map -> Map.put(map, :value, map.value + 1) end,
-            next: :increment_by_two_task
-          },
-          %Service{
-            name: :increment_by_two_task,
-            function: fn map -> Map.put(map, :value, map.value + 2) end,
-            next: :increment_by_three_task
-          },
-          %Service{
-            name: :increment_by_three_task,
-            function: fn map -> Map.put(map, :value, map.value + 3) end
-          }
-        ],
-        initial_task: :increment_by_one_task
-      }
     ]
+  end
+
+  def run_choice_process_model do
+    PMS.clear_then_load_process_models(choice_process_model())
+    data = %{value: 1}
+    {:ok, ppid, uid} = PE.start_process(:choice_process_model, data)
+    PE.execute(ppid)
+    Process.sleep(1000)
+
+    completed_process = PS.get_completed_process(uid)
+    IO.inspect(completed_process, label: "choice task process state")
+
+    IO.puts("finished")
   end
 end
