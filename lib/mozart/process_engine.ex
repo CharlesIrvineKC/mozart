@@ -206,12 +206,15 @@ defmodule Mozart.ProcessEngine do
   end
 
   def terminate(reason, state) do
-    IO.puts("Process engine terminated with reason:")
-    IO.inspect(reason, label: "terminate reason")
-    IO.inspect(state, label: "terminate state")
+    {reason_code, _} = reason
+    if reason_code != :shutdown do
+      IO.puts("Process engine terminated with reason:")
+      IO.inspect(reason, label: "terminate reason")
+      IO.inspect(state, label: "terminate state")
 
-    PS.cache_pe_state(state.uid, state)
-    Process.sleep(50)
+      PS.cache_pe_state(state.uid, state)
+    end
+    # Process.sleep(50)
   end
 
   ## callback utilities

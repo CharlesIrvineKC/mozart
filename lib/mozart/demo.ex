@@ -173,22 +173,9 @@ defmodule Mozart.Demo do
     IO.puts "finished"
   end
 
-  # def call_exteral_services do
-  #   [
-  #     %ProcessModel{
-  #       name: :call_external_services,
-  #       tasks: [
-  #         %Service{
-  #           name: :get_cat_facts,
-  #           function: fn data -> Map.merge(data, %{cat_facts: RestService.get_cat_facts()}) end
-  #         }
-  #       ],
-  #       initial_task: :get_cat_facts
-  #     }
-  #   ]
-  # end
+  ## Demo parallel tasks
 
-  def get_parallel_process_models do
+  def parallel_process_with_join_models do
     [
       %ProcessModel{
         name: :parallel_process_model,
@@ -227,7 +214,22 @@ defmodule Mozart.Demo do
     ]
   end
 
-  def get_complex_process_models do
+  def run_parallel_process_model do
+    PMS.clear_then_load_process_models(parallel_process_with_join_models())
+    data = %{value: 1}
+    {:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)
+    PE.execute(ppid)
+    Process.sleep(1000)
+
+    completed_process = PS.get_completed_process(uid)
+    IO.inspect(completed_process, label: "parallel process state")
+
+    IO.puts "finished"
+  end
+
+  ## Demo subprocess model
+
+  def subprocess_process_models do
     [
       %ProcessModel{
         name: :call_process_model,
@@ -239,16 +241,6 @@ defmodule Mozart.Demo do
           },
           %Service{
             name: :service_task1,
-            function: fn data -> Map.put(data, :value, data.value + 1) end,
-            next: :service_task2
-          },
-          %Service{
-            name: :service_task2,
-            function: fn data -> Map.put(data, :value, data.value + 1) end,
-            next: :service_task3
-          },
-          %Service{
-            name: :service_task3,
             function: fn data -> Map.put(data, :value, data.value + 1) end
           }
         ],
@@ -258,24 +250,29 @@ defmodule Mozart.Demo do
         name: :service_subprocess_model,
         tasks: [
           %Service{
-            name: :service_task1,
-            function: fn data -> Map.put(data, :value, data.value + 1) end,
-            next: :service_task2
-          },
-          %Service{
-            name: :service_task2,
-            function: fn data -> Map.put(data, :value, data.value + 1) end,
-            next: :service_task3
-          },
-          %Service{
-            name: :service_task3,
-            function: fn data -> Map.put(data, :value, data.value + 1) end
+            name: :service_task,
+            function: fn data -> Map.put(data, :subprocess_data, "subprocess data") end
           }
         ],
-        initial_task: :service_task1
+        initial_task: :service_task
       }
     ]
   end
+
+ def run_subprocess_process do
+  PMS.clear_then_load_process_models(subprocess_process_models())
+  data = %{value: 1}
+
+  {:ok, ppid, uid} = PE.start_process(:call_process_model, data)
+
+  PE.execute(ppid)
+  Process.sleep(1000)
+
+  completed_process = PS.get_completed_process(uid)
+  IO.inspect(completed_process, label: "subprocess process state")
+
+  IO.puts "finished"
+ end
 
   def get_testing_process_models do
     [
