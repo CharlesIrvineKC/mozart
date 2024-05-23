@@ -5,8 +5,8 @@ Companies large and small have business processes that they regularly execute. L
 Business processes have the following charateristics:
 
 * A business process is comprised of some number of individual tasks. 
-* Tasks are performed in a prescribed order. 
-* Processes can branch to differing sets of tasks depending on that state of the process.
+* Tasks are performed in an order prescribed by network of task connections.
+* Processes can branch to multiple alternative sets of tasks depending on the state of the process.
 * Processes can branch to multiple parallel paths as well.
 * There are multiple kinds of tasks. Some tasks are performed by users. Some tasks are performed by calling services. There are many other kinds of tasks as well.
 * Processes store data to be used by tasks to perform their functions.
