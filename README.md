@@ -85,10 +85,12 @@ end
 
 For a while, documentation is going to be limited....
 
-The basic idea is that first process models defined and loaded them into the system. After that, 
+The basic idea is that first process models are defined and loaded into the system. After that, 
 process models are started and executed by providing a model name and some initial data.
 
-If you look in the file [Wikipedia]( on the web).
+If you look in the [demo file](https://github.com/CharlesIrvineKC/mozart/blob/main/lib/mozart/demo.ex) in the Mozart GitHub repository, you will see a set of "def run*" functions. Each one of the loads some process model definitions and then executes them by calling two functions: ProcessEngin.start_process/2 and ProcessEngine.execute/1.
+
+Until some actual documentation is available, the best way to figure out what's going on is to examine this file.
 
 ## Todo
 
