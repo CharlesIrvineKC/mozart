@@ -38,8 +38,11 @@ BPM platforms provide the following functions:
 This is difficult to answer exactly, but BPM may be applicable when:
 
 * Processes are performed on a regular basis.
-* Process are well defined.
-* Multiple business groups and people participate in process execution.
+* Successful process execution is crucial to the business.
+* Current processes are error prone.
+* The speed of process completion is very important.
+* Processes are well defined.
+* Multiple business groups and/or people participate in process execution.
 
 # Mozart
 
