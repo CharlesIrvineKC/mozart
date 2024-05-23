@@ -20,7 +20,7 @@ defmodule Mozart.Demo do
   def get_loan_models do
     [
       %ProcessModel{
-        name: :load_approval,
+        name: :loan_approval,
         tasks: [
           %Decision{
             name: :loan_decision,
@@ -39,10 +39,10 @@ defmodule Mozart.Demo do
   end
 
   def run_get_loan_models do
-    PMS.clear_then_load_process_models(get_loan_models())
+    PMS.load_process_models(get_loan_models())
     data = %{loan_args: [income: 3000]}
 
-    {:ok, ppid, uid} = PE.start_process(:load_approval, data)
+    {:ok, ppid, uid} = PE.start_process(:loan_approval, data)
     PE.execute(ppid)
 
     Process.sleep(1000)
@@ -86,7 +86,7 @@ defmodule Mozart.Demo do
   end
 
   def run_send_task_to_receive_task do
-    PMS.clear_then_load_process_models(send_task_to_receive_task())
+    PMS.load_process_models(send_task_to_receive_task())
     data = %{}
 
     {:ok, r_ppid, r_uid} = PE.start_process(:process_with_receive_task, data)
@@ -124,7 +124,7 @@ defmodule Mozart.Demo do
   end
 
   def run_single_service_task do
-    PMS.clear_then_load_process_models(single_service_task())
+    PMS.load_process_models(single_service_task())
     data = %{value: 0}
 
     {:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
@@ -160,7 +160,7 @@ defmodule Mozart.Demo do
   end
 
   def run_call_timer_tasks do
-    PMS.clear_then_load_process_models(call_timer_tasks())
+    PMS.load_process_models(call_timer_tasks())
     data = %{}
 
     {:ok, ppid, uid} = PE.start_process(:call_timer_task, data)
@@ -215,7 +215,7 @@ defmodule Mozart.Demo do
   end
 
   def run_parallel_process_model do
-    PMS.clear_then_load_process_models(parallel_process_with_join_models())
+    PMS.load_process_models(parallel_process_with_join_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)
     PE.execute(ppid)
@@ -260,7 +260,7 @@ defmodule Mozart.Demo do
   end
 
   def run_subprocess_process do
-    PMS.clear_then_load_process_models(subprocess_process_models())
+    PMS.load_process_models(subprocess_process_models())
     data = %{value: 1}
 
     {:ok, ppid, uid} = PE.start_process(:call_process_model, data)
@@ -292,7 +292,7 @@ defmodule Mozart.Demo do
   end
 
   def run_user_task_process do
-    PMS.clear_then_load_process_models(user_task_process())
+    PMS.load_process_models(user_task_process())
     data = %{value: 0}
     {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
     PE.execute(ppid)
@@ -343,7 +343,7 @@ defmodule Mozart.Demo do
   end
 
   def run_choice_process_model do
-    PMS.clear_then_load_process_models(choice_process_model())
+    PMS.load_process_models(choice_process_model())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:choice_process_model, data)
     PE.execute(ppid)
@@ -353,5 +353,17 @@ defmodule Mozart.Demo do
     IO.inspect(completed_process, label: "choice task process state")
 
     IO.puts("finished")
+  end
+
+  def run_all do
+    run_get_loan_models()
+    run_send_task_to_receive_task()
+    run_single_service_task()
+    run_call_timer_tasks()
+    run_parallel_process_model()
+    run_subprocess_process()
+    run_user_task_process()
+    run_choice_process_model()
+    
   end
 end

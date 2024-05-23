@@ -9,6 +9,8 @@ Business processes have the following charateristics:
 * Processes can branch to differing sets of tasks depending on that state of the process.
 * Processes can branch to multiple parallel paths as well.
 * There are multiple kinds of tasks. Some tasks are performed by users. Some tasks are performed by calling services. 
+* Store data used by tasks to perform their functions.
+* Allow tasks to add data for use by downstream tasks.
 
 # What is Business Process Management (BPM)?
 
@@ -26,10 +28,10 @@ Business Process Managemnt is implemented with the aid of a BPM platform of some
 BPM platforms provide the following functions:
 
 * Provide developers with the ability of define and store process models.
+* Provide developers with the ability have certain tasks completed by making service calls.
 * Provide users and administrators with the ability to start process instances.
 * Provide users with the ability to assign user tasks to specified users.
-* Prvide users with the ability to assignn task to members of a specified user group.
-* Provide developers with the ability have certain tasks completed by making service calls.
+* Prvide users with the ability to assign user tasks to members of a specified user group.
 
 # When is BPM Applicable
 
@@ -83,7 +85,10 @@ end
 
 For a while, documentation is going to be limited....
 
-The following assumes that you have some knowledge of **Business Process Management**. 
+The basic idea is that first process models defined and loaded them into the system. After that, 
+process models are started and executed by providing a model name and some initial data.
+
+If you look in the file [Wikipedia]( on the web).
 
 ## Todo
 

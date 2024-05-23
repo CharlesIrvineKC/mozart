@@ -27,6 +27,10 @@ defmodule Mozart.ProcessModelService do
     GenServer.call(__MODULE__, :get_state)
   end
 
+  def clear_state() do
+    GenServer.call(__MODULE__, :clear_state)
+  end
+
   ## GenServer Callbacks
 
   def init(_init_arg) do
@@ -34,6 +38,11 @@ defmodule Mozart.ProcessModelService do
   end
 
   def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
+  end
+
+  def handle_call(:clear_state, _from, state) do
+    state = Map.put(state, :process_models, %{})
     {:reply, state, state}
   end
 
