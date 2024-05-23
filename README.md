@@ -8,15 +8,15 @@ Business processes have the following charateristics:
 * Tasks are performed in a prescribed order. 
 * Processes can branch to differing sets of tasks depending on that state of the process.
 * Processes can branch to multiple parallel paths as well.
-* There are multiple kinds of tasks. Some tasks are performed by users. Some tasks are performed by calling services. 
-* Store data used by tasks to perform their functions.
-* Allow tasks to add data for use by downstream tasks.
+* There are multiple kinds of tasks. Some tasks are performed by users. Some tasks are performed by calling services. There are many other kinds of tasks as well.
+* Processes store data to be used by tasks to perform their functions.
+* Processes allow tasks to add data for use by downstream tasks.
 
 # What is Business Process Management (BPM)?
 
 The goals of Business Process Management are:
 
-* More Reliablibility
+* Better Process Reliablibility
 * Faster Process Execugtion
 * Reduced Training Requirements
 * Incremental Process Improvement
@@ -43,7 +43,9 @@ This is difficult to answer exactly, but BPM may be applicable when:
 
 # Mozart
 
-Mozart will be a open source BPM platform. It is written in Elixir and is in the early stages of development. A distinguishing characteristic is that, instead of using BPNM2, it will provide a text-based BPM modelling language that is highly readable by process experts with no programming experience. The modelling language is inspired by AWS Step Functions. See [AWS Step Functions](https://docs.aws.amazon.com/step-functions/?icmpid=docs_homepage_appintegration).
+Mozart is an open source BPM platform. It is written in Elixir and is in the early stages of development. Currently, process models are defined using a set of Elixir structs providing a modelling language which is somewhat inspired by AWS Step Functions. See [AWS Step Functions](https://docs.aws.amazon.com/step-functions/?icmpid=docs_homepage_appintegration). 
+
+In the future, the intent is to provide a text-based BPM modelling language that is highly readable by process experts with no programming experience. 
 
 The modeling elements currently supported are:
 
@@ -59,14 +61,6 @@ The modeling elements currently supported are:
 | Exclusive Gate          | Selects one of many process paths. |
 | Parallel Gate           | Initiates two or more process paths. |
 | Parallel Join           | Sychronizes on completion of two or more process paths. |
-
-## Current Development Status
-
-* There is a working process execution engine.
-* Each business process, including each subprocess, runs in it's own GenServer process.
-* Example business process definitions are in test_models.ex_doc
-* Business process models are, for now, written using Elxir data structues. (See Todo Section)
-* The examples can be run with "mix test".
 
 ## Installation
 
@@ -90,11 +84,12 @@ process models are started and executed by providing a model name and some initi
 
 If you look in the [demo file](https://github.com/CharlesIrvineKC/mozart/blob/main/lib/mozart/demo.ex) in the Mozart GitHub repository, you will see a set of "def run*" functions. Each one of the loads some process model definitions and then executes them by calling two functions: ProcessEngin.start_process/2 and ProcessEngine.execute/1.
 
-Until some actual documentation is available, the best way to figure out what's going on is to examine this file.
+Until some actual documentation is available, the best way to figure out what's going on is to examine this file. After, that you might take a look at the unit test, especially those in [https://github.com/CharlesIrvineKC/mozart/blob/main/test/mozart/process_engine_test.exs](https://github.com/CharlesIrvineKC/mozart/blob/main/test/mozart/process_engine_test.exs).
 
-## Todo
+## Major Todo Items
 
-* Publish 0.1 release to hex.
+* Code clean up.
+* Performance testing (probaly compared with [Camunda](https://camunda.com/) since I am familiar with it.)
 * Develop a textual business processs modeling language with will be translated at runtime into native Elixir data structures. The language will be highly readable to process modelers with no programming experience.
 * Develop GUIs for:
   * Runtime trouble shooting and monitoring.
