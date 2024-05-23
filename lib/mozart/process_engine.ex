@@ -3,7 +3,6 @@ defmodule Mozart.ProcessEngine do
 
   require Logger
 
-  alias Mozart.ProcessEngine
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.Data.ProcessState
@@ -449,7 +448,7 @@ defmodule Mozart.ProcessEngine do
       ## no work remaining so process is complete
       # if process instance has a parent process
       if state.parent do
-        ProcessEngine.notify_child_complete(state.parent, state.model_name, state.data)
+        notify_child_complete(state.parent, state.model_name, state.data)
       end
 
       state = Map.put(state, :complete, true)
