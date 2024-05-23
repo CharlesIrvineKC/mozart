@@ -2,6 +2,14 @@
 
 Companies large and small have business processes that they regularly execute. Let's just call them "processes" for brevity's sake. Insurance companies have processes to process a claim. Banks have processes to approve loans. The government have processes to award contracts. 
 
+Business processes have the following charateristics:
+
+* A business process is comprised of some number of individual tasks. 
+* Tasks are performed in a prescribed order. 
+* Processes can branch to differing sets of tasks depending on that state of the process.
+* Processes can branch to multiple parallel paths as well.
+* There are multiple kinds of tasks. Some tasks are performed by users. Some tasks are performed by calling services. 
+
 # What is Business Process Management (BPM)?
 
 The goals of Business Process Management are:
@@ -14,6 +22,14 @@ The goals of Business Process Management are:
 * Cost Savings
 
 Business Process Managemnt is implemented with the aid of a BPM platform of some sort. There are are dozens of commerical BPM platforms and they can be quite expensive, potentially costing millions of dollars a year.
+
+BPM platforms provide the following functions:
+
+* Provide developers with the ability of define and store process models.
+* Provide users and administrators with the ability to start process instances.
+* Provide users with the ability to assign user tasks to specified users.
+* Prvide users with the ability to assignn task to members of a specified user group.
+* Provide developers with the ability have certain tasks completed by making service calls.
 
 # When is BPM Applicable
 
@@ -63,6 +79,11 @@ def deps do
 end
 ```
 
+## Documentation
+
+For a while, documentation is going to be limited....
+
+The following assumes that you have some knowledge of **Business Process Management**. 
 
 ## Todo
 
