@@ -69,7 +69,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   def notify_child_complete(parent_pid, sub_process_name, data) do
-    GenServer.cast(parent_pid, {:notify_child_complete, sub_process_name, data})
+    GenServer.call(parent_pid, {:notify_child_complete, sub_process_name, data})
   end
 
   ## GenServer callbacks
@@ -152,14 +152,7 @@ defmodule Mozart.ProcessEngine do
     {:reply, state, state}
   end
 
-  def handle_cast(:execute, state) do
-    model = PMS.get_process_model(state.model_name)
-    state = create_next_tasks(state, model.initial_task)
-    state = execute_process(state)
-    {:noreply, state}
-  end
-
-  def handle_cast({:notify_child_complete, sub_process_name, child_data}, state) do
+  def handle_call({:notify_child_complete, sub_process_name, child_data}, _from, state) do
     {_uid, task_instance} =
       Enum.find(state.task_instances, fn {_uid, ti} -> ti.sub_process == sub_process_name end)
 
@@ -170,6 +163,13 @@ defmodule Mozart.ProcessEngine do
     state =
       state |> Map.put(:task_instances, task_instances) |> Map.put(:data, child_data)
 
+    state = execute_process(state)
+    {:reply, state, state}
+  end
+
+  def handle_cast(:execute, state) do
+    model = PMS.get_process_model(state.model_name)
+    state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
     {:noreply, state}
   end
