@@ -335,7 +335,7 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.data == %{value: 1}
   end
 
-  test "test correcting bad data and re-executing" do
+  test "correcting bad data and re-executing" do
     # Will cause a process restart due to adding 1 to "foobar"
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: "foobar"}
