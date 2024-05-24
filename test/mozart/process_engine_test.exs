@@ -5,7 +5,6 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
-  alias Phoenix.PubSub
 
   test "test for loan approval" do
     PMS.clear_then_load_process_models(TestModels.get_loan_models())
@@ -17,6 +16,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{loan_args: [income: 3000], status: "declined"}
     assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
   end
 
   test "process with single send event task" do
@@ -45,6 +45,8 @@ defmodule Mozart.ProcessEngineTest do
     completed_processes = ps_state.completed_processes
     assert completed_processes[r_uid].complete == true
     assert completed_processes[s_uid].complete == true
+    assert length(completed_processes[r_uid].completed_tasks) == 1
+    assert length(completed_processes[s_uid].completed_tasks) == 1
   end
 
   test "process with a single service task" do
@@ -83,6 +85,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{}
     assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 2
   end
 
   # test "call an external service" do
@@ -109,6 +112,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 7}
     assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 7
   end
 
   test "start server and get id" do
@@ -161,6 +165,7 @@ defmodule Mozart.ProcessEngineTest do
            }
 
     assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 6
   end
 
   test "execute process with choice returning :foo" do
@@ -172,6 +177,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 1, foo: :foo}
     assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 2
   end
 
   test "execute process with choice returning :bar" do
@@ -254,6 +260,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 2, user_task_1: true, user_task_2: true}
     assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
   end
 
   test "complete one user task then sevice task" do

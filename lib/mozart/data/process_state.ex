@@ -5,6 +5,7 @@ defmodule Mozart.Data.ProcessState do
     :parent,
     :model_name,
     task_instances: %{},
+    completed_tasks: [],
     data: %{},
     complete: false
   ]
