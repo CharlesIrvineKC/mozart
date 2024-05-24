@@ -14,16 +14,7 @@ Business processes have the following charateristics:
 
 # What is Business Process Management (BPM)?
 
-The goals of Business Process Management are:
-
-* Better Process Reliablibility
-* Faster Process Execugtion
-* Reduced Training Requirements
-* Incremental Process Improvement
-* Provide Process Metrics
-* Cost Savings
-
-Business Process Managemnt is implemented with the aid of a BPM platform of some sort. There are are dozens of commerical BPM platforms and they can be quite expensive, potentially costing millions of dollars a year.
+Business Process Management (BPM) is the organized and directed activity of a company to control, monitor and improve the quality of their business processes. They do this with the aid of a BPM platform made available by dozens of commercial vendors.
 
 BPM platforms provide the following functions:
 
@@ -32,6 +23,15 @@ BPM platforms provide the following functions:
 * Provide users and administrators with the ability to start process instances.
 * Provide users with the ability to assign user tasks to specified users.
 * Prvide users with the ability to assign user tasks to members of a specified user group.
+
+The goals of Business Process Management are:
+
+* Better Process Reliablibility
+* Faster Process Execugtion
+* Reduced Training Requirements
+* Incremental Process Improvement
+* Provide Process Metrics
+* Cost Savings
 
 # When is BPM Applicable
 
