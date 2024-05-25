@@ -59,7 +59,8 @@ defmodule Mozart.ProcessModelService do
 
   def handle_call({:load_process_model, process_model}, _from, state) do
     process_models = Map.put(state.process_models, process_model.name, process_model)
-    {:reply, Map.put(state, :process_models, process_models)}
+    state = Map.put(state, :process_models, process_models)
+    {:reply, state, state}
   end
 
   def handle_call({:clear_then_load_process_models, models}, _from, state) do
