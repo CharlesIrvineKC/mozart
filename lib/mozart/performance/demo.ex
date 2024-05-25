@@ -1,4 +1,4 @@
-defmodule Mozart.Demo do
+defmodule Mozart.Performance.Demo do
   alias Mozart.Task.Service
   alias Mozart.Task.Receive
   alias Mozart.Task.Timer
@@ -14,6 +14,7 @@ defmodule Mozart.Demo do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
+  alias Mozart.Performance.RestService
 
   ## Demo decision task
 
@@ -291,8 +292,9 @@ defmodule Mozart.Demo do
     ]
   end
 
+  # PMS.load_process_models(user_task_process())
+
   def run_user_task_process do
-    PMS.load_process_models(user_task_process())
     data = %{value: 0}
     {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
     PE.execute(ppid)
@@ -338,7 +340,7 @@ defmodule Mozart.Demo do
           }
         ],
         initial_task: :choice_task
-      },
+      }
     ]
   end
 
@@ -364,6 +366,50 @@ defmodule Mozart.Demo do
     run_subprocess_process()
     run_user_task_process()
     run_choice_process_model()
-    
+  end
+
+  def clear_and_load() do
+    PS.clear_state()
+    PMS.clear_state()
+    load_model(get_model())
+  end
+
+  def load_model(model) do
+    PMS.load_process_model(model)
+  end
+
+  def get_model() do
+    %ProcessModel{
+      name: :process_with_single_service_task,
+      tasks: [
+        %Service{
+          name: :service_task,
+          function: &RestService.small_payload_service(&1)
+        }
+      ],
+      initial_task: :service_task
+    }
+  end
+
+  def run_process_n_times(data, model_name, n) do
+    Logger.configure(level: :emergency)
+
+    function = fn data, model_name ->
+      {:ok, ppid, _uid} = PE.start_process(model_name, data)
+      PE.execute(ppid)
+    end
+
+    spawn(fn ->
+      1..n |> Enum.each(fn _v -> function.(data, model_name) end)
+    end)
+
+    function = fn _v ->
+      num_completed_processes = Kernel.map_size(PS.get_completed_processes())
+      IO.puts("completed processes: #{num_completed_processes}")
+    end
+
+    spawn(fn ->
+      1..n |> Enum.each(fn _v -> function.(nil) end)
+    end)
   end
 end

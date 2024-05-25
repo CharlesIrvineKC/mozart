@@ -20,6 +20,10 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_completed_process, uid})
   end
 
+  def get_completed_processes() do
+    GenServer.call(__MODULE__, :get_completed_processes)
+  end
+
   def get_process_instances() do
     GenServer.call(__MODULE__, :get_process_instances)
   end
@@ -64,6 +68,10 @@ defmodule Mozart.ProcessService do
     GenServer.cast(__MODULE__, :clear_user_tasks)
   end
 
+  def clear_state() do
+    GenServer.call(__MODULE__, :clear_state)
+  end
+
   def cache_pe_state(uid, pe_state) do
     GenServer.call(__MODULE__, {:cache_pe_state, uid, pe_state})
   end
@@ -83,12 +91,26 @@ defmodule Mozart.ProcessService do
     {:ok, initial_state}
   end
 
+  def handle_call(:clear_state, _from, _state) do
+    new_state = %{
+      process_instances: %{},
+      user_tasks: %{},
+      completed_processes: %{},
+      restart_state_cache: %{}
+    }
+    {:reply, :ok, new_state}
+  end
+
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
   def handle_call(:get_process_instances, _from, state) do
     {:reply, state.process_instances, state}
+  end
+
+  def handle_call(:get_completed_processes, _from, state) do
+    {:reply, state.completed_processes, state}
   end
 
   def handle_call({:get_process_ppid, process_uid}, _from, state) do
@@ -132,6 +154,7 @@ defmodule Mozart.ProcessService do
 
     state =
       Map.put(state, :process_instances, Map.delete(state.process_instances, pe_state.uid))
+
     Process.exit(pid, :shutdown)
 
     {:reply, state, state}

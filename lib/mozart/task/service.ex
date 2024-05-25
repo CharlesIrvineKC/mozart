@@ -4,7 +4,6 @@ defmodule Mozart.Task.Service do
     :function,
     :next,
     :uid,
-    complete: false,
     data: %{},
     type: :service
   ]

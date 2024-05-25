@@ -378,7 +378,7 @@ defmodule Mozart.ProcessEngine do
   defp complete_parallel_task_i(state, task) do
     Logger.info("Complete parallel task [#{task.name}]")
     next_states = task.multi_next
-    
+
     update_for_completed_task(state, task)
     |> process_next_task_list(next_states, task.name)
     |> execute_process()
