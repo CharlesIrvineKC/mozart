@@ -87,7 +87,8 @@ defmodule Mozart.ProcessEngine do
           model_name: model_name,
           data: data,
           uid: uid,
-          parent: parent
+          parent: parent,
+          start_time: DateTime.utc_now()
         }
 
     PS.register_process_instance(uid, self())
@@ -155,22 +156,22 @@ defmodule Mozart.ProcessEngine do
   defp complete_user_task_impl(state, task_uid, return_data) do
     task_instance = get_task_instance(task_uid, state)
 
-      if task_instance do
-        data = Map.merge(state.data, return_data)
-        state = Map.put(state, :data, data)
+    if task_instance do
+      data = Map.merge(state.data, return_data)
+      state = Map.put(state, :data, data)
 
       state = update_for_completed_task(state, task_instance)
 
-        state =
-          if task_instance.next,
-            do: create_next_tasks(state, task_instance.next, task_instance.name),
-            else: state
+      state =
+        if task_instance.next,
+          do: create_next_tasks(state, task_instance.next, task_instance.name),
+          else: state
 
-        Logger.info("Complete user task [#{task_instance.name}][#{task_instance.uid}]")
-        execute_process(state)
-      else
-        state
-      end
+      Logger.info("Complete user task [#{task_instance.name}][#{task_instance.uid}]")
+      execute_process(state)
+    else
+      state
+    end
   end
 
   def handle_cast({:complete_user_task, task_uid, return_data}, state) do
@@ -484,7 +485,12 @@ defmodule Mozart.ProcessEngine do
         notify_child_complete(state.parent, state.model_name, state.data, state.completed_tasks)
       end
 
-      state = Map.put(state, :complete, true)
+      now = DateTime.utc_now()
+
+      state =
+        Map.put(state, :complete, true)
+        |> Map.put(:end_time, now)
+        |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
       Logger.info("Process complete [#{state.model_name}][#{state.uid}]")
 
