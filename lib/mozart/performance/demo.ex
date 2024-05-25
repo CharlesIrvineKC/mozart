@@ -399,17 +399,6 @@ defmodule Mozart.Performance.Demo do
       PE.execute(ppid)
     end
 
-    spawn(fn ->
-      1..n |> Enum.each(fn _v -> function.(data, model_name) end)
-    end)
-
-    function = fn _v ->
-      num_completed_processes = Kernel.map_size(PS.get_completed_processes())
-      IO.puts("completed processes: #{num_completed_processes}")
-    end
-
-    spawn(fn ->
-      1..n |> Enum.each(fn _v -> function.(nil) end)
-    end)
+    1..n |> Enum.each(fn _v -> function.(data, model_name) end)
   end
 end
