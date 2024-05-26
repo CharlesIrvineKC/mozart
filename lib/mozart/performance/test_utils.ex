@@ -1,4 +1,4 @@
-defmodule Mozart.Performance.Demo do
+defmodule Mozart.Performance.TestUtils do
   alias Mozart.Task.Service
   alias Mozart.Task.Receive
   alias Mozart.Task.Timer
