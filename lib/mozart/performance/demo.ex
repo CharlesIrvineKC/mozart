@@ -368,6 +368,8 @@ defmodule Mozart.Performance.Demo do
     run_choice_process_model()
   end
 
+  ## The following functions are ad hoc for investigating performance
+
   def clear_and_load() do
     PS.clear_state()
     PMS.clear_state()
@@ -383,11 +385,74 @@ defmodule Mozart.Performance.Demo do
       name: :process_with_single_service_task,
       tasks: [
         %Service{
-          name: :service_task,
-          function: &RestService.small_payload_service(&1)
+          name: :service_task_1,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_2
+        },
+        %Service{
+          name: :service_task_2,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_3
+        },
+        %Service{
+          name: :service_task_3,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_4
+        },
+        %Service{
+          name: :service_task_4,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_5
+        },
+        %Service{
+          name: :service_task_5,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_6
+        },
+        %Service{
+          name: :service_task_6,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_7
+        },
+        %Service{
+          name: :service_task_7,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_8
+        },
+        %Service{
+          name: :service_task_8,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_9
+        },
+        %Service{
+          name: :service_task_9,
+          function: &RestService.small_payload_service(&1),
+          next: :service_task_10
+        },
+        %Service{
+          name: :service_task_10,
+          function: &RestService.small_payload_service(&1),
+        },
+      ],
+      initial_task: :service_task_1
+    }
+  end
+
+  def get_timer_model do
+    %ProcessModel{
+      name: :call_timer_task,
+      tasks: [
+        %Timer{
+          name: :wait_1_seconds,
+          timer_duration: 10,
+          next: :wait_3_seconds
+        },
+        %Timer{
+          name: :wait_3_seconds,
+          timer_duration: 30
         }
       ],
-      initial_task: :service_task
+      initial_task: :wait_1_seconds
     }
   end
 
