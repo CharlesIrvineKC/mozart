@@ -91,17 +91,19 @@ defmodule Mozart.ProcessEngine do
           start_time: DateTime.utc_now()
         }
 
-    PS.register_process_instance(uid, self())
-
-    Phoenix.PubSub.subscribe(:pubsub, "pe_topic")
-
     if pe_recovered_state do
       Logger.warning("Restart process instance [#{model_name}][#{uid}]")
     else
       Logger.info("Start process instance [#{model_name}][#{uid}]")
     end
 
-    {:ok, state}
+    {:ok, state, {:continue, {:register_and_subscribe, uid}}}
+  end
+
+  def handle_continue({:register_and_subscribe, uid}, state) do
+    PS.register_process_instance(uid, self())
+    Phoenix.PubSub.subscribe(:pubsub, "pe_topic")
+    {:noreply, state}
   end
 
   def handle_call(:is_complete, _from, state) do
