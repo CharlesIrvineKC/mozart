@@ -103,4 +103,8 @@ You might also take a look at the unit tests, especially those in [https://githu
 
 If you have questions, comments, suggestions, etc. feel free to open issues in GitHub.
 
+## Collaboration
+
+Yes, it would be great having other developers join the effort (and discussion).
+
 
