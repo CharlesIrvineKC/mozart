@@ -6,6 +6,28 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
 
+  test "call json service" do
+    PMS.clear_then_load_process_models(TestModels.call_exteral_services())
+    data = %{}
+
+    {:ok, ppid, uid} = PE.start_process(:call_external_service, data)
+    catch_exit(PE.execute_and_wait(ppid))
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.data == %{
+             todo_data: %{
+               "completed" => false,
+               "id" => 1,
+               "title" => "delectus aut autem",
+               "userId" => 1
+             }
+           }
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
   test "test for loan approval" do
     PMS.clear_then_load_process_models(TestModels.get_loan_models())
     data = %{loan_args: [income: 3000]}
@@ -232,7 +254,7 @@ defmodule Mozart.ProcessEngineTest do
     # Get the first user task and complete it.
     [task_instance] = Map.values(PE.get_task_instances(ppid))
     PE.complete_user_task(ppid, task_instance.uid, %{user_task_1: true})
-    assert PE.get_data(ppid) ==  %{value: "foobar", user_task_1: true}
+    assert PE.get_data(ppid) == %{value: "foobar", user_task_1: true}
 
     # Get the second user task and complete it. This will cause the service
     # task to fail due to adding 1 to "foobar". The process will terminate and
@@ -244,7 +266,7 @@ defmodule Mozart.ProcessEngineTest do
 
     # Get the restarted process pid from PS and make sure the state is as expected.
     new_pid = PS.get_process_ppid(uid)
-    assert PE.get_data(new_pid) ==  %{value: "foobar", user_task_1: true}
+    assert PE.get_data(new_pid) == %{value: "foobar", user_task_1: true}
 
     # Get the recoved second user task. Reset value to a numerical value, i.e. 1.
     # Then complete the user task. This time the service task will complete
@@ -302,7 +324,7 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{foo: :foo}
     {:ok, ppid, uid} = PE.start_process(:simple_process_model, data)
-   catch_exit(PE.execute_and_wait(ppid))
+    catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.complete == true

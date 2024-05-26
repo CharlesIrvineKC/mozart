@@ -10,7 +10,7 @@ defmodule Mozart.Models.TestModels do
   alias Mozart.Task.Send
   alias Mozart.Task.Decision
   alias Mozart.Data.ProcessModel
-  # alias Mozart.Services.RestService
+  alias Mozart.Services.RestService
 
   def get_loan_models do
     [
@@ -133,20 +133,20 @@ defmodule Mozart.Models.TestModels do
     ]
   end
 
-  # def call_exteral_services do
-  #   [
-  #     %ProcessModel{
-  #       name: :call_external_services,
-  #       tasks: [
-  #         %Service{
-  #           name: :get_cat_facts,
-  #           function: fn data -> Map.merge(data, %{cat_facts: RestService.get_cat_facts()}) end
-  #         }
-  #       ],
-  #       initial_task: :get_cat_facts
-  #     }
-  #   ]
-  # end
+  def call_exteral_services do
+    [
+      %ProcessModel{
+        name: :call_external_service,
+        tasks: [
+          %Service{
+            name: :get_api_data,
+            function: fn data -> Map.merge(data, %{todo_data: RestService.call_json_api()}) end
+          }
+        ],
+        initial_task: :get_api_data
+      }
+    ]
+  end
 
   def get_parallel_process_models do
     [
