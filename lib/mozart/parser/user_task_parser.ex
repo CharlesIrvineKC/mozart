@@ -1,4 +1,5 @@
 defmodule Mozart.Parser.UserTaskParser do
+  @moduledoc false
   import NimbleParsec
   import Mozart.Parser.ParserUtil
 

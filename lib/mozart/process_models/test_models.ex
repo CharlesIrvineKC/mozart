@@ -1,4 +1,5 @@
-defmodule Mozart.Models.TestModels do
+defmodule Mozart.ProcessModels.TestModels do
+  @moduledoc false
   alias Mozart.Task.Service
   alias Mozart.Task.Receive
   alias Mozart.Task.Timer

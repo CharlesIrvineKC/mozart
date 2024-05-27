@@ -1,4 +1,5 @@
 defmodule Mozart.Services.RestService do
+  @moduledoc false
   use Tesla
 
   plug(Tesla.Middleware.BaseUrl, "https://jsonplaceholder.typicode.com")

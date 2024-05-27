@@ -1,4 +1,6 @@
 defmodule Mozart.Performance.TestUtils do
+  @moduledoc false
+  
   alias Mozart.Task.Service
   alias Mozart.Task.Receive
   alias Mozart.Task.Timer

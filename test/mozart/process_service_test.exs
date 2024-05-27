@@ -5,7 +5,7 @@ defmodule Mozart.ProcessServiceTest do
   alias Mozart.UserService, as: US
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
-  alias Mozart.Models.TestModels
+  alias Mozart.ProcessModels.TestModels
   alias Mozart.Data.User
 
   setup do

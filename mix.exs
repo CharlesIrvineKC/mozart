@@ -38,7 +38,8 @@ defmodule Mozart.MixProject do
       {:ecto_sql, "~> 3.10"},
       {:phoenix_pubsub, "~> 2.1"},
       {:tablex, "~> 0.3.1"},
-      {:nimble_parsec, "~> 1.4.0"}
+      {:nimble_parsec, "~> 1.4.0"},
+      {:ex_doc, "~> 0.33", only: :dev, runtime: false},
     ]
   end
 

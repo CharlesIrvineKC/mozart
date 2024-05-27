@@ -1,4 +1,5 @@
 defmodule Mozart.Application do
+  @moduledoc false
   use Application
 
   @impl true

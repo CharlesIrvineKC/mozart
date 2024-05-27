@@ -1,7 +1,7 @@
 defmodule Mozart.ProcessEngineTest do
   use ExUnit.Case
 
-  alias Mozart.Models.TestModels
+  alias Mozart.ProcessModels.TestModels
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
@@ -26,6 +26,7 @@ defmodule Mozart.ProcessEngineTest do
 
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
+    IO.inspect(completed_process)
   end
 
   test "test for loan approval" do

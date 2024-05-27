@@ -1,4 +1,5 @@
 defmodule Mozart.Parser.ParserUtil do
+  @moduledoc false
   import NimbleParsec
 
   def spaces do

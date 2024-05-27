@@ -1,4 +1,7 @@
 defmodule Mozart.ProcessEngine do
+  @moduledoc """
+  A ProcessEngine is dynamically spawned for the purpose of executing a process model.
+  """
   use GenServer
 
   require Logger
@@ -11,11 +14,15 @@ defmodule Mozart.ProcessEngine do
 
   ## Client API
 
+  @doc false
   def start_link(uid, model_name, data, parent \\ nil) do
     {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, parent})
     {:ok, pid, uid}
   end
 
+  @doc """
+  Used to initiate task completion on any complete-able open tasks.
+  """
   def execute(ppid) do
     GenServer.cast(ppid, :execute)
   end
@@ -36,6 +43,9 @@ defmodule Mozart.ProcessEngine do
     DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
   end
 
+  @doc """
+  Utility function mainly for debugging. Returns the state of the process engine.
+  """
   def get_state(ppid) do
     GenServer.call(ppid, :get_state)
   end
