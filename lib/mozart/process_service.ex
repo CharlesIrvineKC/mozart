@@ -56,8 +56,8 @@ defmodule Mozart.ProcessService do
     GenServer.cast(__MODULE__, {:complete_user_task, ppid, user_task, data})
   end
 
-  def assign_user_task(task_i, user_id) do
-    GenServer.cast(__MODULE__, {:assign_user_task, task_i, user_id})
+  def assign_user_task(task, user_id) do
+    GenServer.cast(__MODULE__, {:assign_user_task, task, user_id})
   end
 
   def insert_user_task(task) do
@@ -171,9 +171,9 @@ defmodule Mozart.ProcessService do
     {:noreply, state}
   end
 
-  def handle_cast({:assign_user_task, task_i, user_id}, state) do
-    task_i = Map.put(task_i, :assignee, user_id)
-    state = Map.put(state, :user_tasks, Map.put(state.user_tasks, task_i.uid, task_i))
+  def handle_cast({:assign_user_task, task, user_id}, state) do
+    task = Map.put(task, :assignee, user_id)
+    state = Map.put(state, :user_tasks, Map.put(state.user_tasks, task.uid, task))
     {:noreply, state}
   end
 
