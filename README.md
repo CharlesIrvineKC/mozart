@@ -1,4 +1,8 @@
-# What is a Business Process?
+# Business Process Management Introduction
+
+The next several sections provide an introduction to to ***Business Process Management***. If you already have a good grasp of this subject, you may want to skip ahead to the section entitled **Mozart**.
+
+## What is a Business Process?
 
 Companies large and small have business processes that they regularly execute. Let's just call them "processes" for brevity's sake. Insurance companies have processes to process a claim. Banks have processes to approve loans. The government have processes to award contracts. 
 
@@ -12,7 +16,7 @@ Business processes have the following charateristics:
 * Processes store data to be used by tasks to perform their functions.
 * Processes allow tasks to add data for use by downstream tasks.
 
-# What is Business Process Management (BPM)?
+## What is Business Process Management (BPM)?
 
 Business Process Management (BPM) is the organized and directed activity of a company to control, monitor and improve the quality of their business processes. They do this with the aid of a BPM platform made available by dozens of commercial vendors.
 
@@ -33,7 +37,7 @@ The goals of Business Process Management are:
 * Provide Process Metrics
 * Cost Savings
 
-# When is BPM Applicable
+## When is BPM Applicable
 
 This is difficult to answer exactly, but BPM may be applicable when:
 
