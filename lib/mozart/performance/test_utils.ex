@@ -300,7 +300,7 @@ defmodule Mozart.Performance.TestUtils do
     PE.execute(ppid)
     Process.sleep(1000)
 
-    [task_instance] = Map.values(PE.get_task_instances(ppid))
+    [task_instance] = Map.values(PE.get_open_tasks(ppid))
     PE.complete_user_task_and_go(ppid, task_instance.uid, %{user_task_complete: true})
     Process.sleep(1000)
 

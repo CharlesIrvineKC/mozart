@@ -7,7 +7,7 @@ defmodule Mozart.Data.ProcessState do
     :start_time,
     :end_time,
     :execute_duration,
-    task_instances: %{},
+    open_tasks: %{},
     completed_tasks: [],
     data: %{},
     complete: false

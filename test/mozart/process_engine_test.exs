@@ -220,8 +220,8 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute_and_wait(ppid)
 
     assert PE.get_data(ppid) == %{value: 0}
-    task_instances = Map.values(PE.get_task_instances(ppid))
-    assert Enum.map(task_instances, fn t_i -> t_i.name end) == [:user_task]
+    open_tasks = Map.values(PE.get_open_tasks(ppid))
+    assert Enum.map(open_tasks, fn t_i -> t_i.name end) == [:user_task]
     assert PE.is_complete(ppid) == false
   end
 
@@ -232,10 +232,10 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute_and_wait(ppid)
 
     assert PE.get_data(ppid) == %{value: 0}
-    task_instances = PE.get_task_instances(ppid)
-    assert Enum.map(Map.values(task_instances), fn t_i -> t_i.name end) == [:user_task]
+    open_tasks = PE.get_open_tasks(ppid)
+    assert Enum.map(Map.values(open_tasks), fn t_i -> t_i.name end) == [:user_task]
 
-    [task_instance] = Map.values(task_instances)
+    [task_instance] = Map.values(open_tasks)
     catch_exit(PE.complete_user_task(ppid, task_instance.uid, %{value: 0, foo: :foo, bar: :bar}))
     Process.sleep(10)
 
@@ -252,7 +252,7 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute_and_wait(ppid)
 
     # Get the first user task and complete it.
-    [task_instance] = Map.values(PE.get_task_instances(ppid))
+    [task_instance] = Map.values(PE.get_open_tasks(ppid))
     PE.complete_user_task(ppid, task_instance.uid, %{user_task_1: true})
     assert PE.get_data(ppid) == %{value: "foobar", user_task_1: true}
 
@@ -260,7 +260,7 @@ defmodule Mozart.ProcessEngineTest do
     # task to fail due to adding 1 to "foobar". The process will terminate and
     # the supervisor will restart it recovering state including the data inserted
     # by the first user task.
-    [task_instance] = Map.values(PE.get_task_instances(ppid))
+    [task_instance] = Map.values(PE.get_open_tasks(ppid))
     catch_exit(PE.complete_user_task(ppid, task_instance.uid, %{user_task_2: true}))
     Process.sleep(100)
 
@@ -271,7 +271,7 @@ defmodule Mozart.ProcessEngineTest do
     # Get the recoved second user task. Reset value to a numerical value, i.e. 1.
     # Then complete the user task. This time the service task will complete
     # without the exception.
-    [task_instance] = Map.values(PE.get_task_instances(new_pid))
+    [task_instance] = Map.values(PE.get_open_tasks(new_pid))
     data = PE.get_data(new_pid)
     PE.set_data(new_pid, Map.merge(data, %{value: 1}))
     catch_exit(PE.complete_user_task(new_pid, task_instance.uid, %{user_task_2: true}))
@@ -293,9 +293,9 @@ defmodule Mozart.ProcessEngineTest do
 
     # Process.sleep(10)
     assert PE.get_data(ppid) == %{value: 0}
-    task_names = Enum.map(Map.values(PE.get_task_instances(ppid)), fn t -> t.name end)
+    task_names = Enum.map(Map.values(PE.get_open_tasks(ppid)), fn t -> t.name end)
     assert task_names == [:user_task_1]
-    [task_instance] = Map.values(PE.get_task_instances(ppid))
+    [task_instance] = Map.values(PE.get_open_tasks(ppid))
 
     catch_exit(PE.complete_user_task(ppid, task_instance.uid, %{foo: :foo, bar: :bar}))
 
@@ -311,7 +311,7 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute_and_wait(ppid)
     assert PE.get_data(ppid) == %{value: 1}
 
-    task_uids = Map.keys(PE.get_task_instances(ppid))
+    task_uids = Map.keys(PE.get_open_tasks(ppid))
     [task_uid] = task_uids
     catch_exit(PE.complete_user_task(ppid, task_uid, %{foo: :foo, bar: :bar}))
 
@@ -409,6 +409,6 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.complete == true
     assert completed_process.data == %{value: 6}
-    assert completed_process.task_instances == %{}
+    assert completed_process.open_tasks == %{}
   end
 end

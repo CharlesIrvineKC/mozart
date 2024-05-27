@@ -27,7 +27,7 @@ defmodule Mozart.ProcessServiceTest do
   #   {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
   #   PE.execute_and_wait(ppid)
 
-  #   [task_instance] = Map.values(PE.get_task_instances(ppid))
+  #   [task_instance] = Map.values(PE.get_open_tasks(ppid))
 
   #   PS.complete_user_task(ppid, task_instance.uid, %{user_task_complete: true})
   #   # Process.sleep(50)
