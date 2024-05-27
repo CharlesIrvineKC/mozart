@@ -1,4 +1,10 @@
 defmodule Mozart.ProcessService do
+  @moduledoc """
+  This modeule provides services required by individual `Mozart.ProcessEngine` instances. Currently,
+  it has no user level functions. Subject to change.
+  """
+
+  @doc false
   use GenServer
 
   alias Mozart.ProcessEngine, as: PE
@@ -7,77 +13,94 @@ defmodule Mozart.ProcessService do
   require Logger
 
   ## Client API
-
+  @doc false
   def start_link(_init_arg) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  @doc false
   def get_cached_state(uid) do
     GenServer.call(__MODULE__, {:get_cached_state, uid})
   end
 
+  @doc false
   def get_completed_process(uid) do
     GenServer.call(__MODULE__, {:get_completed_process, uid})
   end
 
+  @doc false
   def get_completed_processes() do
     GenServer.call(__MODULE__, :get_completed_processes)
   end
 
+  @doc false
   def get_process_instances() do
     GenServer.call(__MODULE__, :get_process_instances)
   end
 
+  @doc false
   def get_process_ppid(process_uid) do
     GenServer.call(__MODULE__, {:get_process_ppid, process_uid})
   end
 
+  @doc false
   def get_user_tasks() do
     GenServer.call(__MODULE__, :get_user_tasks)
   end
 
+  @doc false
   def get_user_tasks(user_id) do
     GenServer.call(__MODULE__, {:get_user_tasks, user_id})
   end
 
+  @doc false
   def register_process_instance(uid, pid) do
     GenServer.cast(__MODULE__, {:register_process_instance, uid, pid})
   end
 
+  @doc false
   def process_completed_process_instance(process_state) do
     GenServer.call(__MODULE__, {:process_completed_process_instance, process_state})
   end
 
+  @doc false
   def get_state() do
     GenServer.call(__MODULE__, :get_state)
   end
 
+  @doc false
   def complete_user_task(ppid, user_task, data) do
     GenServer.cast(__MODULE__, {:complete_user_task, ppid, user_task, data})
   end
 
+  @doc false
   def assign_user_task(task, user_id) do
     GenServer.cast(__MODULE__, {:assign_user_task, task, user_id})
   end
 
+  @doc false
   def insert_user_task(task) do
     GenServer.cast(__MODULE__, {:insert_user_task, task})
   end
 
+  @doc false
   def clear_user_tasks() do
     GenServer.cast(__MODULE__, :clear_user_tasks)
   end
 
+  @doc false
   def clear_state() do
     GenServer.call(__MODULE__, :clear_state)
   end
 
+  @doc false
   def cache_pe_state(uid, pe_state) do
     GenServer.call(__MODULE__, {:cache_pe_state, uid, pe_state})
   end
 
   ## Callbacks
 
+  @doc false
   def init(_init_arg) do
     initial_state = %{
       process_instances: %{},
@@ -91,6 +114,7 @@ defmodule Mozart.ProcessService do
     {:ok, initial_state}
   end
 
+  @doc false
   def handle_call(:clear_state, _from, _state) do
     new_state = %{
       process_instances: %{},
@@ -187,7 +211,7 @@ defmodule Mozart.ProcessService do
     {:noreply, state}
   end
 
-  def get_tasks_for_groups(groups, state) do
+  defp get_tasks_for_groups(groups, state) do
     intersection = fn grp1, grp2 ->
       temp = grp1 -- grp2
       grp1 -- temp

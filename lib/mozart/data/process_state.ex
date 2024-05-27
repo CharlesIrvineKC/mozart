@@ -1,6 +1,23 @@
 defmodule Mozart.Data.ProcessState do
 @moduledoc """
-This struct is used to give the state of a process engine execution.
+
+```
+defstruct [
+    :uid,
+    :parent,
+    :model_name,
+    :start_time,
+    :end_time,
+    :execute_duration,
+    open_tasks: %{},
+    completed_tasks: [],
+    data: %{},
+    complete: false
+  ]
+end
+```
+
+This struct is used to represent the state of a `Mozart.ProcessEngine` execution.
 
 Example: (incrementally populated throughout process execution.)
 

@@ -1,7 +1,9 @@
 defmodule Mozart.ProcessEngine do
   @moduledoc """
-  A ProcessEngine is dynamically spawned for the purpose of executing a process model.
+  A ProcessEngine is dynamically spawned for the purpose of executing a `Mozart.Data.ProcessModel`.
   """
+
+  @doc false
   use GenServer
 
   require Logger
@@ -21,16 +23,30 @@ defmodule Mozart.ProcessEngine do
   end
 
   @doc """
-  Used to initiate task completion on any complete-able open tasks.
+  Used to complete any "complete-able" open tasks. Task execution frequently spawns new
+  open tasks. Execute will continue to as long as there are "complete-able" open tasks.
+
+  Note: Some types of task are completeable immediately and some are not. For
+  example:
+    * A `Mozart.Task.Service` task is complete-able as soon as it is opened.
+    * A `Mozart.Task.User` task when a user completes the task.
+    * A `Mozart.Task.Receive` task is complete-able when a matching
+      `Mozart.Task.Send` task is received.
   """
   def execute(ppid) do
     GenServer.cast(ppid, :execute)
   end
 
+  @doc false
   def execute_and_wait(ppid) do
     GenServer.call(ppid, :execute)
   end
 
+  @doc """
+  Use this function to create a ProcessEngine instance initialized with the
+  name of the process model to be executed and any initialization data. The
+  engine will start executing tasks with the execute/1 function is called.
+  """
   def start_process(model_name, data, parent \\ nil) do
     uid = UUID.generate()
 
@@ -43,51 +59,59 @@ defmodule Mozart.ProcessEngine do
     DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
   end
 
-  @doc """
-  Utility function mainly for debugging. Returns the state of the process engine.
-  """
+  @doc false
   def get_state(ppid) do
     GenServer.call(ppid, :get_state)
   end
 
+  @doc false
   def get_uid(ppid) do
     GenServer.call(ppid, :get_uid)
   end
 
+  @doc false
   def get_model(ppid) do
     GenServer.call(ppid, :get_model)
   end
 
+  @doc false
   def get_data(ppid) do
     GenServer.call(ppid, :get_data)
   end
 
+  @doc false
   def get_open_tasks(ppid) do
     GenServer.call(ppid, :get_open_tasks)
   end
 
+  @doc false
   def complete_user_task(ppid, task_uid, data) do
     GenServer.call(ppid, {:complete_user_task, task_uid, data})
   end
 
+  @doc false
   def complete_user_task_and_go(ppid, task_uid, data) do
     GenServer.cast(ppid, {:complete_user_task, task_uid, data})
   end
 
+  @doc false
   def set_data(ppid, data) do
     GenServer.cast(ppid, {:set_data, data})
   end
 
+  @doc false
   def is_complete(ppid) do
     GenServer.call(ppid, :is_complete)
   end
 
+  @doc false
   def notify_child_complete(parent_pid, sub_process_name, data, completed_tasks) do
     GenServer.call(parent_pid, {:notify_child_complete, sub_process_name, data, completed_tasks})
   end
 
   ## GenServer callbacks
 
+  @doc false
   def init({uid, model_name, data, parent}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
@@ -110,6 +134,7 @@ defmodule Mozart.ProcessEngine do
     {:ok, state, {:continue, {:register_and_subscribe, uid}}}
   end
 
+  @doc false
   def handle_continue({:register_and_subscribe, uid}, state) do
     PS.register_process_instance(uid, self())
     Phoenix.PubSub.subscribe(:pubsub, "pe_topic")
@@ -299,7 +324,7 @@ defmodule Mozart.ProcessEngine do
     state
   end
 
-  def create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
+  defp create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
     existing_task = get_existing_task_instance(state, next_task_name)
 
     if existing_task && existing_task.type == :join do
