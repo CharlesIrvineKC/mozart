@@ -7,7 +7,11 @@ Now we will put together what we've lerned so far to execute a process model.
 To follow along create a new Elxir project and then add Mozart as a dependency. Your dependency should look like this:
 
 ```elixir
-
+  defp deps do
+    [
+      {:mozart, "~> 0.1"}
+    ]
+  end
 ```
 
 ## Construct the Process Model
