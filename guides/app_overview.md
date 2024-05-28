@@ -22,7 +22,27 @@ When a process model has been developed, it is stored in a process model reposit
 
 Earlier we said that the job of the process engine is to drive a process model execution to completion. Let's discuss what that means.
 
-Later we'll discuss tasks in great detail, but there are a couple of things you need to know now. A process model specifies all the tasks that might get completed. We say "might" since 
+### Completing Tasks
+
+Every process model must specify an **initial task**. This will be the first task opened for completion. Completion of the initial task will often, though not always, trigger the opening of addition tasks. Every task that completes will potentially trigger the opening of additional tasks. At least one task in a process model will not trigger any downstream tasks. Eventually, a process model will stop generating new open tasks and it's process engine will terminate.
+
+So, completing the execution of a process model equates to repeatedly opening and completing tasks until the process as a whole is complete.
+
+## Accumulating Data
+
+Amost every task that is opened will need some data to complete. Further, when a task completes, it will introduce some new data for downstream tasks to use. Thus, completing a processes equates to generating a store of information.
+
+## Producing Side Effects
+
+To be useful, almost all process model executions will produce some side effects. Take the process of processing a bank loan application for example. What are the possible side effects?
+
+* Sending a notice that the loan is approved or declined.
+* Depositing money in the customers account.
+* Setting up the loan in the banks backend system.
+
+## Conclusion
+
+Hopefully, the mechanics of Business Process Managment is now much clearer. In the newxt section, we will use Mozart to execute business processes.
 
 
 
