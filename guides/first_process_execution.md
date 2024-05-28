@@ -39,9 +39,10 @@ alias Mozart.ProcessModelService, as: PMS
 alias Mozart.ProcessService, as: PS
 alias Mozart.Task.Service
 alias Mozart.Data.ProcessModel
+
 ```
 
-Now we are ready to load our process model into the repository. Let's do it. Now we copy the following into our iex session:
+Now we are ready to load our process model into the repository. Copy the following into your iex session:
 
 ```elixir
 process_model = 
@@ -57,21 +58,35 @@ process_model =
     }
 PMS.load_process_model(process_model)
 PMS.get_process_model(:process_with_single_service_task)
-```
-
-You should see something like:
-
-```
 
 ```
 
 First, we assigned a process model to a variable.
 Secondly, we loaded the process definition into our repository.
-Finally, pulled the process model from the repository as verification.
+Finally, we pulled the process model from the repository as verification. At the very bottom of the output, you should see the result of calling **get_process_model(:process_with_single_service_task)**:
+
+
+```
+iex [12:52 :: 8] > PMS.get_process_model(:process_with_single_service_task)
+%Mozart.Data.ProcessModel{
+  name: :process_with_single_service_task,
+  tasks: [
+    %Mozart.Task.Service{
+      name: :service_task,
+      function: #Function<42.105768164/1 in :erl_eval.expr/6>,
+      next: nil,
+      uid: nil,
+      data: %{},
+      type: :service
+    }
+  ],
+  initial_task: :service_task
+}
+```
 
 ## Start a Process Engine and Execute the Process Model
 
-Now let us start a process engine, initializing it with our process model and some data. Then we call a function that will invoke process execution.
+Now let us start a process engine, initializing it with our process model and some data. Then we call the function that will invoke process execution. Copy the following into your iex session:
 
 ```elixir
 {:ok, pid, uid} = PE.start_process(:process_with_single_service_task, %{x: 0})
@@ -131,5 +146,5 @@ iex [12:22 :: 14] > PS.get_completed_process(uid)
 }
 ```
 
-We see the see the start and end times of process execution as well as the duration of 1177 microseconds (or 1.177 milliseconds). We see that tasks that were completed. And, finally, we see that the service task has done its job of adding 1 to the value of **x**.
+We see the start and end times of process execution as well as the execution duration of 1177 microseconds (or 1.177 milliseconds). We see that tasks that were completed. And, finally, we see that the service task has done its job of adding 1 to the value of **x**.
 
