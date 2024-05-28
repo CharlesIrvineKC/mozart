@@ -23,7 +23,9 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_cached_state, uid})
   end
 
-  @doc false
+  @doc """
+  Returns the state of the completed process corresponding to the process engine's uid
+  """
   def get_completed_process(uid) do
     GenServer.call(__MODULE__, {:get_completed_process, uid})
   end
@@ -48,7 +50,9 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, :get_user_tasks)
   end
 
-  @doc false
+  @doc """
+  Get user tasks eligible for assignment and completion by the specified user.
+  """
   def get_user_tasks(user_id) do
     GenServer.call(__MODULE__, {:get_user_tasks, user_id})
   end
