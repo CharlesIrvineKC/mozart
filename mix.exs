@@ -10,7 +10,8 @@ defmodule Mozart.MixProject do
       deps: deps(),
       name: "Mozart",
       description: description(),
-      package: package()
+      package: package(),
+      docs: docs()
     ]
   end
 
@@ -26,6 +27,21 @@ defmodule Mozart.MixProject do
     [
       extra_applications: [:logger, :runtime_tools, :observer, :wx],
       mod: {Mozart.Application, []}
+    ]
+  end
+
+  defp docs do
+    [
+     extra_section: "GUIDES",
+     extras: extras()
+    ]
+  end
+
+  defp extras do
+    [
+      "guides/intro_bpm.md",
+      "guides/app_overview.md",
+      "guides/first_process_execution.md"
     ]
   end
 
