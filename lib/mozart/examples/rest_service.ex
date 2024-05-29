@@ -1,4 +1,4 @@
-defmodule Mozart.Services.RestService do
+defmodule Mozart.Examples.RestService do
   @moduledoc false
   use Tesla
 

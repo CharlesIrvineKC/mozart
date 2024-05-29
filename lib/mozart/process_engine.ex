@@ -26,7 +26,7 @@ defmodule Mozart.ProcessEngine do
   Used to complete any "complete-able" open tasks. Task execution frequently spawns new
   open tasks. Execute will continue to as long as there are "complete-able" open tasks.
 
-  Note: Some types of task are completeable immediately and some are not. For
+  Note: Some types of task are complete-able immediately and some are not. For
   example:
     * A `Mozart.Task.Service` task is complete-able as soon as it is opened.
     * A `Mozart.Task.User` task when a user completes the task.

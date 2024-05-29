@@ -76,8 +76,12 @@ defmodule Mozart.ProcessEngineTest do
     PMS.clear_then_load_process_models(TestModels.single_service_task())
     data = %{value: 0}
 
-    {:ok, ppid, _uid} = PE.start_process(:process_with_single_service_task, data)
-    PE.execute(ppid)
+    {:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
+    catch_exit(PE.execute_and_wait(ppid))
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data ==  %{value: 0, single_service: true}
+    assert completed_process.complete == true
   end
 
   # test "call process with a receive event task" do

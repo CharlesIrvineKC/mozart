@@ -18,6 +18,37 @@ defmodule Mozart.Examples.Example do
   alias Mozart.ProcessService, as: PS
   alias Mozart.Performance.RestService
 
+  ## Demo service task
+
+  def single_service_task do
+    [
+      %ProcessModel{
+        name: :process_with_single_service_task,
+        tasks: [
+          %Service{
+            name: :service_task,
+            function: fn data -> Map.put(data, :value, data.value + 1) end
+          }
+        ],
+        initial_task: :service_task
+      }
+    ]
+  end
+
+  def run_single_service_task do
+    PMS.load_process_models(single_service_task())
+    data = %{value: 0}
+
+    {:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
+    PE.execute(ppid)
+    Process.sleep(1000)
+
+    completed_process = PS.get_completed_process(uid)
+    IO.inspect(completed_process, label: "service process state")
+
+    IO.puts("finished")
+  end
+
   ## Demo decision task
 
   def get_loan_models do
@@ -105,37 +136,6 @@ defmodule Mozart.Examples.Example do
 
     completed_process = PS.get_completed_process(s_uid)
     IO.inspect(completed_process, label: "send process state")
-
-    IO.puts("finished")
-  end
-
-  ## Demo service task
-
-  def single_service_task do
-    [
-      %ProcessModel{
-        name: :process_with_single_service_task,
-        tasks: [
-          %Service{
-            name: :service_task,
-            function: fn data -> Map.merge(data, %{single_service: true}) end
-          }
-        ],
-        initial_task: :service_task
-      }
-    ]
-  end
-
-  def run_single_service_task do
-    PMS.load_process_models(single_service_task())
-    data = %{value: 0}
-
-    {:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
-    PE.execute(ppid)
-    Process.sleep(1000)
-
-    completed_process = PS.get_completed_process(uid)
-    IO.inspect(completed_process, label: "service process state")
 
     IO.puts("finished")
   end

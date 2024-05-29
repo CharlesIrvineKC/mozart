@@ -11,7 +11,7 @@ defmodule Mozart.ProcessModels.TestModels do
   alias Mozart.Task.Send
   alias Mozart.Task.Decision
   alias Mozart.Data.ProcessModel
-  alias Mozart.Services.RestService
+  alias Mozart.Examples.RestService
 
   def get_loan_models do
     [

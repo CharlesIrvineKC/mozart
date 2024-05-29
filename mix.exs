@@ -41,7 +41,8 @@ defmodule Mozart.MixProject do
     [
       "guides/intro_bpm.md",
       "guides/app_overview.md",
-      "guides/first_process_execution.md"
+      "guides/first_process_execution.md",
+      "guides/task_types.md"
     ]
   end
 
