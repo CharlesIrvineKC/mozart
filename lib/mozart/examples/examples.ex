@@ -1,6 +1,6 @@
-defmodule Mozart.Performance.TestUtils do
+defmodule Mozart.Examples.Example do
   @moduledoc false
-  
+
   alias Mozart.Task.Service
   alias Mozart.Task.Receive
   alias Mozart.Task.Timer
@@ -297,6 +297,7 @@ defmodule Mozart.Performance.TestUtils do
   # PMS.load_process_models(user_task_process())
 
   def run_user_task_process do
+    PMS.load_process_models(user_task_process())
     data = %{value: 0}
     {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
     PE.execute(ppid)
