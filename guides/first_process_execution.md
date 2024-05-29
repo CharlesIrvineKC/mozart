@@ -24,6 +24,7 @@ First, let us construct a simple process model that will have a single service t
         tasks: [
           %Service{
             name: :service_task,
+            input_fields: [:x],
             function: fn data -> Map.put(data, :x, data.x + 1) end
           }
         ],
@@ -55,6 +56,7 @@ process_model =
         tasks: [
           %Service{
             name: :service_task,
+            input_fields: [:x],
             function: fn data -> Map.put(data, :x, data.x + 1) end
           }
         ],
@@ -119,6 +121,7 @@ Let's verify the results of our process model execution. Copy the following into
 
 ```elixir
 PS.get_completed_process(uid)
+
 ```
 
 and you should see:
