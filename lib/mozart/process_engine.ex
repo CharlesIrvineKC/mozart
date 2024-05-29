@@ -403,8 +403,19 @@ defmodule Mozart.ProcessEngine do
 
   defp complete_service_task(state, task) do
     Logger.info("Complete service task [#{task.name}[#{task.uid}]")
-    data = task.function.(state.data)
-    Map.put(state, :data, data) |> update_task_state(task) |> execute_process()
+
+    input_data =
+      if task.input_fields do
+        Map.take(state.data, task.input_fields)
+      else
+        state.data
+      end
+
+    output_data = task.function.(input_data)
+
+    Map.put(state, :data, Map.merge(state.data, output_data))
+    |> update_task_state(task)
+    |> execute_process()
   end
 
   defp complete_decision_task(state, task) do

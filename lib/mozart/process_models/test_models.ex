@@ -86,7 +86,8 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Service{
             name: :service_task,
-            function: fn data -> Map.merge(data, %{single_service: true}) end
+            input_fields: [:x],
+            function: fn data -> Map.put(data, :x, data.x + 1) end
           },
         ],
         initial_task: :service_task
