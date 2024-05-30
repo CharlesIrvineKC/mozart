@@ -309,10 +309,16 @@ defmodule Mozart.ProcessEngine do
     do: set_timer_for(new_task.uid, new_task.timer_duration)
 
   defp do_side_effects(:user, new_task, state) do
-    input_data = Map.take(state.data, new_task.input_fields)
+    input_data =
+      if new_task.input_fields do
+        Map.take(state.data, new_task.input_fields)
+      else
+        state.data
+      end
+
     new_task = Map.put(new_task, :data, input_data)
     PS.insert_user_task(new_task)
-end
+  end
 
   defp do_side_effects(:send, new_task, _) do
     PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
