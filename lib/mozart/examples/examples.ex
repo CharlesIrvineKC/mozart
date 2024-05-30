@@ -11,6 +11,7 @@ defmodule Mozart.Examples.Example do
   alias Mozart.Task.Choice
   alias Mozart.Task.Send
   alias Mozart.Task.Decision
+
   alias Mozart.Data.ProcessModel
 
   alias Mozart.ProcessEngine, as: PE
@@ -27,7 +28,8 @@ defmodule Mozart.Examples.Example do
         tasks: [
           %Service{
             name: :service_task,
-            function: fn data -> Map.put(data, :value, data.value + 1) end
+            input_fields: [:x, :y],
+            function: fn data -> Map.put(data, :sum, data.x + data.y) end
           }
         ],
         initial_task: :service_task
@@ -37,7 +39,7 @@ defmodule Mozart.Examples.Example do
 
   def run_single_service_task do
     PMS.load_process_models(single_service_task())
-    data = %{value: 0}
+    data = %{x: 1, y: 1}
 
     {:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
     PE.execute(ppid)

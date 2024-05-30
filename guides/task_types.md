@@ -1,11 +1,5 @@
 # Mozart Task Types
 
-This guide will describe and give examples of each of the Mozart task types. We will use an [**example file**](https://github.com/CharlesIrvineKC/mozart/blob/main/lib/mozart/examples/examples.ex) from the Mozart GitHub repository. Copy it to your repository if you would like to follow along.
-
-Each example consists of two functions. One returns a list of process models. The other function, whose name starts with **run_**, is used to execute the process model in a process engine instance.
-
-Each **run_** function will output the state of the completed process for you to inspect.
-
 ## Properties Common to All Task Types
 
 All of the task types have the following properties:
@@ -18,65 +12,99 @@ All of the task types have the following properties:
 
 A **Service Task** (`Mozart.Task.Service`) performs its work by calling an Elixir function. This function could perform a computation, call an external JSON service, retrieve data from a database, etc.
 
-A service task has three unique fields: **:function**, **:input_fields** and **:data**.
+A service task has two unique fields: **:function** and **:input_fields**.
 
 * The **:function** field specifies the function that the service task should apply for the purpose of returning output data into the process state.
 * The **:input_fields** field is used to select which process data fields are passed to the task's function. If no value is supplied for this field, the entire process data is passed.
-* The **:data** field is populated with the data returned to process data.
 
 ### Service Task example
 
-If you are following along, open your project in iex:
+If you are following along, open an Elixir project that has Mozart as a dependency.
 
 ```
 iex -S mix
 
 ```
 
-Now import the Example module:
+Now paste the following alias' into your iex session
 
 ```
-import Mozart.Examples.Example
-
-```
-
-Now invoke the **run_single_service_task/0** function:
-
-```
-run_single_service_task()
+ alias Mozart.Data.ProcessModel
+ alias Mozart.Task.Service
+ alias Mozart.ProcessEngine, as: PE
+ alias Mozart.ProcessModelService, as: PMS
+ alias Mozart.ProcessService, as: PS
 
 ```
 
-The result should be something like:
+Now define a process model with a single service task and assign it to a variable:
 
 ```
-service process state: %Mozart.Data.ProcessState{
-  uid: "2f577410-af1a-498a-9d9d-3935dc9eea55",
+model = %ProcessModel{
+    name: :process_with_single_service_task,
+    tasks: [
+      %Service{
+        name: :service_task,
+        input_fields: [:x, :y],
+        function: fn data -> Map.put(data, :sum, data.x + data.y) end
+      }
+    ],
+    initial_task: :service_task
+}
+
+```
+
+We have specified that state data properties **:x** and **:y** should be available to the task's function. 
+
+The task function will take the sum of **x** and **y** and assign the result to a new the new property **sum**.
+
+Now paste the following into your iex session to execute your process model:
+
+```
+PMS.load_process_model(model)
+data = %{x: 1, y: 1}
+{:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
+PE.execute(ppid)
+
+```
+
+Now, to view the state of the completed process, paste the following into your iex session:
+
+```
+PS.get_completed_process(uid)
+
+```
+
+and should see something like this:
+
+```
+iex [12:21 :: 11] > PS.get_completed_process(uid)
+%Mozart.Data.ProcessState{
+  uid: "53d0220b-4e0c-42bb-9154-7e4aeff83837",
   parent: nil,
   model_name: :process_with_single_service_task,
-  start_time: ~U[2024-05-29 19:07:20.445452Z],
-  end_time: ~U[2024-05-29 19:07:20.448849Z],
-  execute_duration: 3397,
+  start_time: ~U[2024-05-30 17:22:49.156516Z],
+  end_time: ~U[2024-05-30 17:22:49.161447Z],
+  execute_duration: 4931,
   open_tasks: %{},
   completed_tasks: [
     %{
-      data: %{},
-      function: #Function<11.76693851/1 in Mozart.Examples.Example.single_service_task/0>,
+      function: #Function<42.105768164/1 in :erl_eval.expr/6>,
       name: :service_task,
       type: :service,
       next: nil,
       __struct__: Mozart.Task.Service,
-      uid: "d94ee606-13e6-4f80-8e74-3cda4672e323",
-      input_fields: nil,
-      process_uid: "2f577410-af1a-498a-9d9d-3935dc9eea55"
+      uid: "443319db-9cef-47c0-9366-9b95ec1fa42b",
+      input_fields: [:x, :y],
+      process_uid: "53d0220b-4e0c-42bb-9154-7e4aeff83837"
     }
   ],
-  data: %{value: 1},
+  data: %{sum: 2, y: 1, x: 1},
   complete: true
 }
 ```
 
-Note that the service task correctly incremented the **value** property by 1.
+We see that the new property **sum** has been added to the state of the completed process.
 
 ## User Task
 ## Decision Task
