@@ -30,6 +30,13 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_completed_process, uid})
   end
 
+  @doc """
+  Get a user task by uid
+  """
+  def get_user_task(uid) do
+    GenServer.call(__MODULE__, {:get_user_task, uid})
+  end
+
   @doc false
   def get_completed_processes() do
     GenServer.call(__MODULE__, :get_completed_processes)
@@ -157,6 +164,10 @@ defmodule Mozart.ProcessService do
 
   def handle_call(:get_user_tasks, _from, state) do
     {:reply, state.user_tasks, state}
+  end
+
+  def handle_call({:get_user_task, uid}, _from, state) do
+    {:reply, Map.get(state.user_tasks, uid), state}
   end
 
   def handle_call({:get_cached_state, uid}, _from, state) do

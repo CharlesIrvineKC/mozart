@@ -5,6 +5,8 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
+  alias Mozart.Task.User
+  alias Mozart.Data.ProcessModel
 
   test "call json service" do
     PMS.clear_then_load_process_models(TestModels.call_exteral_services())
@@ -26,7 +28,7 @@ defmodule Mozart.ProcessEngineTest do
 
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
-    IO.inspect(completed_process)
+    # IO.inspect(completed_process)
   end
 
   test "test for loan approval" do
@@ -230,22 +232,37 @@ defmodule Mozart.ProcessEngineTest do
     assert PE.is_complete(ppid) == false
   end
 
+  @user_process_models [
+    %ProcessModel{
+      name: :user_task_process_model,
+      tasks: [
+        %User{
+          name: :user_task,
+          input_fields: [:x, :y],
+          assigned_groups: ["admin"]
+        }
+      ],
+      initial_task: :user_task
+    }
+  ]
+
   test "complete one user task" do
-    PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
-    data = %{value: 0}
+    PMS.clear_then_load_process_models(@user_process_models)
+    data = %{x: 1, y: 1, z: 1}
     {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
     PE.execute_and_wait(ppid)
 
-    assert PE.get_data(ppid) == %{value: 0}
-    open_tasks = PE.get_open_tasks(ppid)
-    assert Enum.map(Map.values(open_tasks), fn t_i -> t_i.name end) == [:user_task]
+    assert PE.get_data(ppid) == %{x: 1, y: 1, z: 1}
 
-    [task_instance] = Map.values(open_tasks)
-    catch_exit(PE.complete_user_task(ppid, task_instance.uid, %{value: 0, foo: :foo, bar: :bar}))
+    [user_task] = Map.values(PE.get_open_tasks(ppid))
+
+    ps_user_task = PS.get_user_task(user_task.uid)
+    {x, y} = {ps_user_task.data.x, ps_user_task.data.y}
+    catch_exit(PE.complete_user_task(ppid, user_task.uid, %{sum: x + y}))
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{value: 0, foo: :foo, bar: :bar}
+    assert completed_process.data == %{sum: 2, x: 1, y: 1, z: 1}
     assert completed_process.complete == true
   end
 

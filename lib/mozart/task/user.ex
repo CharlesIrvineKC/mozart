@@ -22,7 +22,9 @@ defmodule Mozart.Task.User do
     :name,
     :function,
     :uid,
-    next: nil,
+    :next,
+    :input_fields,
+    data: %{},
     assigned_groups: [],
     complete: false,
     type: :user

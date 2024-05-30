@@ -264,8 +264,6 @@ defmodule Mozart.ProcessEngine do
 
       PS.cache_pe_state(state.uid, state)
     end
-
-    # Process.sleep(50)
   end
 
   ## callback utilities
@@ -310,7 +308,11 @@ defmodule Mozart.ProcessEngine do
   defp do_side_effects(:timer, new_task, _),
     do: set_timer_for(new_task.uid, new_task.timer_duration)
 
-  defp do_side_effects(:user, new_task, _), do: PS.insert_user_task(new_task)
+  defp do_side_effects(:user, new_task, state) do
+    input_data = Map.take(state.data, new_task.input_fields)
+    new_task = Map.put(new_task, :data, input_data)
+    PS.insert_user_task(new_task)
+end
 
   defp do_side_effects(:send, new_task, _) do
     PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
