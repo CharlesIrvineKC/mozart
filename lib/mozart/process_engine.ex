@@ -315,8 +315,6 @@ defmodule Mozart.ProcessEngine do
       data = state.data
       {:ok, process_pid, _uid} = start_process(new_task_i.sub_process, data, self())
       execute(process_pid)
-    else
-      state
     end
 
     Logger.info("New task instance [#{new_task_i.name}][#{new_task_i.uid}]")
