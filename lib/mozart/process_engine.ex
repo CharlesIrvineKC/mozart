@@ -292,37 +292,33 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp create_new_next_task(state, next_task_name, previous_task_name) do
-    new_task_i = get_new_task_instance(next_task_name, state)
+    new_task = get_new_task_instance(next_task_name, state)
+    Logger.info("New task instance [#{new_task.name}][#{new_task.uid}]")
 
-    new_task_i =
-      if new_task_i.type == :join do
-        Map.put(new_task_i, :inputs, List.delete(new_task_i.inputs, previous_task_name))
+    new_task =
+      if new_task.type == :join do
+        Map.put(new_task, :inputs, List.delete(new_task.inputs, previous_task_name))
       else
-        new_task_i
+        new_task
       end
 
-    state =
-      Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task_i.uid, new_task_i))
+    handle_new_task(new_task.type, new_task, state)
 
-    handle_new_task(new_task_i.type, new_task_i, state)
-
-    Logger.info("New task instance [#{new_task_i.name}][#{new_task_i.uid}]")
-
-    state
+    Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
   end
 
-  defp handle_new_task(:timer, new_task_i, _),
-    do: set_timer_for(new_task_i.uid, new_task_i.timer_duration)
+  defp handle_new_task(:timer, new_task, _),
+    do: set_timer_for(new_task.uid, new_task.timer_duration)
 
-  defp handle_new_task(:user, new_task_i, _), do: PS.insert_user_task(new_task_i)
+  defp handle_new_task(:user, new_task, _), do: PS.insert_user_task(new_task)
 
-  defp handle_new_task(:send, new_task_i, _) do
-    PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task_i.message})
+  defp handle_new_task(:send, new_task, _) do
+    PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
   end
 
-  defp handle_new_task(:sub_process, new_task_i, state) do
+  defp handle_new_task(:sub_process, new_task, state) do
     data = state.data
-    {:ok, process_pid, _uid} = start_process(new_task_i.sub_process, data, self())
+    {:ok, process_pid, _uid} = start_process(new_task.sub_process, data, self())
     execute(process_pid)
   end
 
