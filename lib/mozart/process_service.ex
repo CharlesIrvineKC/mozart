@@ -195,7 +195,7 @@ defmodule Mozart.ProcessService do
 
   def handle_cast({:complete_user_task, ppid, user_task_uid, data}, state) do
     Map.put(state, :user_tasks, Map.delete(state.user_tasks, user_task_uid))
-    PE.complete_user_task(ppid, user_task_uid, data)
+    PE.complete_user_task_and_go(ppid, user_task_uid, data)
     {:noreply, state}
   end
 
