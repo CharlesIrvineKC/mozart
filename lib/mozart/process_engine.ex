@@ -304,23 +304,29 @@ defmodule Mozart.ProcessEngine do
     state =
       Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task_i.uid, new_task_i))
 
-    if new_task_i.type == :timer, do: set_timer_for(new_task_i.uid, new_task_i.timer_duration)
-
-    if new_task_i.type == :user, do: PS.insert_user_task(new_task_i)
-
-    if new_task_i.type == :send,
-      do: PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task_i.message})
-
-    if new_task_i.type == :sub_process do
-      data = state.data
-      {:ok, process_pid, _uid} = start_process(new_task_i.sub_process, data, self())
-      execute(process_pid)
-    end
+    handle_new_task(new_task_i.type, new_task_i, state)
 
     Logger.info("New task instance [#{new_task_i.name}][#{new_task_i.uid}]")
 
     state
   end
+
+  defp handle_new_task(:timer, new_task_i, _),
+    do: set_timer_for(new_task_i.uid, new_task_i.timer_duration)
+
+  defp handle_new_task(:user, new_task_i, _), do: PS.insert_user_task(new_task_i)
+
+  defp handle_new_task(:send, new_task_i, _) do
+    PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task_i.message})
+  end
+
+  defp handle_new_task(:sub_process, new_task_i, state) do
+    data = state.data
+    {:ok, process_pid, _uid} = start_process(new_task_i.sub_process, data, self())
+    execute(process_pid)
+  end
+
+  defp handle_new_task(_, _, _), do: nil
 
   defp create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
     existing_task = get_existing_task_instance(state, next_task_name)
