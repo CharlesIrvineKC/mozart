@@ -302,27 +302,27 @@ defmodule Mozart.ProcessEngine do
         new_task
       end
 
-    handle_new_task(new_task.type, new_task, state)
+    do_side_effects(new_task.type, new_task, state)
 
     Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
   end
 
-  defp handle_new_task(:timer, new_task, _),
+  defp do_side_effects(:timer, new_task, _),
     do: set_timer_for(new_task.uid, new_task.timer_duration)
 
-  defp handle_new_task(:user, new_task, _), do: PS.insert_user_task(new_task)
+  defp do_side_effects(:user, new_task, _), do: PS.insert_user_task(new_task)
 
-  defp handle_new_task(:send, new_task, _) do
+  defp do_side_effects(:send, new_task, _) do
     PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
   end
 
-  defp handle_new_task(:sub_process, new_task, state) do
+  defp do_side_effects(:sub_process, new_task, state) do
     data = state.data
     {:ok, process_pid, _uid} = start_process(new_task.sub_process, data, self())
     execute(process_pid)
   end
 
-  defp handle_new_task(_, _, _), do: nil
+  defp do_side_effects(_, _, _), do: nil
 
   defp create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
     existing_task = get_existing_task_instance(state, next_task_name)
