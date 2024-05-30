@@ -28,7 +28,6 @@ defmodule Mozart.Task.Service do
     :next,
     :uid,
     :input_fields,
-    data: %{},
     type: :service
   ]
 end
