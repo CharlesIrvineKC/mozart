@@ -107,6 +107,156 @@ iex [12:21 :: 11] > PS.get_completed_process(uid)
 We see that the new property **sum** has been added to the state of the completed process.
 
 ## User Task
+
+A **User Task** (`Mozart.Task.User`) works by having a user complete some required task. This often takes the form of a user using a GUI to examine a subset of process data and then supplying additional data. 
+
+**Important Note**: Users interact with a BPM platfrom such as Mozart by way of user application of some kind. The user application will allow the user to find tasks which may be assigned to him. Once the user accepts responsibility for a task, the application will then provide a user interface appropriate for accomplishing the given task. 
+
+A user task has two unique fields: **:assigned_groups** and **:input_fields**.
+
+* The **:assigned_groups** field specifies the user groups that are elibigle to complete the task. 
+* The **:input_fields** field is used to select which process data fields are passed to the user that will compleete the task. If no value is supplied for this field, the entire process data is passed.
+
+### User Task example
+
+If you are following along, open an Elixir project that has Mozart as a dependency.
+
+```
+iex -S mix
+
+```
+
+Now paste the following alias' into your iex session
+
+```
+ alias Mozart.Data.ProcessModel
+ alias Mozart.Task.User
+ alias Mozart.ProcessEngine, as: PE
+ alias Mozart.ProcessModelService, as: PMS
+ alias Mozart.ProcessService, as: PS
+
+```
+
+Now we define a process model with a single service task and assign it to a variable:
+
+```
+model = %ProcessModel{
+      name: :user_task_process_model,
+      tasks: [
+        %User{
+          name: :user_task,
+          input_fields: [:x, :y],
+          assigned_groups: ["admin"]
+        }
+      ],
+      initial_task: :user_task
+  }
+
+```
+
+We have specified that state data properties **:x** and **:y** should be available to the user that performs the task.
+
+The user will compute the sum of **x** and **y** and assign the result to a new the new property **sum**.
+
+Now paste the following into your iex session to execute your process model:
+
+```
+PMS.load_process_model(model)
+data = %{x: 1, y: 1}
+{:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
+PE.execute(ppid)
+
+```
+
+At this point, a user task has been opened and is available for a user to claim and complete. Now we need to find a user task that can be claimed by persons in specified groups. We can do that like this:
+
+```
+[user_task] = PS.get_tasks_for_groups(["admin"])
+
+```
+
+which gives this result:
+
+```
+13:29:25.959 [info] New task instance [user_task][09fe2c87-d2c8-401b-a4df-83a7edab987d]
+iex [13:28 :: 11] > PS.get_tasks_for_groups(["admin"])
+[
+  %{
+    complete: false,
+    data: %{y: 1, x: 1},
+    function: nil,
+    name: :user_task,
+    type: :user,
+    next: nil,
+    __struct__: Mozart.Task.User,
+    uid: "09fe2c87-d2c8-401b-a4df-83a7edab987d",
+    assigned_groups: ["admin"],
+    input_fields: [:x, :y],
+    process_uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82"
+  }
+]
+```
+
+Now, pulling the task uid from the results above, we can complete the user task like this:
+
+```
+PE.complete_user_task(ppid,  user_task.uid, %{sum: 2})
+
+```
+
+which will produce a result like this:
+
+```
+iex [16:54 :: 12] > PE.complete_user_task(ppid,  user_task.uid, %{sum: 2})
+16:56:11.417 [info] Complete user task [user_task][9b88be91-3b99-4e9c-b362-0f0dc5fb604c]
+16:56:11.417 [info] Process complete [user_task_process_model][d7bed372-94c4-477a-be0a-dcc7417c6e60]
+** (exit) exited in: GenServer.call(#PID<0.273.0>, {:complete_user_task, "9b88be91-3b99-4e9c-b362-0f0dc5fb604c", %{sum: 2}}, 5000)
+    ** (EXIT) shutdown
+    (elixir 1.16.2) lib/gen_server.ex:1114: GenServer.call/3
+    iex:12: (file)
+```
+
+Don't be concerned regarding the **shutdown** notice. It is normal. It simply means tht the process engine shutdown becuase the process had finished.
+
+Now we can verify that the process has completed and shows the expected value for process data:
+
+```
+PS.get_completed_process(uid)
+
+```
+
+and should see something like this:
+
+```
+iex [13:28 :: 12] > PS.get_completed_process(uid)
+%Mozart.Data.ProcessState{
+  uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82",
+  parent: nil,
+  model_name: :user_task_process_model,
+  start_time: ~U[2024-05-30 18:29:25.954801Z],
+  end_time: ~U[2024-05-30 21:35:58.017106Z],
+  execute_duration: 11192062305,
+  open_tasks: %{},
+  completed_tasks: [
+    %{
+      complete: false,
+      function: nil,
+      name: :user_task,
+      type: :user,
+      next: nil,
+      __struct__: Mozart.Task.User,
+      uid: "09fe2c87-d2c8-401b-a4df-83a7edab987d",
+      assigned_groups: ["admin"],
+      input_fields: [:x, :y],
+      process_uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82"
+    }
+  ],
+  data: %{sum: 3, y: 1, x: 1},
+  complete: true
+}
+```
+
+We see that the new property **sum** has been added to the state of the completed process.
 ## Decision Task
 ## Parallel Task
 ## Subprocess Task

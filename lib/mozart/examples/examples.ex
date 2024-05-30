@@ -288,6 +288,7 @@ defmodule Mozart.Examples.Example do
         tasks: [
           %User{
             name: :user_task,
+            input_fields: [:x, :y],
             assigned_groups: ["admin"]
           }
         ],
@@ -300,10 +301,12 @@ defmodule Mozart.Examples.Example do
 
   def run_user_task_process do
     PMS.load_process_models(user_task_process())
-    data = %{value: 0}
+    data = %{x: 2, y: 2}
     {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
     PE.execute(ppid)
     Process.sleep(1000)
+
+    
 
     [task_instance] = Map.values(PE.get_open_tasks(ppid))
     PE.complete_user_task_and_go(ppid, task_instance.uid, %{user_task_complete: true})

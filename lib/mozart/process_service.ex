@@ -31,6 +31,13 @@ defmodule Mozart.ProcessService do
   end
 
   @doc """
+  Returns the user tasks that can be completed by users belonging to one of the input groups.
+  """
+  def get_user_tasks_for_groups(groups) do
+    GenServer.call(__MODULE__, {:get_user_tasks_for_groups, groups})
+  end
+
+  @doc """
   Get a user task by uid
   """
   def get_user_task(uid) do
@@ -156,9 +163,14 @@ defmodule Mozart.ProcessService do
     {:reply, Map.get(state.completed_processes, uid), state}
   end
 
+  def handle_call({:get_user_tasks_for_groups, groups}, _from, state) do
+    tasks = get_user_tasks_for_groups_local(groups, state)
+    {:reply, tasks, state}
+  end
+
   def handle_call({:get_user_tasks, user_id}, _from, state) do
     member_groups = US.get_assigned_groups(user_id)
-    tasks = get_tasks_for_groups(member_groups, state)
+    tasks = get_user_tasks_for_groups_local(member_groups, state)
     {:reply, tasks, state}
   end
 
@@ -226,7 +238,7 @@ defmodule Mozart.ProcessService do
     {:noreply, state}
   end
 
-  defp get_tasks_for_groups(groups, state) do
+  defp get_user_tasks_for_groups_local(groups, state) do
     intersection = fn grp1, grp2 ->
       temp = grp1 -- grp2
       grp1 -- temp
