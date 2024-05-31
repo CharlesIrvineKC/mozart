@@ -14,7 +14,7 @@ The modeling elements currently supported are:
 | Timer Task              | Waits for expiration of a timer. |
 | Receive Task            | Waits for a subscribed PubSub event. |
 | Send Task               | Sends a PubSub event. |
-| Decision Task           | Perform by evaluating a decision block (Tablex) |
+| Rule Task           | Perform by evaluating a run block (Tablex) |
 | Exclusive Gate          | Selects one of many process paths. |
 | Parallel Gate           | Initiates two or more process paths. |
 | Parallel Join           | Sychronizes on completion of two or more process paths. |

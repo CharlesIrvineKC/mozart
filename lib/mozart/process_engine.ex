@@ -427,7 +427,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp complete_decision_task(state, task) do
-    Logger.info("Complete decision task [#{task.name}[#{task.uid}]")
+    Logger.info("Complete run task [#{task.name}[#{task.uid}]")
     data = Map.merge(state.data, Tablex.decide(task.tablex, state.data[task.decision_args]))
     Map.put(state, :data, data) |> update_task_state(task) |> execute_process()
   end
@@ -528,7 +528,7 @@ defmodule Mozart.ProcessEngine do
           complete_able_task_i.type == :send ->
             complete_send_event_task(state, complete_able_task_i)
 
-          complete_able_task_i.type == :decision ->
+          complete_able_task_i.type == :rule ->
             complete_decision_task(state, complete_able_task_i)
         end
       else
@@ -551,13 +551,14 @@ defmodule Mozart.ProcessEngine do
       Logger.info("Process complete [#{state.model_name}][#{state.uid}]")
 
       PS.insert_completed_process(state)
-      
+
       Process.exit(self(), :shutdown)
       state
     end
   end
 
-  defp complete_able(t) when t.type == :decision, do: true
+  defp complete_able(t) when t.type == :rule, do: true
+  defp complete_able(t) when t.type == :run, do: true
   defp complete_able(t) when t.type == :service, do: true
   defp complete_able(t) when t.type == :send, do: true
   defp complete_able(t) when t.type == :receive, do: t.complete

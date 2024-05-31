@@ -257,7 +257,7 @@ iex [13:28 :: 12] > PS.get_completed_process(uid)
 ```
 
 We see that the new property **sum** has been added to the state of the completed process.
-## Decision Task
+## Rule Task
 ## Parallel Task
 ## Subprocess Task
 ## Timer Task

@@ -1,6 +1,6 @@
-defmodule Mozart.Task.Decision do
+defmodule Mozart.Task.Rule do
   @moduledoc """
-  Used to model a Mozart decision task. Called a Business Rule in BPMN2. Uses
+  Used to model a Mozart run task. Called a Business Rule in BPMN2. Uses
   the Elixir [tablex](https://hex.pm/packages/tablex) library.
 
   Example:
@@ -31,6 +31,6 @@ defmodule Mozart.Task.Decision do
     :uid,
     :tablex,
     :decision_args,
-    type: :decision
+    type: :rule
   ]
 end

@@ -10,7 +10,7 @@ defmodule Mozart.Examples.Example do
   alias Mozart.Task.User
   alias Mozart.Task.Choice
   alias Mozart.Task.Send
-  alias Mozart.Task.Decision
+  alias Mozart.Task.Rule
 
   alias Mozart.Data.ProcessModel
 
@@ -51,14 +51,14 @@ defmodule Mozart.Examples.Example do
     IO.puts("finished")
   end
 
-  ## Demo decision task
+  ## Demo run task
 
   def get_loan_models do
     [
       %ProcessModel{
         name: :loan_approval,
         tasks: [
-          %Decision{
+          %Rule{
             name: :loan_decision,
             decision_args: :loan_args,
             tablex:
@@ -306,7 +306,7 @@ defmodule Mozart.Examples.Example do
     PE.execute(ppid)
     Process.sleep(1000)
 
-    
+
 
     [task_instance] = Map.values(PE.get_open_tasks(ppid))
     PE.complete_user_task_and_go(ppid, task_instance.uid, %{user_task_complete: true})

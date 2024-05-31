@@ -9,7 +9,7 @@ defmodule Mozart.ProcessModels.TestModels do
   alias Mozart.Task.User
   alias Mozart.Task.Choice
   alias Mozart.Task.Send
-  alias Mozart.Task.Decision
+  alias Mozart.Task.Rule
   alias Mozart.Data.ProcessModel
   alias Mozart.Examples.RestService
 
@@ -18,7 +18,7 @@ defmodule Mozart.ProcessModels.TestModels do
       %ProcessModel{
         name: :load_approval,
         tasks: [
-          %Decision{
+          %Rule{
             name: :loan_decision,
             decision_args: :loan_args,
             tablex:

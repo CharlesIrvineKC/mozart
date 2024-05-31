@@ -66,6 +66,8 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, s_ppid, s_uid} = PE.start_process(:process_with_single_send_task, data)
     catch_exit(PE.execute_and_wait(s_ppid))
 
+    Process.sleep(1000)
+
     receive_process =  PS.get_completed_process(r_uid)
     send_process =  PS.get_completed_process(s_uid)
 
