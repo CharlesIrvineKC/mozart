@@ -66,12 +66,13 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, s_ppid, s_uid} = PE.start_process(:process_with_single_send_task, data)
     catch_exit(PE.execute_and_wait(s_ppid))
 
-    ps_state = PS.get_state()
-    completed_processes = ps_state.completed_processes
-    assert completed_processes[r_uid].complete == true
-    assert completed_processes[s_uid].complete == true
-    assert length(completed_processes[r_uid].completed_tasks) == 1
-    assert length(completed_processes[s_uid].completed_tasks) == 1
+    receive_process =  PS.get_completed_process(r_uid)
+    send_process =  PS.get_completed_process(s_uid)
+
+    assert receive_process.complete == true
+    assert send_process.complete == true
+    assert length(receive_process.completed_tasks) == 1
+    assert length(send_process.completed_tasks) == 1
   end
 
   test "process with a single service task" do

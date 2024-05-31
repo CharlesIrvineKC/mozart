@@ -121,11 +121,13 @@ defmodule Mozart.ProcessService do
   @doc false
   def init(_init_arg) do
     {:ok, user_task_db} = CubDB.start_link(data_dir: "database/user_task_db")
+    {:ok, completed_process_db} = CubDB.start_link(data_dir: "database/completed_process_db")
+
     initial_state = %{
       process_instances: %{},
+      restart_state_cache: %{},
       user_task_db: user_task_db,
-      completed_processes: %{},
-      restart_state_cache: %{}
+      completed_process_db: completed_process_db
     }
 
     Logger.info("Process service initialized")
@@ -134,14 +136,15 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
-  def handle_call(:clear_state, _from, _state) do
-    {:ok, user_task_db} = CubDB.start_link(data_dir: "database/user_task_db")
+  def handle_call(:clear_state, _from, state) do
+    CubDB.clear(state.user_task_db)
+    CubDB.clear(state.completed_process_db)
+
     new_state = %{
       process_instances: %{},
-      user_task_db: user_task_db,
-      completed_processes: %{},
       restart_state_cache: %{}
     }
+
     {:reply, :ok, new_state}
   end
 
@@ -154,7 +157,12 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_call(:get_completed_processes, _from, state) do
-    {:reply, state.completed_processes, state}
+    completed_processes =
+      CubDB.select(state.completed_process_db)
+      |> Stream.map(fn {_k, v} -> v end)
+      |> Enum.to_list()
+
+    {:reply, completed_processes, state}
   end
 
   def handle_call({:get_process_ppid, process_uid}, _from, state) do
@@ -162,7 +170,7 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_call({:get_completed_process, uid}, _from, state) do
-    {:reply, Map.get(state.completed_processes, uid), state}
+    {:reply, CubDB.get(state.completed_process_db, uid), state}
   end
 
   def handle_call({:get_user_tasks_for_groups, groups}, _from, state) do
@@ -191,19 +199,23 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_call({:cache_pe_state, uid, pe_state}, _from, state) do
-    state = Map.put(state, :restart_state_cache, Map.put(state.restart_state_cache, uid, pe_state))
+    state =
+      Map.put(state, :restart_state_cache, Map.put(state.restart_state_cache, uid, pe_state))
+
     {:reply, pe_state, state}
   end
 
   def handle_call({:process_completed_process_instance, pe_state}, _from, state) do
     pid = Map.get(state.process_instances, pe_state.uid)
 
-    state =
-      Map.put(
-        state,
-        :completed_processes,
-        Map.put(state.completed_processes, pe_state.uid, pe_state)
-      )
+    CubDB.put(state.completed_process_db, pe_state.uid, pe_state)
+
+    # state =
+    #   Map.put(
+    #     state,
+    #     :completed_processes,
+    #     Map.put(state.completed_processes, pe_state.uid, pe_state)
+    #   )
 
     state =
       Map.put(state, :process_instances, Map.delete(state.process_instances, pe_state.uid))
@@ -246,7 +258,8 @@ defmodule Mozart.ProcessService do
   end
 
   defp get_user_tasks_for_groups_local(groups, state) do
-    intersection = fn l1, l2 -> Enum.filter(l2, fn(item) -> Enum.member?(l1, item) end) end
+    intersection = fn l1, l2 -> Enum.filter(l2, fn item -> Enum.member?(l1, item) end) end
+
     CubDB.select(state.user_task_db)
     |> Stream.map(fn {_uid, t} -> t end)
     |> Stream.filter(fn t -> intersection.(groups, t.assigned_groups) end)
@@ -258,6 +271,6 @@ defmodule Mozart.ProcessService do
   end
 
   defp get_user_tasks(state) do
-    CubDB.select(state.user_task_db) |> Stream.map(fn {_k,v} -> v end) |> Enum.to_list()
+    CubDB.select(state.user_task_db) |> Stream.map(fn {_k, v} -> v end) |> Enum.to_list()
   end
 end
