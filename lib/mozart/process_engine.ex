@@ -550,7 +550,9 @@ defmodule Mozart.ProcessEngine do
 
       Logger.info("Process complete [#{state.model_name}][#{state.uid}]")
 
-      PS.process_completed_process_instance(state)
+      PS.insert_completed_process(state)
+      
+      Process.exit(self(), :shutdown)
       state
     end
   end

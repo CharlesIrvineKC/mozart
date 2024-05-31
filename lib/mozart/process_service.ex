@@ -37,6 +37,10 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_user_tasks_for_groups, groups})
   end
 
+  def insert_completed_process(process_state) do
+    GenServer.cast(__MODULE__, {:insert_completed_process, process_state})
+  end
+
   @doc """
   Get a user task by uid
   """
@@ -47,11 +51,6 @@ defmodule Mozart.ProcessService do
   @doc false
   def get_completed_processes() do
     GenServer.call(__MODULE__, :get_completed_processes)
-  end
-
-  @doc false
-  def get_process_instances() do
-    GenServer.call(__MODULE__, :get_process_instances)
   end
 
   @doc false
@@ -152,10 +151,6 @@ defmodule Mozart.ProcessService do
     {:reply, state, state}
   end
 
-  def handle_call(:get_process_instances, _from, state) do
-    {:reply, state.process_instances, state}
-  end
-
   def handle_call(:get_completed_processes, _from, state) do
     completed_processes =
       CubDB.select(state.completed_process_db)
@@ -205,34 +200,18 @@ defmodule Mozart.ProcessService do
     {:reply, pe_state, state}
   end
 
-  def handle_call({:process_completed_process_instance, pe_state}, _from, state) do
-    pid = Map.get(state.process_instances, pe_state.uid)
-
-    CubDB.put(state.completed_process_db, pe_state.uid, pe_state)
-
-    # state =
-    #   Map.put(
-    #     state,
-    #     :completed_processes,
-    #     Map.put(state.completed_processes, pe_state.uid, pe_state)
-    #   )
-
-    state =
-      Map.put(state, :process_instances, Map.delete(state.process_instances, pe_state.uid))
-
-    Process.exit(pid, :shutdown)
-
-    {:reply, state, state}
-  end
-
   def handle_cast({:register_process_instance, uid, pid}, state) do
     process_instances = Map.put(state.process_instances, uid, pid)
     {:noreply, Map.put(state, :process_instances, process_instances)}
   end
 
+  def handle_cast({:insert_completed_process, pe_process}, state) do
+    CubDB.put(state.completed_process_db, pe_process.uid, pe_process)
+    {:noreply, state}
+  end
+
   def handle_cast({:complete_user_task, ppid, user_task_uid, data}, state) do
     CubDB.delete(state.user_task_db, user_task_uid)
-    # Map.put(state, :user_tasks, Map.delete(state.user_tasks, user_task_uid))
     PE.complete_user_task_and_go(ppid, user_task_uid, data)
     {:noreply, state}
   end
