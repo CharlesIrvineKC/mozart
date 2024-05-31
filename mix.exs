@@ -56,6 +56,7 @@ defmodule Mozart.MixProject do
       {:phoenix_pubsub, "~> 2.1"},
       {:tablex, "~> 0.3.1"},
       {:nimble_parsec, "~> 1.4.0"},
+      {:cubdb, "~> 2.0"},
       {:ex_doc, "~> 0.33", only: :dev, runtime: false},
     ]
   end

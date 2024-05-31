@@ -17,7 +17,8 @@ defmodule Mozart.ProcessServiceTest do
   end
 
   test "get user tasks for person" do
-    tasks = PS.get_user_tasks("crirvine")
+    PS.clear_user_tasks()
+    tasks = PS.get_user_tasks_for_user("crirvine")
     assert tasks == []
   end
 
@@ -33,17 +34,18 @@ defmodule Mozart.ProcessServiceTest do
     Process.sleep(50)
 
     assert PS.get_completed_process(uid) != nil
-    # assert PS.get_user_tasks() == %{}
+    # assert PS.get_user_tasks_for_user() == %{}
   end
 
   test "assign a task to a user" do
     PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
+    PS.clear_user_tasks()
     {:ok, ppid, _uid} = PE.start_process(:one_user_task_process, %{value: 1})
     PE.execute(ppid)
     Process.sleep(10)
-    [task] = PS.get_user_tasks("crirvine")
+    [task] = PS.get_user_tasks_for_user("crirvine")
     PS.assign_user_task(task, "crirvine")
-    [task] = PS.get_user_tasks("crirvine")
+    [task] = PS.get_user_tasks_for_user("crirvine")
     assert task.assignee == "crirvine"
   end
 

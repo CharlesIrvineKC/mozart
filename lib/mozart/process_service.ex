@@ -67,8 +67,8 @@ defmodule Mozart.ProcessService do
   @doc """
   Get user tasks eligible for assignment and completion by the specified user.
   """
-  def get_user_tasks(user_id) do
-    GenServer.call(__MODULE__, {:get_user_tasks, user_id})
+  def get_user_tasks_for_user(user_id) do
+    GenServer.call(__MODULE__, {:get_user_tasks_for_user, user_id})
   end
 
   @doc false
@@ -120,9 +120,10 @@ defmodule Mozart.ProcessService do
 
   @doc false
   def init(_init_arg) do
+    {:ok, user_task_db} = CubDB.start_link(data_dir: "database/user_task_db")
     initial_state = %{
       process_instances: %{},
-      user_tasks: %{},
+      user_task_db: user_task_db,
       completed_processes: %{},
       restart_state_cache: %{}
     }
@@ -134,9 +135,10 @@ defmodule Mozart.ProcessService do
 
   @doc false
   def handle_call(:clear_state, _from, _state) do
+    {:ok, user_task_db} = CubDB.start_link(data_dir: "database/user_task_db")
     new_state = %{
       process_instances: %{},
-      user_tasks: %{},
+      user_task_db: user_task_db,
       completed_processes: %{},
       restart_state_cache: %{}
     }
@@ -168,18 +170,18 @@ defmodule Mozart.ProcessService do
     {:reply, tasks, state}
   end
 
-  def handle_call({:get_user_tasks, user_id}, _from, state) do
+  def handle_call({:get_user_tasks_for_user, user_id}, _from, state) do
     member_groups = US.get_assigned_groups(user_id)
     tasks = get_user_tasks_for_groups_local(member_groups, state)
     {:reply, tasks, state}
   end
 
   def handle_call(:get_user_tasks, _from, state) do
-    {:reply, state.user_tasks, state}
+    {:reply, get_user_tasks(state), state}
   end
 
   def handle_call({:get_user_task, uid}, _from, state) do
-    {:reply, Map.get(state.user_tasks, uid), state}
+    {:reply, get_user_task_by_id(state, uid), state}
   end
 
   def handle_call({:get_cached_state, uid}, _from, state) do
@@ -217,35 +219,45 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_cast({:complete_user_task, ppid, user_task_uid, data}, state) do
-    Map.put(state, :user_tasks, Map.delete(state.user_tasks, user_task_uid))
+    CubDB.delete(state.user_task_db, user_task_uid)
+    # Map.put(state, :user_tasks, Map.delete(state.user_tasks, user_task_uid))
     PE.complete_user_task_and_go(ppid, user_task_uid, data)
     {:noreply, state}
   end
 
   def handle_cast({:assign_user_task, task, user_id}, state) do
     task = Map.put(task, :assignee, user_id)
-    state = Map.put(state, :user_tasks, Map.put(state.user_tasks, task.uid, task))
+    insert_user_task(state, task)
     {:noreply, state}
   end
 
   def handle_cast(:clear_user_tasks, state) do
-    {:noreply, Map.put(state, :user_tasks, %{})}
-  end
-
-  def handle_cast({:insert_user_task, task}, state) do
-    user_tasks = Map.put(state.user_tasks, task.uid, task)
-    state = Map.put(state, :user_tasks, user_tasks)
+    CubDB.clear(state.user_task_db)
     {:noreply, state}
   end
 
-  defp get_user_tasks_for_groups_local(groups, state) do
-    intersection = fn grp1, grp2 ->
-      temp = grp1 -- grp2
-      grp1 -- temp
-    end
+  def handle_cast({:insert_user_task, task}, state) do
+    insert_user_task(state, task)
+    {:noreply, state}
+  end
 
-    Enum.filter(Map.values(state.user_tasks), fn task ->
-      intersection.(task.assigned_groups, groups) != []
-    end)
+  defp insert_user_task(state, task) do
+    CubDB.put(state.user_task_db, task.uid, task)
+  end
+
+  defp get_user_tasks_for_groups_local(groups, state) do
+    intersection = fn l1, l2 -> Enum.filter(l2, fn(item) -> Enum.member?(l1, item) end) end
+    CubDB.select(state.user_task_db)
+    |> Stream.map(fn {_uid, t} -> t end)
+    |> Stream.filter(fn t -> intersection.(groups, t.assigned_groups) end)
+    |> Enum.to_list()
+  end
+
+  defp get_user_task_by_id(state, uid) do
+    CubDB.get(state.user_task_db, uid)
+  end
+
+  defp get_user_tasks(state) do
+    CubDB.select(state.user_task_db) |> Stream.map(fn {_k,v} -> v end) |> Enum.to_list()
   end
 end
