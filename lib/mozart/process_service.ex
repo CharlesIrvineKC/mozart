@@ -142,6 +142,27 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:clear_then_load_process_models, models})
   end
 
+  @doc """
+  Get process model db
+  """
+  def get_process_model_db() do
+    GenServer.call(__MODULE__, :get_process_model_db)
+  end
+
+  @doc """
+  Get process model db
+  """
+  def get_completed_process_db() do
+    GenServer.call(__MODULE__, :get_completed_process_db)
+  end
+
+  @doc """
+  Get process model db
+  """
+  def get_user_task_db() do
+    GenServer.call(__MODULE__, :get_user_task_db)
+  end
+
   ## Callbacks
 
   @doc false
@@ -161,6 +182,18 @@ defmodule Mozart.ProcessService do
     Logger.info("Process service initialized")
 
     {:ok, initial_state}
+  end
+
+  def handle_call(:get_process_model_db, _from, state) do
+    {:reply, state.process_model_db, state}
+  end
+
+  def handle_call(:get_user_task_db, _from, state) do
+    {:reply, state.user_task_db, state}
+  end
+
+  def handle_call(:get_completed_process_db, _from, state) do
+    {:reply, state.completed_process_db, state}
   end
 
   @doc false
