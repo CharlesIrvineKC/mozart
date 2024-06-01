@@ -407,7 +407,7 @@ Now paste the following alias' into your iex session
 
 ```
 
-Now define a process model with a parallel task and two user tasks. When the parallel completes, the two user tasks should be opened in parallel.
+Now define a process model with a parallel task and two user tasks. When the parallel task completes, the two user tasks should be opened in parallel.
 
 ```
 model = %ProcessModel{
