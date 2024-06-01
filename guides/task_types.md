@@ -407,7 +407,7 @@ Now paste the following alias' into your iex session
 
 ```
 
-Now define a process model with a single service task and assign it to a variable:
+Now define a process model with a parallel task and two user tasks. When the parallel completes, the two user tasks should be opened in parallel.
 
 ```
 model = %ProcessModel{
