@@ -78,7 +78,9 @@ defmodule Mozart.ProcessEngine do
     GenServer.call(ppid, :get_data)
   end
 
-  @doc false
+  @doc """
+  Gets the open tasks of the given process engine
+  """
   def get_open_tasks(ppid) do
     GenServer.call(ppid, :get_open_tasks)
   end

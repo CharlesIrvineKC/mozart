@@ -388,6 +388,127 @@ iex [20:45 :: 11] > PS.get_completed_process(uid)
 We see that the new property **status** with a value of **declined** has been added to the state of the completed process.
 
 ## Parallel Task
+
+If you are following along, open an Elixir project that has Mozart as a dependency.
+
+```
+iex -S mix
+
+```
+
+Now paste the following alias' into your iex session
+
+```
+ alias Mozart.Data.ProcessModel
+ alias Mozart.Task.Parallel
+ alias Mozart.Task.User
+ alias Mozart.ProcessEngine, as: PE
+ alias Mozart.ProcessService, as: PS
+
+```
+
+Now define a process model with a single service task and assign it to a variable:
+
+```
+model = %ProcessModel{
+        name: :parallel_process_model,
+        tasks: [
+          %Parallel{
+            name: :parallel_user_tasks,
+            multi_next: [:user_task_1, :user_task_2]
+          },
+          %User{
+            name: :user_task_1,
+            input_fields: [:user_task_1_input],
+            assigned_groups: ["admin"]
+          },
+          %User{
+            name: :user_task_2,
+            input_fields: [:user_task_2_input],
+            assigned_groups: ["admin"]
+          }
+        ],
+        initial_task: :parallel_user_tasks
+      }
+
+```
+
+We specify that state data properties **:user_task_1_input** and **:user_task_2_input** will passed to **:user_task_1** and **:user_task_2**, respectively. However, in this example we aren't going to actually complete the tasks. Hence, the property values won't actually be used.
+
+Now paste the following into your iex session to execute your process model:
+
+```
+PS.load_process_model(model)
+data = %{user_task_1_input: :input_1, user_task_2_input: :input_2}
+{:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)
+PE.execute(ppid)
+
+```
+
+Now, to view the state of the not yet complete process, paste the following into your iex session:
+
+```
+PE.get_state(ppid)
+
+```
+
+and should see something like this:
+
+```
+iex [10:32 :: 11] > PE.get_state(ppid)
+%Mozart.Data.ProcessState{
+  uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b",
+  parent: nil,
+  model_name: :parallel_process_model,
+  start_time: ~U[2024-06-01 15:33:23.663777Z],
+  end_time: nil,
+  execute_duration: nil,
+  open_tasks: %{
+    "0fe80867-0a8c-4721-ad57-838dbb0901ac" => %{
+      complete: false,
+      function: nil,
+      name: :user_task_2,
+      type: :user,
+      next: nil,
+      __struct__: Mozart.Task.User,
+      uid: "0fe80867-0a8c-4721-ad57-838dbb0901ac",
+      assigned_groups: ["admin"],
+      input_fields: [:user_task_2_input],
+      process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
+    },
+    "12925277-c6e0-4310-a87b-8945573017ba" => %{
+      complete: false,
+      function: nil,
+      name: :user_task_1,
+      type: :user,
+      next: nil,
+      __struct__: Mozart.Task.User,
+      uid: "12925277-c6e0-4310-a87b-8945573017ba",
+      assigned_groups: ["admin"],
+      input_fields: [:user_task_1_input],
+      process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
+    }
+  },
+  completed_tasks: [
+    %{
+      function: nil,
+      name: :parallel_user_tasks,
+      type: :parallel,
+      __struct__: Mozart.Task.Parallel,
+      uid: "aa0108cf-2f2c-4700-b97a-49ca7b002c18",
+      multi_next: [:user_task_1, :user_task_2],
+      sub_process: nil,
+      process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
+    }
+  ],
+  data: %{user_task_1_input: :input_1, user_task_2_input: :input_2},
+  complete: false
+}
+
+```
+
+We see that parallel task **:parallel_user_tasks** has been completed. We also see our two user tasks have been opened in parallel, but have not yet been completed.
+
 ## Subprocess Task
 ## Timer Task
 ## Join Task
