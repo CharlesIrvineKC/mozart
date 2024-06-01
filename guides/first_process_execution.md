@@ -36,11 +36,10 @@ The process model definition is pretty simple. It uses two Mozart structures: `M
 
 ## Load the Process Model into repository
 
-Now let's load this process model into the process model repository (`Mozart.ProcessModelService`). First, let's paste a few aliases into our iex session:
+Now let's load this process model into the process model repository, which is implemented by (`Mozart.ProcessService`). First, let's paste a few aliases into our iex session:
 
 ```elixir
 alias Mozart.ProcessEngine, as: PE
-alias Mozart.ProcessModelService, as: PMS
 alias Mozart.ProcessService, as: PS
 alias Mozart.Task.Service
 alias Mozart.Data.ProcessModel
@@ -62,8 +61,8 @@ process_model =
         ],
         initial_task: :service_task
     }
-PMS.load_process_model(process_model)
-PMS.get_process_model(:process_with_single_service_task)
+PS.load_process_model(process_model)
+PS.get_process_model(:process_with_single_service_task)
 
 ```
 
@@ -73,7 +72,7 @@ Finally, we pulled the process model from the repository as verification. At the
 
 
 ```
-iex [12:52 :: 8] > PMS.get_process_model(:process_with_single_service_task)
+iex [12:52 :: 8] > PS.get_process_model(:process_with_single_service_task)
 %Mozart.Data.ProcessModel{
   name: :process_with_single_service_task,
   tasks: [

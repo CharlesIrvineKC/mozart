@@ -159,6 +159,7 @@ The user will compute the sum of **x** and **y** and assign the result to a new 
 Now paste the following into your iex session to execute your process model:
 
 ```
+PS.clear_user_tasks()
 PS.load_process_model(model)
 data = %{x: 1, y: 1}
 {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
@@ -169,7 +170,7 @@ PE.execute(ppid)
 At this point, a user task has been opened and is available for a user to claim and complete. Now we need to find a user task that can be claimed by persons in specified groups. We can do that like this:
 
 ```
-[user_task] = PS.get_tasks_for_groups(["admin"])
+[user_task] = PS.get_user_tasks_for_groups(["admin"])
 
 ```
 
@@ -177,7 +178,7 @@ which gives this result:
 
 ```
 13:29:25.959 [info] New task instance [user_task][09fe2c87-d2c8-401b-a4df-83a7edab987d]
-iex [13:28 :: 11] > PS.get_tasks_for_groups(["admin"])
+iex [13:28 :: 11] > PS.get_user_tasks_for_groups(["admin"])
 [
   %{
     complete: false,

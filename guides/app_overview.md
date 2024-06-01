@@ -14,9 +14,9 @@ What happens when a process engine executes a process model? That brings us to t
 
 Mozart provides arounds a dozen different type of *tasks*. The two most ofen used are the `Mozart.Task.User` task and the `Mozart.Task.Service` task. 
 
-## Process Model Service
+## Process Service
  
-When a process model has been developed, it is stored in a process model repository for later use. The repository is implemented by `Mozart.ProcessModelService`. When system users are ready to execute a process model, they retrieve it from the repository and use it to start a process engine execution.
+When a process model has been developed, it is stored in a process model repository for later use. The repository is implemented by `Mozart.ProcessService`. When system users are ready to execute a process model, they retrieve it from the repository and use it to start a process engine execution.
 
 ## Processes Model Execution
 
