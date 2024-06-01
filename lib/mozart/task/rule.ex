@@ -1,7 +1,7 @@
 defmodule Mozart.Task.Rule do
   @moduledoc """
   Used to model a Mozart run task. Called a Business Rule in BPMN2. Uses
-  the Elixir [tablex](https://hex.pm/packages/tablex) library.
+  the Elixir [rule_table](https://hex.pm/packages/rule_table) library.
 
   Example:
 
@@ -12,7 +12,7 @@ defmodule Mozart.Task.Rule do
           %Decision{
             name: :loan_decision,
             decision_args: :loan_args,
-            tablex:
+            rule_table:
               Tablex.new(\"""
               F     income      || status
               1     > 50000     || approved
@@ -29,8 +29,8 @@ defmodule Mozart.Task.Rule do
     :name,
     :next,
     :uid,
-    :tablex,
-    :decision_args,
+    :rule_table,
+    :input_fields,
     type: :rule
   ]
 end

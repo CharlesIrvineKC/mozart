@@ -20,8 +20,8 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Rule{
             name: :loan_decision,
-            decision_args: :loan_args,
-            tablex:
+            input_fields: [:income],
+            rule_table:
               Tablex.new("""
               F     income      || status
               1     > 50000     || approved

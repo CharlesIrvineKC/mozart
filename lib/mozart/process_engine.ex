@@ -426,13 +426,14 @@ defmodule Mozart.ProcessEngine do
     |> execute_process()
   end
 
-  defp complete_decision_task(state, task) do
+  defp complete_rule_task(state, task) do
     Logger.info("Complete run task [#{task.name}[#{task.uid}]")
-    data = Map.merge(state.data, Tablex.decide(task.tablex, state.data[task.decision_args]))
+    arguments = Map.take(state.data, task.input_fields) |> Map.to_list()
+    data = Map.merge(state.data, Tablex.decide(task.rule_table, arguments))
     Map.put(state, :data, data) |> update_task_state(task) |> execute_process()
   end
 
-  defp complete_parallel_task_i(state, task) do
+  defp complete_parallel_task(state, task) do
     Logger.info("Complete parallel task [#{task.name}]")
     next_states = task.multi_next
 
@@ -464,7 +465,7 @@ defmodule Mozart.ProcessEngine do
     |> execute_process()
   end
 
-  defp complete_subprocess_task_i(state, task) do
+  defp complete_subprocess_task(state, task) do
     Logger.info("Complete subprocess task [#{task.name}][#{task.uid}]")
     data = Map.merge(task.data, state.data)
     Map.put(state, :data, data) |> update_task_state(task) |> execute_process()
@@ -500,36 +501,36 @@ defmodule Mozart.ProcessEngine do
 
   defp execute_process(state) do
     if work_remaining(state) do
-      complete_able_task_i = get_complete_able_task(state)
+      complete_able_task = get_complete_able_task(state)
 
-      if complete_able_task_i do
+      if complete_able_task do
         cond do
-          complete_able_task_i.type == :service ->
-            complete_service_task(state, complete_able_task_i)
+          complete_able_task.type == :service ->
+            complete_service_task(state, complete_able_task)
 
-          complete_able_task_i.type == :choice ->
-            complete_choice_task(state, complete_able_task_i)
+          complete_able_task.type == :choice ->
+            complete_choice_task(state, complete_able_task)
 
-          complete_able_task_i.type == :sub_process ->
-            complete_subprocess_task_i(state, complete_able_task_i)
+          complete_able_task.type == :sub_process ->
+            complete_subprocess_task(state, complete_able_task)
 
-          complete_able_task_i.type == :parallel ->
-            complete_parallel_task_i(state, complete_able_task_i)
+          complete_able_task.type == :parallel ->
+            complete_parallel_task(state, complete_able_task)
 
-          complete_able_task_i.type == :join ->
-            complete_join_task(state, complete_able_task_i)
+          complete_able_task.type == :join ->
+            complete_join_task(state, complete_able_task)
 
-          complete_able_task_i.type == :timer ->
-            complete_timer_task(state, complete_able_task_i)
+          complete_able_task.type == :timer ->
+            complete_timer_task(state, complete_able_task)
 
-          complete_able_task_i.type == :receive ->
-            complete_receive_event_task(state, complete_able_task_i)
+          complete_able_task.type == :receive ->
+            complete_receive_event_task(state, complete_able_task)
 
-          complete_able_task_i.type == :send ->
-            complete_send_event_task(state, complete_able_task_i)
+          complete_able_task.type == :send ->
+            complete_send_event_task(state, complete_able_task)
 
-          complete_able_task_i.type == :rule ->
-            complete_decision_task(state, complete_able_task_i)
+          complete_able_task.type == :rule ->
+            complete_rule_task(state, complete_able_task)
         end
       else
         state

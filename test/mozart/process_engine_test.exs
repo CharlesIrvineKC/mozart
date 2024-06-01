@@ -33,13 +33,13 @@ defmodule Mozart.ProcessEngineTest do
 
   test "test for loan approval" do
     PMS.clear_then_load_process_models(TestModels.get_loan_models())
-    data = %{loan_args: [income: 3000]}
+    data = %{income: 3000}
 
     {:ok, ppid, uid} = PE.start_process(:load_approval, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{loan_args: [income: 3000], status: "declined"}
+    assert completed_process.data == %{income: 3000, status: "declined"}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end

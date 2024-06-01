@@ -59,9 +59,8 @@ defmodule Mozart.Examples.Example do
         name: :loan_approval,
         tasks: [
           %Rule{
-            name: :loan_decision,
-            decision_args: :loan_args,
-            tablex:
+            input_fields: [:income],
+            rule_table:
               Tablex.new("""
               F     income      || status
               1     > 50000     || approved
@@ -76,7 +75,7 @@ defmodule Mozart.Examples.Example do
 
   def run_get_loan_models do
     PMS.load_process_models(get_loan_models())
-    data = %{loan_args: [income: 3000]}
+    data = %{income: 3000}
 
     {:ok, ppid, uid} = PE.start_process(:loan_approval, data)
     PE.execute(ppid)
