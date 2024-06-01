@@ -59,6 +59,7 @@ defmodule Mozart.Examples.Example do
         name: :loan_approval,
         tasks: [
           %Rule{
+            name: :loan_decision,
             input_fields: [:income],
             rule_table:
               Tablex.new("""

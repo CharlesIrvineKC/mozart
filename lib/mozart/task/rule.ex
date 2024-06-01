@@ -11,7 +11,7 @@ defmodule Mozart.Task.Rule do
         tasks: [
           %Decision{
             name: :loan_decision,
-            decision_args: :loan_args,
+            input_fields: [:income],
             rule_table:
               Tablex.new(\"""
               F     income      || status

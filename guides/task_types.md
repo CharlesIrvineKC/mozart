@@ -257,7 +257,138 @@ iex [13:28 :: 12] > PS.get_completed_process(uid)
 ```
 
 We see that the new property **sum** has been added to the state of the completed process.
+
 ## Rule Task
+
+A **Rule Task** (`Mozart.Task.Rule`) performs its work by evaluating a rule table using process data. 
+
+Rule tasks use [Tablex](https://hexdocs.pm/tablex/0.3.1/readme.html), an incredibly useful Elixir library for evaluating [decision tables](https://en.wikipedia.org/wiki/Decision_table).
+
+A rule task has two unique fields: **:decision_args** and **:rule_table**.
+
+* The **:input_fields** field specifies the state data fields used to evaluate the rule table.
+* The **:rule_table** field holds the Tablex table definition.
+
+### Rule Task example
+
+If you are following along, open an Elixir project that has Mozart as a dependency.
+
+```
+iex -S mix
+
+```
+
+Now paste the following alias' into your iex session
+
+```
+ alias Mozart.Data.ProcessModel
+ alias Mozart.Task.Rule
+ alias Mozart.ProcessEngine, as: PE
+ alias Mozart.ProcessModelService, as: PMS
+ alias Mozart.ProcessService, as: PS
+
+```
+
+Now define a process model with a single service task and assign it to a variable:
+
+```
+model = %ProcessModel{
+    name: :loan_approval,
+    tasks: [
+      %Rule{
+        name: :loan_decision,
+        input_fields: [:income],
+        rule_table:
+          Tablex.new("""
+          F     income      || status
+          1     > 50000     || approved
+          2     <= 49999    || declined
+          """)
+      }
+    ],
+    initial_task: :loan_decision
+}
+
+```
+
+We have specified that state data property **:income** should be available as an input field to the rule table.
+
+The **:rule_table** property holds the Tablex table to be evaluated.
+
+Now paste the following into your iex session to execute your process model:
+
+```
+PMS.load_process_model(model)
+data = %{income: 3000}
+{:ok, ppid, uid} = PE.start_process(:loan_approval, data)
+PE.execute(ppid)
+
+```
+
+Now, to view the state of the completed process, paste the following into your iex session:
+
+```
+PS.get_completed_process(uid)
+
+```
+
+and should see something like this:
+
+```
+iex [20:45 :: 11] > PS.get_completed_process(uid)
+%Mozart.Data.ProcessState{
+  uid: "b79fe224-52b9-4457-b885-1234c47c0eb3",
+  parent: nil,
+  model_name: :loan_approval,
+  start_time: ~U[2024-06-01 01:45:57.687401Z],
+  end_time: ~U[2024-06-01 01:45:57.695101Z],
+  execute_duration: 7700,
+  open_tasks: %{},
+  completed_tasks: [
+    %{
+      name: :loan_decision,
+      type: :rule,
+      next: nil,
+      __struct__: Mozart.Task.Rule,
+      uid: "a045ccfe-21d1-410f-aa87-6e020017e48d",
+      input_fields: [:income],
+      rule_table: %Tablex.Table{
+        hit_policy: :first_hit,
+        inputs: [
+          %Tablex.Variable{
+            name: :income,
+            label: "income",
+            desc: nil,
+            type: :undefined,
+            path: []
+          }
+        ],
+        outputs: [
+          %Tablex.Variable{
+            name: :status,
+            label: "status",
+            desc: nil,
+            type: :undefined,
+            path: []
+          }
+        ],
+        rules: [
+          [1, {:input, [>: 50000]}, {:output, ["approved"]}],
+          [2, {:input, [<=: 49999]}, {:output, ["declined"]}]
+        ],
+        valid?: :undefined,
+        table_dir: :h
+      },
+      process_uid: "b79fe224-52b9-4457-b885-1234c47c0eb3"
+    }
+  ],
+  data: %{status: "declined", income: 3000},
+  complete: true
+}
+```
+
+We see that the new property **status** with a value of **declined** has been added to the state of the completed process.
+
 ## Parallel Task
 ## Subprocess Task
 ## Timer Task
