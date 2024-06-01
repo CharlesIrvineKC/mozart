@@ -1,7 +1,6 @@
 defmodule Mozart.ProcessServiceTest do
   use ExUnit.Case
 
-  alias Mozart.ProcessModelService, as: PMS
   alias Mozart.UserService, as: US
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
@@ -23,7 +22,7 @@ defmodule Mozart.ProcessServiceTest do
   end
 
   test "complete a user task" do
-    PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
+    PS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
     {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
     PE.execute_and_wait(ppid)
@@ -38,7 +37,7 @@ defmodule Mozart.ProcessServiceTest do
   end
 
   test "assign a task to a user" do
-    PMS.clear_then_load_process_models(TestModels.get_testing_process_models())
+    PS.clear_then_load_process_models(TestModels.get_testing_process_models())
     PS.clear_user_tasks()
     {:ok, ppid, _uid} = PE.start_process(:one_user_task_process, %{value: 1})
     PE.execute(ppid)
@@ -50,7 +49,7 @@ defmodule Mozart.ProcessServiceTest do
   end
 
   test "start a process engine" do
-    PMS.clear_then_load_process_models(TestModels.get_parallel_process_models())
+    PS.clear_then_load_process_models(TestModels.get_parallel_process_models())
     {:ok, ppid, uid} = PE.start_process(:parallel_process_model, %{value: 1})
     PE.execute(ppid)
     Process.sleep(10)

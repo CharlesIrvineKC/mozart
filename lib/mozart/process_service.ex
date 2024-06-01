@@ -115,18 +115,47 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:cache_pe_state, uid, pe_state})
   end
 
+  @doc """
+  Loads a list of `Mozart.Data.ProcessModel`s into the state of the
+  ProcessService.
+  """
+  def load_process_models(models) do
+    GenServer.call(__MODULE__, {:load_process_models, models})
+  end
+
+  @doc """
+  Retrieves a process model by name.
+  """
+  def get_process_model(model_name) do
+    GenServer.call(__MODULE__, {:get_process_model, model_name})
+  end
+
+  @doc """
+  Loads a single process model in the repository.
+  """
+  def load_process_model(model) do
+    GenServer.call(__MODULE__, {:load_process_model, model})
+  end
+
+  @doc false
+  def clear_then_load_process_models(models) do
+    GenServer.call(__MODULE__, {:clear_then_load_process_models, models})
+  end
+
   ## Callbacks
 
   @doc false
   def init(_init_arg) do
     {:ok, user_task_db} = CubDB.start_link(data_dir: "database/user_task_db")
     {:ok, completed_process_db} = CubDB.start_link(data_dir: "database/completed_process_db")
+    {:ok, process_model_db} = CubDB.start_link(data_dir: "database/process_model_db")
 
     initial_state = %{
       process_instances: %{},
       restart_state_cache: %{},
       user_task_db: user_task_db,
-      completed_process_db: completed_process_db
+      completed_process_db: completed_process_db,
+      process_model_db: process_model_db
     }
 
     Logger.info("Process service initialized")
@@ -138,6 +167,7 @@ defmodule Mozart.ProcessService do
   def handle_call(:clear_state, _from, state) do
     CubDB.clear(state.user_task_db)
     CubDB.clear(state.completed_process_db)
+    CubDB.clear(state.process_model_db)
 
     new_state = %{
       process_instances: %{},
@@ -198,6 +228,29 @@ defmodule Mozart.ProcessService do
       Map.put(state, :restart_state_cache, Map.put(state.restart_state_cache, uid, pe_state))
 
     {:reply, pe_state, state}
+  end
+
+  @doc false
+  def handle_call({:load_process_models, models}, _from, state) do
+    Enum.each(models, fn m -> CubDB.put(state.process_model_db, m.name, m) end)
+    {:reply, state, state}
+  end
+
+  @doc false
+  def handle_call({:get_process_model, name}, _from, state) do
+    {:reply, CubDB.get(state.process_model_db, name), state}
+  end
+
+  @doc false
+  def handle_call({:load_process_model, process_model}, _from, state) do
+    {:reply, CubDB.put(state.process_model_db, process_model.name, process_model), state}
+  end
+
+  @doc false
+  def handle_call({:clear_then_load_process_models, models}, _from, state) do
+    CubDB.clear(state.process_model_db)
+    Enum.each(models, fn m -> CubDB.put(state.process_model_db, m.name, m) end)
+    {:reply, models, Map.put(state, :process_models, models)}
   end
 
   def handle_cast({:register_process_instance, uid, pid}, state) do

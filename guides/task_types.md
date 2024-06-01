@@ -32,7 +32,6 @@ Now paste the following alias' into your iex session
  alias Mozart.Data.ProcessModel
  alias Mozart.Task.Service
  alias Mozart.ProcessEngine, as: PE
- alias Mozart.ProcessModelService, as: PMS
  alias Mozart.ProcessService, as: PS
 
 ```
@@ -61,7 +60,7 @@ The task function will take the sum of **x** and **y** and assign the result to 
 Now paste the following into your iex session to execute your process model:
 
 ```
-PMS.load_process_model(model)
+PS.load_process_model(model)
 data = %{x: 1, y: 1}
 {:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
 PE.execute(ppid)
@@ -132,7 +131,6 @@ Now paste the following alias' into your iex session
  alias Mozart.Data.ProcessModel
  alias Mozart.Task.User
  alias Mozart.ProcessEngine, as: PE
- alias Mozart.ProcessModelService, as: PMS
  alias Mozart.ProcessService, as: PS
 
 ```
@@ -161,7 +159,7 @@ The user will compute the sum of **x** and **y** and assign the result to a new 
 Now paste the following into your iex session to execute your process model:
 
 ```
-PMS.load_process_model(model)
+PS.load_process_model(model)
 data = %{x: 1, y: 1}
 {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
 PE.execute(ppid)
@@ -284,7 +282,6 @@ Now paste the following alias' into your iex session
  alias Mozart.Data.ProcessModel
  alias Mozart.Task.Rule
  alias Mozart.ProcessEngine, as: PE
- alias Mozart.ProcessModelService, as: PMS
  alias Mozart.ProcessService, as: PS
 
 ```
@@ -318,7 +315,7 @@ The **:rule_table** property holds the Tablex table to be evaluated.
 Now paste the following into your iex session to execute your process model:
 
 ```
-PMS.load_process_model(model)
+PS.load_process_model(model)
 data = %{income: 3000}
 {:ok, ppid, uid} = PE.start_process(:loan_approval, data)
 PE.execute(ppid)

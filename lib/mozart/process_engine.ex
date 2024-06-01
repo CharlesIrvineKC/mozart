@@ -9,7 +9,6 @@ defmodule Mozart.ProcessEngine do
   require Logger
 
   alias Mozart.ProcessService, as: PS
-  alias Mozart.ProcessModelService, as: PMS
   alias Mozart.Data.ProcessState
   alias Phoenix.PubSub
   alias Ecto.UUID
@@ -167,7 +166,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_call(:execute, _from, state) do
-    model = PMS.get_process_model(state.model_name)
+    model = PS.get_process_model(state.model_name)
     state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
     {:reply, state, state}
@@ -217,7 +216,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast(:execute, state) do
-    model = PMS.get_process_model(state.model_name)
+    model = PS.get_process_model(state.model_name)
     state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
     {:noreply, state}
@@ -472,7 +471,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_task_def(task_name, state) do
-    model = PMS.get_process_model(state.model_name)
+    model = PS.get_process_model(state.model_name)
     Enum.find(model.tasks, fn task -> task.name == task_name end)
   end
 

@@ -15,7 +15,6 @@ defmodule Mozart.Examples.Example do
   alias Mozart.Data.ProcessModel
 
   alias Mozart.ProcessEngine, as: PE
-  alias Mozart.ProcessModelService, as: PMS
   alias Mozart.ProcessService, as: PS
   alias Mozart.Performance.RestService
 
@@ -38,7 +37,7 @@ defmodule Mozart.Examples.Example do
   end
 
   def run_single_service_task do
-    PMS.load_process_models(single_service_task())
+    PS.load_process_models(single_service_task())
     data = %{x: 1, y: 1}
 
     {:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
@@ -75,7 +74,7 @@ defmodule Mozart.Examples.Example do
   end
 
   def run_get_loan_models do
-    PMS.load_process_models(get_loan_models())
+    PS.load_process_models(get_loan_models())
     data = %{income: 3000}
 
     {:ok, ppid, uid} = PE.start_process(:loan_approval, data)
@@ -122,7 +121,7 @@ defmodule Mozart.Examples.Example do
   end
 
   def run_send_task_to_receive_task do
-    PMS.load_process_models(send_task_to_receive_task())
+    PS.load_process_models(send_task_to_receive_task())
     data = %{}
 
     {:ok, r_ppid, r_uid} = PE.start_process(:process_with_receive_task, data)
@@ -165,7 +164,7 @@ defmodule Mozart.Examples.Example do
   end
 
   def run_call_timer_tasks do
-    PMS.load_process_models(call_timer_tasks())
+    PS.load_process_models(call_timer_tasks())
     data = %{}
 
     {:ok, ppid, uid} = PE.start_process(:call_timer_task, data)
@@ -220,7 +219,7 @@ defmodule Mozart.Examples.Example do
   end
 
   def run_parallel_process_model do
-    PMS.load_process_models(parallel_process_with_join_models())
+    PS.load_process_models(parallel_process_with_join_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)
     PE.execute(ppid)
@@ -265,7 +264,7 @@ defmodule Mozart.Examples.Example do
   end
 
   def run_subprocess_process do
-    PMS.load_process_models(subprocess_process_models())
+    PS.load_process_models(subprocess_process_models())
     data = %{value: 1}
 
     {:ok, ppid, uid} = PE.start_process(:call_process_model, data)
@@ -297,10 +296,10 @@ defmodule Mozart.Examples.Example do
     ]
   end
 
-  # PMS.load_process_models(user_task_process())
+  # PS.load_process_models(user_task_process())
 
   def run_user_task_process do
-    PMS.load_process_models(user_task_process())
+    PS.load_process_models(user_task_process())
     data = %{x: 2, y: 2}
     {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
     PE.execute(ppid)
@@ -353,7 +352,7 @@ defmodule Mozart.Examples.Example do
   end
 
   def run_choice_process_model do
-    PMS.load_process_models(choice_process_model())
+    PS.load_process_models(choice_process_model())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:choice_process_model, data)
     PE.execute(ppid)
@@ -380,12 +379,12 @@ defmodule Mozart.Examples.Example do
 
   def clear_and_load() do
     PS.clear_state()
-    PMS.clear_state()
+    PS.clear_state()
     load_model(get_model())
   end
 
   def load_model(model) do
-    PMS.load_process_model(model)
+    PS.load_process_model(model)
   end
 
   def get_model() do
