@@ -33,7 +33,6 @@ defmodule Mozart.ProcessServiceTest do
     Process.sleep(50)
 
     assert PS.get_completed_process(uid) != nil
-    # assert PS.get_user_tasks_for_user() == %{}
   end
 
   test "assign a task to a user" do

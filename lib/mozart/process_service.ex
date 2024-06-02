@@ -38,7 +38,7 @@ defmodule Mozart.ProcessService do
   end
 
   def insert_completed_process(process_state) do
-    GenServer.cast(__MODULE__, {:insert_completed_process, process_state})
+    GenServer.call(__MODULE__, {:insert_completed_process, process_state})
   end
 
   @doc """
@@ -204,10 +204,13 @@ defmodule Mozart.ProcessService do
 
     new_state = %{
       process_instances: %{},
-      restart_state_cache: %{}
+      restart_state_cache: %{},
+      user_task_db: state.user_task_db,
+      completed_process_db: state.completed_process_db,
+      process_model_db: state.process_model_db
     }
 
-    {:reply, :ok, new_state}
+    {:reply, new_state, new_state}
   end
 
   def handle_call(:get_state, _from, state) do
@@ -215,12 +218,7 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_call(:get_completed_processes, _from, state) do
-    completed_processes =
-      CubDB.select(state.completed_process_db)
-      |> Stream.map(fn {_k, v} -> v end)
-      |> Enum.to_list()
-
-    {:reply, completed_processes, state}
+    {:reply, get_completed_processes_local(state), state}
   end
 
   def handle_call({:get_process_ppid, process_uid}, _from, state) do
@@ -266,7 +264,7 @@ defmodule Mozart.ProcessService do
   @doc false
   def handle_call({:load_process_models, models}, _from, state) do
     Enum.each(models, fn m -> CubDB.put(state.process_model_db, m.name, m) end)
-    {:reply, state, state}
+    {:reply, models, state}
   end
 
   @doc false
@@ -286,14 +284,14 @@ defmodule Mozart.ProcessService do
     {:reply, models, Map.put(state, :process_models, models)}
   end
 
+  def handle_call({:insert_completed_process, pe_process}, _from, state) do
+    CubDB.put(state.completed_process_db, pe_process.uid, pe_process)
+    {:reply, pe_process, state}
+  end
+
   def handle_cast({:register_process_instance, uid, pid}, state) do
     process_instances = Map.put(state.process_instances, uid, pid)
     {:noreply, Map.put(state, :process_instances, process_instances)}
-  end
-
-  def handle_cast({:insert_completed_process, pe_process}, state) do
-    CubDB.put(state.completed_process_db, pe_process.uid, pe_process)
-    {:noreply, state}
   end
 
   def handle_cast({:complete_user_task, ppid, user_task_uid, data}, state) do
@@ -330,6 +328,13 @@ defmodule Mozart.ProcessService do
     |> Stream.filter(fn t -> intersection.(groups, t.assigned_groups) end)
     |> Enum.to_list()
   end
+
+  def get_completed_processes_local(state) do
+    CubDB.select(state.completed_process_db)
+      |> Stream.map(fn {_k, v} -> v end)
+      |> Enum.to_list()
+  end
+
 
   defp get_user_task_by_id(state, uid) do
     CubDB.get(state.user_task_db, uid)

@@ -5,6 +5,8 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
   alias Mozart.Task.User
+  alias Mozart.Task.Subprocess
+  alias Mozart.Task.Service
   alias Mozart.Data.ProcessModel
 
   test "call json service" do
@@ -27,7 +29,6 @@ defmodule Mozart.ProcessEngineTest do
 
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
-    # IO.inspect(completed_process)
   end
 
   test "test for loan approval" do
@@ -143,7 +144,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 7}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 7
+    assert length(completed_process.completed_tasks) == 4
   end
 
   test "start server and get id" do
@@ -165,18 +166,51 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute(ppid)
   end
 
+  def get_subprocess_models do
+    [
+      %ProcessModel{
+        name: :call_process_model,
+        tasks: [
+          %Subprocess{
+            name: :call_process_task,
+            sub_process: :service_subprocess_model,
+            next: :service_task1
+          },
+          %Service{
+            name: :service_task1,
+            function: fn data -> Map.put(data, :value, data.value + 1) end
+          }
+        ],
+        initial_task: :call_process_task
+      },
+      %ProcessModel{
+        name: :service_subprocess_model,
+        tasks: [
+          %Service{
+            name: :service_task,
+            function: fn data -> Map.put(data, :subprocess_data, "subprocess data") end
+          }
+        ],
+        initial_task: :service_task
+      }
+    ]
+  end
+
   test "execute process with service subprocess" do
-    PS.clear_then_load_process_models(TestModels.get_testing_process_models())
+    PS.clear_state()
+    PS.load_process_models(get_subprocess_models())
     data = %{value: 1}
-    {:ok, ppid, uid} = PE.start_process(:simple_call_service_process_model, data)
+    {:ok, ppid, uid} = PE.start_process(:call_process_model, data)
     PE.execute_and_wait(ppid)
 
     Process.monitor(ppid)
     assert_receive(_msg, 500)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{value: 1, service: :service}
+    assert length(completed_process.completed_tasks) == 2
+    assert completed_process.data == %{value: 2, subprocess_data: "subprocess data"}
     assert completed_process.complete == true
+    assert length(PS.get_completed_processes()) == 2
   end
 
   test "execute process with parallel task and join" do
