@@ -510,7 +510,234 @@ iex [10:32 :: 11] > PE.get_state(ppid)
 We see that parallel task **:parallel_user_tasks** has been completed. We also see our two user tasks have been opened in parallel, but have not yet been completed.
 
 ## Subprocess Task
+
+If you are following along, open an Elixir project that has Mozart as a dependency.
+
+```
+iex -S mix
+
+```
+
+Now paste the following alias' into your iex session:
+
+```
+ alias Mozart.Data.ProcessModel
+ alias Mozart.Task.Subprocess
+ alias Mozart.Task.Service
+ alias Mozart.ProcessEngine, as: PE
+ alias Mozart.ProcessService, as: PS
+
+```
+
+Now we need two process models. The first process model will call a subprocess task, wait for its completion, and then call a service task. The second process model will be called as a subprocess of the first process model.
+
+```
+models = 
+    [
+      %ProcessModel{
+        name: :call_process_model,
+        tasks: [
+          %Subprocess{
+            name: :call_process_task,
+            sub_process: :service_subprocess_model,
+            next: :service_task1
+          },
+          %Service{
+            name: :service_task1,
+            function: fn data -> Map.put(data, :value, data.value + 1) end
+          }
+        ],
+        initial_task: :call_process_task
+      },
+      %ProcessModel{
+        name: :service_subprocess_model,
+        tasks: [
+          %Service{
+            name: :service_task,
+            function: fn data -> Map.put(data, :subprocess_data, "subprocess data") end
+          }
+        ],
+        initial_task: :service_task
+      }
+    ]
+
+```
+
+Now paste the following into your iex session to execute your process model:
+
+```
+PS.clear_state()
+PS.load_process_models(models)
+data = %{value: 1}
+{:ok, ppid, uid} = PE.start_process(:call_process_model, data)
+PE.execute(ppid)
+
+```
+
+At this point, both the processess should have completed.
+
+```
+PS.get_completed_processes()
+
+```
+
+and should see something like this:
+
+```
+iex [12:30 :: 12] > PS.get_completed_processes()
+[
+  %Mozart.Data.ProcessState{
+    uid: "0a04f109-505b-4059-a5e2-0980c3229ce2",
+    parent: #PID<0.299.0>,
+    model_name: :service_subprocess_model,
+    start_time: ~U[2024-06-02 17:30:33.946285Z],
+    end_time: ~U[2024-06-02 17:30:33.946645Z],
+    execute_duration: 360,
+    open_tasks: %{},
+    completed_tasks: [
+      %{
+        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
+        name: :service_task,
+        type: :service,
+        next: nil,
+        __struct__: Mozart.Task.Service,
+        uid: "c4466a99-6f07-465c-802a-2b8836499940",
+        input_fields: nil,
+        process_uid: "0a04f109-505b-4059-a5e2-0980c3229ce2"
+      }
+    ],
+    data: %{value: 1, subprocess_data: "subprocess data"},
+    complete: true
+  },
+  %Mozart.Data.ProcessState{
+    uid: "83769669-388d-490a-a326-cd5c3c684361",
+    parent: nil,
+    model_name: :call_process_model,
+    start_time: ~U[2024-06-02 17:30:33.939824Z],
+    end_time: ~U[2024-06-02 17:30:33.947097Z],
+    execute_duration: 7273,
+    open_tasks: %{},
+    completed_tasks: [
+      %{
+        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
+        name: :service_task1,
+        type: :service,
+        next: nil,
+        __struct__: Mozart.Task.Service,
+        uid: "692c0af0-b5f5-4474-a478-6de3cdd84ec8",
+        input_fields: nil,
+        process_uid: "83769669-388d-490a-a326-cd5c3c684361"
+      },
+      %{
+        complete: true,
+        data: %{},
+        function: nil,
+        name: :call_process_task,
+        type: :sub_process,
+        next: :service_task1,
+        __struct__: Mozart.Task.Subprocess,
+        uid: "ee4211a0-ee8e-4b6d-992d-80121566bd41",
+        sub_process: :service_subprocess_model,
+        process_uid: "83769669-388d-490a-a326-cd5c3c684361",
+        completed_sub_tasks: []
+      }
+    ],
+    data: %{value: 2, subprocess_data: "subprocess data"},
+    complete: true
+  }
+]
+```
+
+We see that two processes have completed. The process named **:call_process_model** is the top level process, and the named **:service_subprocess_model** is the subprocess. As expected, the top level process state shows two completed tasks and the subprocess state shows one completed task.
+
 ## Timer Task
+
+If you are following along, open an Elixir project that has Mozart as a dependency.
+
+```
+iex -S mix
+
+```
+
+Now paste the following alias' into your iex session:
+
+```
+ alias Mozart.Data.ProcessModel
+ alias Mozart.Task.Timer
+ alias Mozart.ProcessEngine, as: PE
+ alias Mozart.ProcessService, as: PS
+
+```
+
+Now we need two process models. The first process model will call a subprocess task, wait for its completion, and then call a service task. The second process model will be called as a subprocess of the first process model.
+
+```
+model = 
+    %ProcessModel{
+        name: :call_timer_task,
+        tasks: [
+          %Timer{
+            name: :wait_5_seconds,
+            timer_duration: 5000
+          },
+        ],
+        initial_task: :wait_5_seconds
+      }
+
+```
+
+Now paste the following into your iex session to execute your process model:
+
+```
+PS.clear_state()
+PS.load_process_model(model)
+data = %{}
+{:ok, ppid, uid} = PE.start_process(:call_timer_task, data)
+PE.execute(ppid)
+
+```
+
+The process should take about 5 seconds to complete. Watch for logging to report **process complete**. After that, invoke the following:
+
+```
+PS.get_completed_processes()
+
+```
+
+and should see something like this:
+
+```
+[
+  %Mozart.Data.ProcessState{
+    uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b",
+    parent: nil,
+    model_name: :call_timer_task,
+    start_time: ~U[2024-06-02 18:07:18.670993Z],
+    end_time: ~U[2024-06-02 18:07:23.677426Z],
+    execute_duration: 5006433,
+    open_tasks: %{},
+    completed_tasks: [
+      %{
+        function: nil,
+        name: :wait_5_seconds,
+        type: :timer,
+        next: nil,
+        expired: true,
+        __struct__: Mozart.Task.Timer,
+        uid: "eacaaf01-37b9-43ef-be81-d2ccb8802084",
+        timer_duration: 5000,
+        process_uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b"
+      }
+    ],
+    data: %{},
+    complete: true
+  }
+]
+
+```
+
+Notice in the above that **execution_duration** is 5006433 microseconds, i.e. just a little over 5 seconds.
+
 ## Join Task
 ## Send Task
 ## Receive Task
