@@ -106,8 +106,8 @@ defmodule Mozart.ProcessEngine do
   end
 
   @doc false
-  def notify_child_complete(parent_pid, sub_process_name, data, completed_tasks) do
-    GenServer.cast(parent_pid, {:notify_child_complete, sub_process_name, data, completed_tasks})
+  def notify_child_complete(parent_pid, sub_process_name, data) do
+    GenServer.cast(parent_pid, {:notify_child_complete, sub_process_name, data})
   end
 
   ## GenServer callbacks
@@ -536,7 +536,7 @@ defmodule Mozart.ProcessEngine do
     else
       ## no work remaining so process is complete
       if state.parent do
-        notify_child_complete(state.parent, state.model_name, state.data, state.completed_tasks)
+        notify_child_complete(state.parent, state.model_name, state.data)
       end
 
       now = DateTime.utc_now()
