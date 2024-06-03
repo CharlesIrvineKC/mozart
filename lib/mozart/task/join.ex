@@ -44,7 +44,7 @@ defmodule Mozart.Task.Join do
   """
   defstruct [
     :name,
-    :function,
+    # :function,
     :next,
     :uid,
     inputs: [],
