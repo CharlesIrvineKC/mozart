@@ -389,7 +389,7 @@ We see that the new property **status** with a value of **declined** has been ad
 
 ## Parallel Task
 
-A parallel task `Mozart.Task.Parallel` is used to multiple concurrent process execution paths. 
+A parallel task `Mozart.Task.Parallel` is used to create multiple concurrent process execution paths. It does this by specifying multipple next tasks in its **multi_next** field.
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
@@ -512,6 +512,8 @@ iex [10:32 :: 11] > PE.get_state(ppid)
 We see that parallel task **:parallel_user_tasks** has been completed. We also see our two user tasks have been opened in parallel, but have not yet been completed.
 
 ## Subprocess Task
+
+A subprocess task (`Mozart.Task.Subprocess`) performs its work by starting a subprocess instance as specified in its **sub_process** field.
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
@@ -654,6 +656,8 @@ We see that two processes have completed. The process named **:call_process_mode
 
 ## Timer Task
 
+A **timer task** (`Mozart.Task.Timer`) performs its work by delaying a process execution path by the duration specified in its **timer_duration** field.
+
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
 ```
@@ -742,6 +746,8 @@ Notice in the above that **execution_duration** is 5006433 microseconds, i.e. ju
 
 ## Join Task
 
+The **join task** (`Mozart.Task.Join`) is used to sychronize any number of parallel execution paths. The **inputs** field holds a list of task names that must finish before the join task can be completed.
+
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
@@ -756,6 +762,8 @@ Now paste the following alias' into your iex session:
  alias Mozart.Data.ProcessModel
  alias Mozart.Task.Join
  alias Mozart.Task.Parallel
+ alias Mozart.Task.Service
+ alias Mozart.Task.Timer
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -770,26 +778,26 @@ model =
         tasks: [
           %Parallel{
             name: :parallel_task,
-            multi_next: [:foo, :bar]
+            multi_next: [:service_task_1, :timer_task]
           },
           %Service{
-            name: :foo,
+            name: :service_task_1,
             function: fn data -> Map.merge(data, %{foo: :foo}) end,
             next: :join_task
           },
-          %Service{
-            name: :bar,
-            function: fn data -> Map.merge(data, %{bar: :bar}) end,
-            next: :foo_bar
+          %Timer{
+            name: :timer_task,
+            timer_duration: 10000,
+            next: :service_task_after_timer
           },
           %Service{
-            name: :foo_bar,
+            name: :service_task_after_timer,
             function: fn data -> Map.merge(data, %{foo_bar: :foo_bar}) end,
             next: :join_task
           },
           %Join{
             name: :join_task,
-            inputs: [:foo, :foo_bar],
+            inputs: [:service_task_1, :service_task_after_timer],
             next: :final_service
           },
           %Service{
@@ -808,12 +816,12 @@ Now paste the following into your iex session to execute your process model:
 PS.clear_state()
 PS.load_process_model(model)
 data = %{}
-{:ok, ppid, uid} = PE.start_process(:call_timer_task, data)
+{:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)
 PE.execute(ppid)
 
 ```
 
-The process should take about 5 seconds to complete. Watch for logging to report **process complete**. After that, invoke the following:
+Due to the presense of the timer task, the process should take about 10 seconds to complete. Watch for logging to report **process complete**. After that, invoke the following:
 
 ```
 PS.get_completed_processes()
@@ -825,34 +833,81 @@ and should see something like this:
 ```
 [
   %Mozart.Data.ProcessState{
-    uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b",
+    uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a",
     parent: nil,
-    model_name: :call_timer_task,
-    start_time: ~U[2024-06-02 18:07:18.670993Z],
-    end_time: ~U[2024-06-02 18:07:23.677426Z],
-    execute_duration: 5006433,
+    model_name: :parallel_process_model,
+    start_time: ~U[2024-06-03 15:02:40.056941Z],
+    end_time: ~U[2024-06-03 15:02:50.065079Z],
+    execute_duration: 10008138,
     open_tasks: %{},
     completed_tasks: [
       %{
-        function: nil,
-        name: :wait_5_seconds,
-        type: :timer,
+        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
+        name: :final_service,
+        type: :service,
         next: nil,
+        __struct__: Mozart.Task.Service,
+        uid: "3c64e2ea-7e42-47dd-b606-2fb61b505b7b",
+        input_fields: nil,
+        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
+      },
+      %{
+        name: :join_task,
+        type: :join,
+        next: :final_service,
+        __struct__: Mozart.Task.Join,
+        uid: "e4545b2c-2d6a-4b7a-9bd7-a08866aa0e4c",
+        inputs: [],
+        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
+      },
+      %{
+        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
+        name: :service_task_after_timer,
+        type: :service,
+        next: :join_task,
+        __struct__: Mozart.Task.Service,
+        uid: "28c9aef1-0e69-4a7f-a3b7-549e582dfe24",
+        input_fields: nil,
+        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
+      },
+      %{
+        function: nil,
+        name: :timer_task,
+        type: :timer,
+        next: :service_task_after_timer,
         expired: true,
         __struct__: Mozart.Task.Timer,
-        uid: "eacaaf01-37b9-43ef-be81-d2ccb8802084",
-        timer_duration: 5000,
-        process_uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b"
+        uid: "cac585aa-b858-4d21-b9f2-38324fc4170b",
+        timer_duration: 10000,
+        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
+      },
+      %{
+        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
+        name: :service_task_1,
+        type: :service,
+        next: :join_task,
+        __struct__: Mozart.Task.Service,
+        uid: "d9e8f3eb-5d56-4772-94a3-e5d6243277e3",
+        input_fields: nil,
+        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
+      },
+      %{
+        name: :parallel_task,
+        type: :parallel,
+        __struct__: Mozart.Task.Parallel,
+        uid: "9a5bca86-8de4-4dc0-8477-47dc97cdbd7d",
+        multi_next: [:service_task_1, :timer_task],
+        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
       }
     ],
-    data: %{},
+    data: %{final: :final, foo: :foo, foo_bar: :foo_bar},
     complete: true
   }
 ]
 
 ```
 
-Notice in the above that **execution_duration** is 5006433 microseconds, i.e. just a little over 5 seconds.
+Notice in the above that **execution_duration** is 10008138 microseconds, i.e. just a little over 10 seconds.
 
 
 ## Send Task
