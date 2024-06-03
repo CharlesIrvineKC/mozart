@@ -910,6 +910,142 @@ and should see something like this:
 Notice in the above that **execution_duration** is 10008138 microseconds, i.e. just a little over 10 seconds.
 
 
-## Send Task
-## Receive Task
+## Send and Receive Tasks
+
+In this section we will demo both the **send** and **receive** tasks since they will normally be used together.
+
+The **receive task** (`Mozart.Task.Receive`) waits until a message has been received from a **send task** (`Mozart.Task.Send`). The send and receive tasks can reside in either the same of different process instances.
+
+
+If you are following along, open an Elixir project that has Mozart as a dependency.
+
+```
+iex -S mix
+
+```
+
+Now paste the following alias' into your iex session:
+
+```
+ alias Mozart.Data.ProcessModel
+ alias Mozart.Task.Send
+ alias Mozart.Task.Receive
+ alias Mozart.ProcessEngine, as: PE
+ alias Mozart.ProcessService, as: PS
+
+```
+
+The process models below contain one receiving process and one sending process.
+
+```
+models = 
+    [
+      %ProcessModel{
+        name: :process_with_receive_task,
+        tasks: [
+          %Receive{
+            name: :receive_task,
+            message_selector: fn msg ->
+              case msg do
+                :message -> %{message: true}
+                _ -> false
+              end
+            end
+          }
+        ],
+        initial_task: :receive_task
+      },
+      %ProcessModel{
+        name: :process_with_single_send_task,
+        tasks: [
+          %Send{
+            name: :send_task,
+            message: :message
+          }
+        ],
+        initial_task: :send_task
+      }
+    ]
+
+```
+
+Now paste the following into your iex session to execute, first, the receive process, and then the send process instance. We insert a 5 second delay between the two processes.
+
+```
+PS.clear_state()
+PS.load_process_models(models)
+data = %{}
+
+{:ok, r_ppid, r_uid} = PE.start_process(:process_with_receive_task, data)
+PE.execute(r_ppid)
+Process.sleep(5000)
+
+{:ok, s_ppid, s_uid} = PE.start_process(:process_with_single_send_task, data)
+PE.execute(s_ppid)
+
+```
+
+Due to the presense of the timer task, the process should take about 10 seconds to complete. Watch for logging to report **process complete**. After that, invoke the following:
+
+```
+PS.get_completed_processes()
+
+```
+
+and should see something like this:
+
+```
+[
+  %Mozart.Data.ProcessState{
+    uid: "29e8f3b7-21df-4e47-b689-9e3fd82cf34a",
+    parent: nil,
+    model_name: :process_with_single_send_task,
+    start_time: ~U[2024-06-03 15:30:18.247638Z],
+    end_time: ~U[2024-06-03 15:30:18.248965Z],
+    execute_duration: 1327,
+    open_tasks: %{},
+    completed_tasks: [
+      %{
+        message: :message,
+        name: :send_task,
+        type: :send,
+        next: nil,
+        __struct__: Mozart.Task.Send,
+        uid: "7b3e4c42-d68d-4d96-8d40-72f0de8d84e1",
+        process_uid: "29e8f3b7-21df-4e47-b689-9e3fd82cf34a"
+      }
+    ],
+    data: %{},
+    complete: true
+  },
+  %Mozart.Data.ProcessState{
+    uid: "3dfad9f6-2629-4e73-8ec2-c6209e84aab9",
+    parent: nil,
+    model_name: :process_with_receive_task,
+    start_time: ~U[2024-06-03 15:30:13.241838Z],
+    end_time: ~U[2024-06-03 15:30:18.248982Z],
+    execute_duration: 5007144,
+    open_tasks: %{},
+    completed_tasks: [
+      %{
+        complete: true,
+        data: %{message: true},
+        function: nil,
+        name: :receive_task,
+        type: :receive,
+        next: nil,
+        __struct__: Mozart.Task.Receive,
+        uid: "d43b54db-2f72-4fcd-bbdc-f5c66cd330a3",
+        message_selector: #Function<42.105768164/1 in :erl_eval.expr/6>,
+        process_uid: "3dfad9f6-2629-4e73-8ec2-c6209e84aab9"
+      }
+    ],
+    data: %{message: true},
+    complete: true
+  }
+]
+
+```
+
+Notice in the above that **execution_duration** for the receive process is 5007144 microseconds, i.e. just a little over the 5 second process sleep pause.
 
