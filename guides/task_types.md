@@ -389,6 +389,8 @@ We see that the new property **status** with a value of **declined** has been ad
 
 ## Parallel Task
 
+A parallel task `Mozart.Task.Parallel` is used to multiple concurrent process execution paths. 
+
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
 ```
@@ -739,6 +741,120 @@ and should see something like this:
 Notice in the above that **execution_duration** is 5006433 microseconds, i.e. just a little over 5 seconds.
 
 ## Join Task
+
+
+If you are following along, open an Elixir project that has Mozart as a dependency.
+
+```
+iex -S mix
+
+```
+
+Now paste the following alias' into your iex session:
+
+```
+ alias Mozart.Data.ProcessModel
+ alias Mozart.Task.Join
+ alias Mozart.Task.Parallel
+ alias Mozart.ProcessEngine, as: PE
+ alias Mozart.ProcessService, as: PS
+
+```
+
+The process model below has a parallel task that spawns tasks **:foo** and **:bar** in parallel.
+
+```
+model = 
+    %ProcessModel{
+        name: :parallel_process_model,
+        tasks: [
+          %Parallel{
+            name: :parallel_task,
+            multi_next: [:foo, :bar]
+          },
+          %Service{
+            name: :foo,
+            function: fn data -> Map.merge(data, %{foo: :foo}) end,
+            next: :join_task
+          },
+          %Service{
+            name: :bar,
+            function: fn data -> Map.merge(data, %{bar: :bar}) end,
+            next: :foo_bar
+          },
+          %Service{
+            name: :foo_bar,
+            function: fn data -> Map.merge(data, %{foo_bar: :foo_bar}) end,
+            next: :join_task
+          },
+          %Join{
+            name: :join_task,
+            inputs: [:foo, :foo_bar],
+            next: :final_service
+          },
+          %Service{
+            name: :final_service,
+            function: fn data -> Map.merge(data, %{final: :final}) end
+          }
+        ],
+        initial_task: :parallel_task
+    }
+
+```
+
+Now paste the following into your iex session to execute your process model:
+
+```
+PS.clear_state()
+PS.load_process_model(model)
+data = %{}
+{:ok, ppid, uid} = PE.start_process(:call_timer_task, data)
+PE.execute(ppid)
+
+```
+
+The process should take about 5 seconds to complete. Watch for logging to report **process complete**. After that, invoke the following:
+
+```
+PS.get_completed_processes()
+
+```
+
+and should see something like this:
+
+```
+[
+  %Mozart.Data.ProcessState{
+    uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b",
+    parent: nil,
+    model_name: :call_timer_task,
+    start_time: ~U[2024-06-02 18:07:18.670993Z],
+    end_time: ~U[2024-06-02 18:07:23.677426Z],
+    execute_duration: 5006433,
+    open_tasks: %{},
+    completed_tasks: [
+      %{
+        function: nil,
+        name: :wait_5_seconds,
+        type: :timer,
+        next: nil,
+        expired: true,
+        __struct__: Mozart.Task.Timer,
+        uid: "eacaaf01-37b9-43ef-be81-d2ccb8802084",
+        timer_duration: 5000,
+        process_uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b"
+      }
+    ],
+    data: %{},
+    complete: true
+  }
+]
+
+```
+
+Notice in the above that **execution_duration** is 5006433 microseconds, i.e. just a little over 5 seconds.
+
+
 ## Send Task
 ## Receive Task
 
