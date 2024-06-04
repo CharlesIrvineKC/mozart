@@ -5,6 +5,7 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
   alias Mozart.Task.User
+  alias Mozart.Task.Choice
   alias Mozart.Task.Subprocess
   alias Mozart.Task.Service
   alias Mozart.Data.ProcessModel

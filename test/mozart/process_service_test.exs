@@ -5,14 +5,137 @@ defmodule Mozart.ProcessServiceTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModels.TestModels
-  alias Mozart.Data.User
+  alias Mozart.Data.MozartUser
+  alias Mozart.Data.ProcessModel
+
+  alias Mozart.Task.User
+  alias Mozart.Task.Choice
 
   setup do
     PS.clear_user_tasks()
   end
 
   setup_all do
-    US.insert_user(%User{name: "crirvine", groups: ["admin"]})
+    US.insert_user(%MozartUser{name: "crirvine", groups: ["admin"]})
+  end
+
+  def get_home_loan_process do
+    %ProcessModel{
+      name: :home_loan_process,
+      tasks: [
+        %User{
+          name: :perform_pre_approval,
+          input_fields: [:credit_score, :income, :debt_amount],
+          assigned_groups: ["credit"],
+          next: :route_on_pre_approval_completion
+        },
+        %Choice{
+          name: :route_on_pre_approval_completion,
+          choices: [
+            %{
+              expression: fn data -> data.pre_approval == true end,
+              next: :receive_mortgage_application
+            },
+            %{
+              expression: fn data -> data.pre_approval == false end,
+              next: :communicate_loan_denied
+            }
+          ]
+        },
+        %User{
+          name: :receive_mortgage_application,
+          input_fields: [:credit_score, :income, :debt_amount],
+          assigned_groups: ["credit"],
+          next: :process_loan
+        },
+        %User{
+          name: :process_loan,
+          input_fields: [:purchase_price, :credit_score, :income, :debt_amount],
+          assigned_groups: ["credit"],
+          next: :process_loan_outcome
+        },
+        %Choice{
+          name: :process_loan_outcome,
+          choices: [
+            %{
+              expression: fn data -> data.loan_verified == true end,
+              next: :perform_underwriting
+            },
+            %{
+              expression: fn data -> data.loan_verified == false end,
+              next: :communicate_loan_denied
+            }
+          ]
+        },
+        %User{
+          name: :perform_underwriting,
+          input_fields: [:purchase_price, :credit_score, :income, :debt_amount, :loan_verified],
+          assigned_groups: ["underwriting"],
+          next: :route_from_underwriting
+        },
+        %Choice{
+          name: :route_from_underwriting,
+          choices: [
+            %{
+              expression: fn data -> data.loan_approved == true end,
+              next: :communicate_approval
+            },
+            %{
+              expression: fn data -> data.loan_approved == false end,
+              next: :communicate_loan_denied
+
+            }
+          ]
+        },
+        %User{
+          name: :communicate_approval,
+          input_fields: [:loan_approved],
+          assigned_groups: ["credit"]
+        },
+        %User{
+          name: :communicate_loan_denied,
+          input_fields: [:loan_approved],
+          assigned_groups: ["credit"]
+        },
+      ],
+      initial_task: :perform_pre_approval
+      }
+  end
+
+  test "run loan approval" do
+    PS.clear_state()
+    PS.load_process_model(get_home_loan_process())
+    data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
+    {:ok, ppid, _uid} = PE.start_process(:home_loan_process, data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    ## complete pre approval
+    [user_task] = PS.get_user_tasks_for_groups(["credit"])
+    PS.complete_user_task(ppid, user_task.uid, %{pre_approval: true})
+    Process.sleep(100)
+
+    ## complete receive mortgage application
+    [user_task] = PS.get_user_tasks_for_groups(["credit"])
+    PS.complete_user_task(ppid, user_task.uid, %{purchase_price: 500_000})
+    Process.sleep(100)
+
+    ## process loan
+    [user_task] = PS.get_user_tasks_for_groups(["credit"])
+    PS.complete_user_task(ppid, user_task.uid, %{loan_verified: true})
+    Process.sleep(100)
+
+    ## perform underwriting
+    [user_task] = PS.get_user_tasks_for_groups(["underwriting"])
+    PS.complete_user_task(ppid, user_task.uid, %{loan_approved: true})
+    Process.sleep(100)
+
+    ## communicate approval
+    [user_task] = PS.get_user_tasks_for_groups(["credit"])
+    PS.complete_user_task(ppid, user_task.uid, %{loan_approved: true})
+    Process.sleep(100)
+
+    IO.puts("finished")
   end
 
   test "get user tasks for person" do

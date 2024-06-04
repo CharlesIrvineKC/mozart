@@ -85,7 +85,9 @@ defmodule Mozart.ProcessEngine do
     GenServer.call(ppid, :get_open_tasks)
   end
 
-  @doc false
+  @doc """
+  Completes a user task
+  """
   def complete_user_task(ppid, task_uid, data) do
     GenServer.call(ppid, {:complete_user_task, task_uid, data})
   end

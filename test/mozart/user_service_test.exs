@@ -2,10 +2,10 @@ defmodule Mozart.UserServiceTest do
   use ExUnit.Case
 
   alias Mozart.UserService
-  alias Mozart.Data.User
+  alias Mozart.Data.MozartUser
 
   setup do
-    %{user: %User{name: "Irvine", groups: [:admin]}}
+    %{user: %MozartUser{name: "Irvine", groups: [:admin]}}
   end
 
   test "add a user", %{user: user} do

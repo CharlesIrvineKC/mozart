@@ -364,6 +364,108 @@ defmodule Mozart.Examples.Example do
     IO.puts("finished")
   end
 
+  def get_home_loan_process do
+    %ProcessModel{
+      name: :home_loan_process,
+      tasks: [
+        %User{
+          name: :perform_pre_approval,
+          input_fields: [:credit_score, :income, :debt_amount],
+          assigned_groups: ["credit"],
+          next: :process_pre_approval_result
+        },
+        %Choice{
+          name: :process_pre_approval_result,
+          choices: [
+            %{
+              expression: fn data -> data.pre_approval == true end,
+              next: :receive_mortgage_application
+            },
+            %{
+              expression: fn data -> data.pre_approval == false end,
+              next: :communicate_loan_denied
+            }
+          ]
+        },
+        %User{
+          name: :receive_mortgage_application,
+          input_fields: [:credit_score, :income, :debt_amount],
+          assigned_groups: ["credit"],
+          next: :process_loan
+        },
+        %User{
+          name: :process_loan,
+          input_fields: [:purchase_price, :credit_score, :income, :debt_amount],
+          assigned_groups: ["credit"],
+          next: :process_loan_outcome
+        },
+        %Choice{
+          name: :process_loan_outcome,
+          choices: [
+            %{
+              expression: fn data -> data.loan_verified == true end,
+              next: :perform_underwriting
+            },
+            %{
+              expression: fn data -> data.loan_verified == false end,
+              next: :communicate_loan_denied
+            }
+          ]
+        },
+        %User{
+          name: :perform_underwriting,
+          input_fields: [:purchase_price, :credit_score, :income, :debt_amount, :loan_verified],
+          assigned_groups: ["underwriting"],
+          next: :route_from_underwriting
+        },
+        %Choice{
+          name: :route_from_underwriting,
+          choices: [
+            %{
+              expression: fn data -> data.loan_approved == true end,
+              next: :communicate_approval
+            },
+            %{
+              expression: fn data -> data.loan_approved == false end,
+              next: :communicate_loan_denied
+
+            }
+          ]
+        },
+        %User{
+          name: :communicate_approval,
+          input_fields: [:loan_approved],
+          assigned_groups: ["credit"]
+        },
+        %User{
+          name: :communicate_loan_denied,
+          input_fields: [:loan_approved],
+          assigned_groups: ["credit"]
+        },
+      ],
+      initial_task: :perform_pre_approval
+      }
+  end
+
+  def process_home_loan_application do
+    PS.clear_state()
+    PS.load_process_model(get_home_loan_process())
+    data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
+    {:ok, ppid, _uid} = PE.start_process(:home_loan_process, data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    [user_task] = PS.get_user_tasks_for_groups(["credit"])
+    PE.complete_user_task(ppid, user_task.uid, %{pre_approval: true})
+    Process.sleep(100)
+
+    [user_task] = PS.get_user_tasks_for_groups(["credit"])
+    PE.complete_user_task(ppid, user_task.uid, %{pre_approval: true})
+    Process.sleep(100)
+
+    IO.puts("finished")
+  end
+
   def run_all do
     run_get_loan_models()
     run_send_task_to_receive_task()

@@ -1,4 +1,4 @@
-defmodule Mozart.Data.User do
+defmodule Mozart.Data.MozartUser do
   @moduledoc false
   defstruct [:name, :groups]
 end
