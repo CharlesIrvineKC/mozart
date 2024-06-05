@@ -4,7 +4,7 @@ defmodule Mozart.MixProject do
   def project do
     [
       app: :mozart,
-      version: "0.1.11",
+      version: "0.2.0",
       elixir: "~> 1.16",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -43,7 +43,7 @@ defmodule Mozart.MixProject do
       "guides/app_overview.md",
       "guides/first_process_execution.md",
       "guides/task_types.md",
-      "guides/complex_example.md"
+      "guides/home_loan.md"
     ]
   end
 

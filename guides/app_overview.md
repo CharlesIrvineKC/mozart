@@ -14,6 +14,21 @@ What happens when a process engine executes a process model? That brings us to t
 
 Mozart provides arounds a dozen different type of *tasks*. The two most ofen used are the `Mozart.Task.User` task and the `Mozart.Task.Service` task. 
 
+The task types currently supported are:
+
+| Task Type               |  Description |
+|-----|-----|
+| User Task               | Performed by a user |
+| Service Task            | Performed by calling a service. |
+| Subprocess Task         | Performed by calling a subprocess. |
+| Timer Task              | Waits for expiration of a timer. |
+| Receive Task            | Waits for a subscribed PubSub event. |
+| Send Task               | Sends a PubSub event. |
+| Rule Task               | Perform by evaluating a run block (Tablex) |
+| Choice Task             | Selects one of many process paths. |
+| Parallel Task           | Initiates two or more process paths. |
+| Join Task               | Sychronizes on completion of two or more process paths. |
+
 ## Process Service
  
 When a process model has been developed, it is stored in a process model repository for later use. The repository is implemented by `Mozart.ProcessService`. When system users are ready to execute a process model, they retrieve it from the repository and use it to start a process engine execution.
