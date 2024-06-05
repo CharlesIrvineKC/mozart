@@ -106,7 +106,7 @@ defmodule Mozart.ProcessServiceTest do
     PS.clear_state()
     PS.load_process_model(get_home_loan_process())
     data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
-    {:ok, ppid, _uid} = PE.start_process(:home_loan_process, data)
+    {:ok, ppid, uid} = PE.start_process(:home_loan_process, data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -134,6 +134,10 @@ defmodule Mozart.ProcessServiceTest do
     [user_task] = PS.get_user_tasks_for_groups(["credit"])
     PS.complete_user_task(ppid, user_task.uid, %{loan_approved: true})
     Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    completed_tasks = completed_process.completed_tasks
+    assert Enum.all?(completed_tasks, fn t -> t.duration end) == true
 
     IO.puts("finished")
   end

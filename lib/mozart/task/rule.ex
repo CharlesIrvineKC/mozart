@@ -31,6 +31,9 @@ defmodule Mozart.Task.Rule do
     :uid,
     :rule_table,
     :input_fields,
+    :start_time,
+    :finish_time,
+    :duration,
     type: :rule
   ]
 end

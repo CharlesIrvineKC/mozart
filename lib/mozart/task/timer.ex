@@ -25,6 +25,9 @@ defmodule Mozart.Task.Timer do
     :uid,
     :timer_duration,
     :expired,
+    :start_time,
+    :finish_time,
+    :duration,
     type: :timer
   ]
 end

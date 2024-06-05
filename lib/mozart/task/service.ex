@@ -28,6 +28,9 @@ defmodule Mozart.Task.Service do
     :next,
     :uid,
     :input_fields,
+    :start_time,
+    :finish_time,
+    :duration,
     type: :service
   ]
 end

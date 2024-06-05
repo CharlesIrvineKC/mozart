@@ -40,6 +40,9 @@ defmodule Mozart.Task.Receive do
     :next,
     :uid,
     :message_selector,
+    :start_time,
+    :finish_time,
+    :duration,
     complete: false,
     data: %{},
     type: :receive

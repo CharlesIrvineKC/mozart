@@ -38,6 +38,9 @@ defmodule Mozart.Task.Subprocess do
     :next,
     :uid,
     :sub_process,
+    :start_time,
+    :finish_time,
+    :duration,
     complete: false,
     data: %{},
     type: :sub_process

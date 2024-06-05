@@ -46,6 +46,9 @@ defmodule Mozart.Task.Join do
     :name,
     :next,
     :uid,
+    :start_time,
+    :finish_time,
+    :duration,
     inputs: [],
     type: :join
   ]

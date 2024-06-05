@@ -24,6 +24,9 @@ defmodule Mozart.Task.User do
     :uid,
     :next,
     :input_fields,
+    :start_time,
+    :finish_time,
+    :duration,
     assigned_groups: [],
     complete: false,
     type: :user

@@ -31,6 +31,8 @@ defmodule Mozart.ProcessEngineTest do
 
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
+    [task] = completed_process.completed_tasks
+    assert task.duration != nil
   end
 
   test "test for loan approval" do
@@ -78,8 +80,15 @@ defmodule Mozart.ProcessEngineTest do
 
     assert receive_process.complete == true
     assert send_process.complete == true
-    assert length(receive_process.completed_tasks) == 1
-    assert length(send_process.completed_tasks) == 1
+
+    receive_tasks = receive_process.completed_tasks
+    send_tasks = send_process.completed_tasks
+
+    assert length(receive_tasks) == 1
+    assert length(send_tasks) == 1
+
+    assert Enum.all?(receive_tasks, fn t -> t.duration end) == true
+    assert Enum.all?(send_tasks, fn t -> t.duration end) == true
   end
 
   test "process with a single service task" do
@@ -93,6 +102,8 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data ==  %{x: 1, y: 0}
     assert completed_process.complete == true
+
+    assert Enum.all?(completed_process.completed_tasks, fn t -> t.duration end) == true
   end
 
   # test "call process with a receive event task" do

@@ -32,6 +32,9 @@ defmodule Mozart.Task.Choice do
     :function,
     :next,
     :uid,
+    :start_time,
+    :finish_time,
+    :duration,
     choices: [],
     type: :choice
   ]
