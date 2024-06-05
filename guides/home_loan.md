@@ -1,16 +1,16 @@
 # Home Loan Example
 
-In this guide we will construct and execute a somewhat complex process model. We will mainly use **user tasks** because they allow user control of the process execution path.
+In this guide we will construct and execute a somewhat more complex process model than we have dealt with thus far. We will mainly use **user tasks** because they allow use to easily control of the process execution path during process exploration.
 
-We will create a process model applying for a home loan. It will be highly simplified compared to the actual process used by lending institutions, but complicated enough for our purposes here.
+We will create a process model applying for a home loan from a bank. It will be highly simplified compared to the actual process used by lending institutions, but complicated enough for our purposes here.
 
 Here is a summary of the loan approval process:
 
-1. Get pre-approval from the bank for a loan. They will require a credit score, yearly income and the extent indebtedness.
-1. After you have a contract on a house, you will fill out a complete loan application. Part of that will be the purchase price of the house.
-1. Now the bank will process your loan. This entails ensure that everything is in order and they have everything that they need.
+1. Get pre-approval from the bank for a loan. They will require a credit score, yearly income and the extent of the applicant's indebtedness.
+1. After the applicant secures a contract on a house, he will fill out a complete loan application. Part of that will be the purchase price of the house.
+1. Now the bank will process the applicant's loan application. This is to ensure that everything is in order and they have everything that they need.
 1. After the loan has been processed, it will go to the underwriting department to determine whether the loan will be approved or not.
-1. Finally, after the loan is approced, the bank will notify you that the loan is approved.
+1. Finally, after the loan is approced, the bank will notify the applicant that the loan is approved.
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
@@ -240,7 +240,7 @@ iex [18:16 :: 23] > PS.complete_user_task(ppid, user_task.uid, %{loan_approved: 
 18:46:03.183 [info] Process complete [home_loan_process][8d106b1c-32f4-43b6-a168-e663bb59056f]
 ```
 
-Now let's start at the beginning, and enter data so that the process completes with the loan being declined:
+Now let's start over at the beginning, and enter data so that the process completes with the loan being declined:
 
 ```
 PS.clear_state()
