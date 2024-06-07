@@ -62,8 +62,7 @@ defmodule Mozart.ProcessEngine do
   Complete subprocess due to a TaskExit event
   """
   def complete_on_task_exit_event(ppid) do
-    IO.puts "***** complete on task exit ***********"
-    GenServer.call(ppid, :complete_on_task_exit_event)
+    GenServer.cast(ppid, :complete_on_task_exit_event)
   end
 
   @doc false
@@ -182,8 +181,7 @@ defmodule Mozart.ProcessEngine do
     {:reply, state, state}
   end
 
-  def handle_call(:complete_on_task_exit_event, _from, state) do
-    IO.puts "******* complete on task exit **********"
+  def handle_cast(:complete_on_task_exit_event, state) do
     now = DateTime.utc_now()
 
     state =
@@ -196,7 +194,7 @@ defmodule Mozart.ProcessEngine do
     PS.insert_completed_process(state)
 
     Process.exit(self(), :shutdown)
-    {:reply, state, state}
+    {:noreply, state}
   end
 
   def handle_cast({:notify_child_complete, sp_name, sp_data}, state) do
@@ -277,7 +275,6 @@ defmodule Mozart.ProcessEngine do
 
   defp exit_task(task_name, state) do
     task = Enum.find(Map.values(state.open_tasks), fn t -> t.name == task_name end)
-    IO.inspect(task, label: "task on task exit")
 
     if task.type == :sub_process do
       complete_on_task_exit_event(task.sub_process_pid)
@@ -373,7 +370,6 @@ defmodule Mozart.ProcessEngine do
 
     new_task = Map.put(new_task, :sub_process_pid, process_pid)
     open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
-    IO.inspect(open_tasks, label: "******* open tasks ***********")
     Map.put(state, :open_tasks, open_tasks)
   end
 

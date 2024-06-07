@@ -142,8 +142,6 @@ defmodule Mozart.ProcessServiceTest do
     completed_process = PS.get_completed_process(uid)
     completed_tasks = completed_process.completed_tasks
     assert Enum.all?(completed_tasks, fn t -> t.duration end) == true
-
-    IO.puts("finished")
   end
 
   test "get user tasks for person" do

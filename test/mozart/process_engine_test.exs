@@ -59,7 +59,7 @@ defmodule Mozart.ProcessEngineTest do
     Process.sleep(100)
 
     PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
-    Process.sleep(1000)
+    Process.sleep(500)
 
     IO.inspect(PS.get_completed_processes(), label: "***** completed processes")
   end
