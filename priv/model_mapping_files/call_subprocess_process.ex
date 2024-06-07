@@ -4,7 +4,7 @@
     %Task{
       name: :call_process_task,
       type: :sub_process,
-      sub_process: :subprocess_model,
+      sub_process_model_name: :subprocess_model,
       next: :service_task1
     },
     %Service{

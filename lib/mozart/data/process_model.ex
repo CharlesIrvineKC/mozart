@@ -1,6 +1,6 @@
 defmodule Mozart.Data.ProcessModel do
   @moduledoc """
-  
+
   ```
   defstruct [:name, :tasks, :initial_task]
   ```
@@ -26,5 +26,5 @@ defmodule Mozart.Data.ProcessModel do
   ```
 
   """
-  defstruct [:name, :tasks, :initial_task]
+  defstruct [:name, :tasks, :events, :initial_task]
 end

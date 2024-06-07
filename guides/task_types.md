@@ -499,7 +499,7 @@ iex [10:32 :: 11] > PE.get_state(ppid)
       __struct__: Mozart.Task.Parallel,
       uid: "aa0108cf-2f2c-4700-b97a-49ca7b002c18",
       multi_next: [:user_task_1, :user_task_2],
-      sub_process: nil,
+      sub_process_model_name: nil,
       process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
     }
   ],
@@ -543,7 +543,7 @@ models =
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process: :service_subprocess_model,
+            sub_process_model_name: :service_subprocess_model,
             next: :service_task1
           },
           %Service{
@@ -641,7 +641,7 @@ iex [12:30 :: 12] > PS.get_completed_processes()
         next: :service_task1,
         __struct__: Mozart.Task.Subprocess,
         uid: "ee4211a0-ee8e-4b6d-992d-80121566bd41",
-        sub_process: :service_subprocess_model,
+        sub_process_model_name: :service_subprocess_model,
         process_uid: "83769669-388d-490a-a326-cd5c3c684361",
         completed_sub_tasks: []
       }

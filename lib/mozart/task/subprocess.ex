@@ -11,7 +11,7 @@ defmodule Mozart.Task.Subprocess do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process: :service_subprocess_model,
+            sub_process_model_name: :service_subprocess_model,
             next: :service_task1
           },
           %Service{
@@ -37,7 +37,8 @@ defmodule Mozart.Task.Subprocess do
     :name,
     :next,
     :uid,
-    :sub_process,
+    :sub_process_model_name,
+    :sub_process_pid,
     :start_time,
     :finish_time,
     :duration,

@@ -58,6 +58,14 @@ defmodule Mozart.ProcessEngine do
     DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
   end
 
+  @doc """
+  Complete subprocess due to a TaskExit event
+  """
+  def complete_on_task_exit_event(ppid) do
+    IO.puts "***** complete on task exit ***********"
+    GenServer.call(ppid, :complete_on_task_exit_event)
+  end
+
   @doc false
   def get_state(ppid) do
     GenServer.call(ppid, :get_state)
@@ -174,9 +182,26 @@ defmodule Mozart.ProcessEngine do
     {:reply, state, state}
   end
 
+  def handle_call(:complete_on_task_exit_event, _from, state) do
+    IO.puts "******* complete on task exit **********"
+    now = DateTime.utc_now()
+
+    state =
+      Map.put(state, :complete, true)
+      |> Map.put(:end_time, now)
+      |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
+
+    Logger.info("Process complete due to task exit even [#{state.model_name}][#{state.uid}]")
+
+    PS.insert_completed_process(state)
+
+    Process.exit(self(), :shutdown)
+    {:reply, state, state}
+  end
+
   def handle_cast({:notify_child_complete, sp_name, sp_data}, state) do
     {_uid, sp_task} =
-      Enum.find(state.open_tasks, fn {_uid, ti} -> ti.sub_process == sp_name end)
+      Enum.find(state.open_tasks, fn {_uid, ti} -> ti.sub_process_model_name == sp_name end)
 
     sp_task = Map.put(sp_task, :complete, true)
     open_tasks = Map.put(state.open_tasks, sp_task.uid, sp_task)
@@ -232,6 +257,37 @@ defmodule Mozart.ProcessEngine do
     {:noreply, state}
   end
 
+  def handle_info({:event, payload}, state) do
+    model = PS.get_process_model(state.model_name)
+
+    if model.events do
+      [event] = model.events
+
+      if event.message_selector.(payload) do
+        exit_task(event.exit_task, state)
+      else
+        state
+      end
+    else
+      state
+    end
+
+    {:noreply, state}
+  end
+
+  defp exit_task(task_name, state) do
+    task = Enum.find(Map.values(state.open_tasks), fn t -> t.name == task_name end)
+    IO.inspect(task, label: "task on task exit")
+
+    if task.type == :sub_process do
+      complete_on_task_exit_event(task.sub_process_pid)
+    end
+
+    Map.put(state, :completed_tasks, [task | state.completed_tasks])
+    |> Map.put(:open_tasks, Map.delete(state.open_tasks, task.uid))
+    |> execute_process()
+  end
+
   def terminate(reason, state) do
     {reason_code, _} = reason
 
@@ -277,13 +333,20 @@ defmodule Mozart.ProcessEngine do
       else
         new_task
       end
-    do_side_effects(new_task.type, new_task, state)
 
-    Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
+    state = do_side_effects(new_task.type, new_task, state)
+
+    if new_task.type != :sub_process do
+      Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
+    else
+      state
+    end
   end
 
-  defp do_side_effects(:timer, new_task, _),
-    do: set_timer_for(new_task.uid, new_task.timer_duration)
+  defp do_side_effects(:timer, new_task, state) do
+    set_timer_for(new_task.uid, new_task.timer_duration)
+    state
+  end
 
   defp do_side_effects(:user, new_task, state) do
     input_data =
@@ -295,16 +358,23 @@ defmodule Mozart.ProcessEngine do
 
     new_task = Map.put(new_task, :data, input_data)
     PS.insert_user_task(new_task)
+    state
   end
 
-  defp do_side_effects(:send, new_task, _) do
+  defp do_side_effects(:send, new_task, state) do
     PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
+    state
   end
 
   defp do_side_effects(:sub_process, new_task, state) do
     data = state.data
-    {:ok, process_pid, _uid} = start_process(new_task.sub_process, data, self())
+    {:ok, process_pid, _uid} = start_process(new_task.sub_process_model_name, data, self())
     execute(process_pid)
+
+    new_task = Map.put(new_task, :sub_process_pid, process_pid)
+    open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
+    IO.inspect(open_tasks, label: "******* open tasks ***********")
+    Map.put(state, :open_tasks, open_tasks)
   end
 
   defp do_side_effects(_, _, _), do: nil
@@ -358,15 +428,14 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp update_for_completed_task(state, task) do
-
     now = DateTime.utc_now()
     duration = DateTime.diff(now, task.start_time, :microsecond)
 
     task =
       task
-        |> Map.put(:finish_time, now)
-        |> Map.put(:duration, duration)
-        
+      |> Map.put(:finish_time, now)
+      |> Map.put(:duration, duration)
+
     open_tasks = Map.delete(state.open_tasks, task.uid)
     completed_tasks = [task | state.completed_tasks]
 

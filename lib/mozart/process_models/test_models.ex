@@ -95,25 +95,25 @@ defmodule Mozart.ProcessModels.TestModels do
     ]
   end
 
-  def call_process_receive_event_task do
-    [
-      %ProcessModel{
-        name: :process_with_receive_event_task,
-        tasks: [
-          %Receive{
-            name: :receive_task,
-            message_selector: fn msg ->
-              case msg do
-                {a, b} -> %{value: a + b}
-                _ -> false
-              end
-            end
-          }
-        ],
-        initial_task: :receive_task
-      }
-    ]
-  end
+  # def call_process_receive_event_task do
+  #   [
+  #     %ProcessModel{
+  #       name: :process_with_receive_event_task,
+  #       tasks: [
+  #         %Receive{
+  #           name: :receive_task,
+  #           message_selector: fn msg ->
+  #             case msg do
+  #               {a, b} -> %{value: a + b}
+  #               _ -> false
+  #             end
+  #           end
+  #         }
+  #       ],
+  #       initial_task: :receive_task
+  #     }
+  #   ]
+  # end
 
   def call_timer_tasks do
     [
@@ -196,7 +196,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process: :service_subprocess_model,
+            sub_process_model_name: :service_subprocess_model,
             next: :service_task1
           },
           %Service{
@@ -246,7 +246,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process: :one_user_task_process
+            sub_process_model_name: :one_user_task_process
           }
         ],
         initial_task: :call_process_task
@@ -256,7 +256,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process: :service_subprocess_model
+            sub_process_model_name: :service_subprocess_model
           }
         ],
         initial_task: :call_process_task

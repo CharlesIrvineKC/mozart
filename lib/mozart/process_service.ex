@@ -130,6 +130,10 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_process_model, model_name})
   end
 
+  def get_process_models do
+    GenServer.call(__MODULE__, :get_process_models)
+  end
+
   @doc """
   Loads a single process model in the repository.
   """
@@ -272,6 +276,14 @@ defmodule Mozart.ProcessService do
     {:reply, CubDB.get(state.process_model_db, name), state}
   end
 
+  def handle_call(:get_process_models, _from, state) do
+    models =
+      CubDB.select(state.process_model_db)
+      |> Enum.to_list()
+
+    {:reply, models, state}
+  end
+
   @doc false
   def handle_call({:load_process_model, process_model}, _from, state) do
     {:reply, CubDB.put(state.process_model_db, process_model.name, process_model), state}
@@ -331,10 +343,9 @@ defmodule Mozart.ProcessService do
 
   def get_completed_processes_local(state) do
     CubDB.select(state.completed_process_db)
-      |> Stream.map(fn {_k, v} -> v end)
-      |> Enum.to_list()
+    |> Stream.map(fn {_k, v} -> v end)
+    |> Enum.to_list()
   end
-
 
   defp get_user_task_by_id(state, uid) do
     CubDB.get(state.user_task_db, uid)

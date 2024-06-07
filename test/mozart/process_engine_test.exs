@@ -5,10 +5,104 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
   alias Mozart.Task.User
-  alias Mozart.Task.Choice
   alias Mozart.Task.Subprocess
   alias Mozart.Task.Service
+  alias Mozart.Task.Receive
+  alias Mozart.Event.TaskExit
   alias Mozart.Data.ProcessModel
+  alias Phoenix.PubSub
+
+  defp get_exit_event_on_sub_process do
+    [
+      %ProcessModel{
+        name: :simple_call_process_model,
+        tasks: [
+          %Subprocess{
+            name: :call_process_task,
+            sub_process_model_name: :sub_process_with_one_user_task
+          }
+        ],
+        events: [
+          %TaskExit{
+            name: :exit_sub_process,
+            exit_task: :call_process_task,
+            message_selector: fn msg ->
+              case msg do
+                :exit_user_task -> true
+                _ -> nil
+              end
+            end
+          }
+        ],
+        initial_task: :call_process_task
+      },
+    %ProcessModel{
+      name: :sub_process_with_one_user_task,
+      tasks: [
+        %User{
+          name: :user_task,
+          assigned_groups: ["admin"]
+        }
+      ],
+      initial_task: :user_task
+    }
+  ]
+  end
+
+  test "exit event on subprocess task" do
+    PS.clear_state()
+    PS.load_process_models(get_exit_event_on_sub_process())
+    data = %{}
+
+    {:ok, ppid, _uid} = PE.start_process(:simple_call_process_model, data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
+    Process.sleep(1000)
+
+    IO.inspect(PS.get_completed_processes(), label: "***** completed processes")
+  end
+
+  defp get_event_on_user_task do
+    %ProcessModel{
+      name: :event_on_user_task_process,
+      tasks: [
+        %User{
+          name: :user_task,
+          assigned_groups: ["admin"]
+        }
+      ],
+      events: [
+        %TaskExit{
+          name: :exit_user_task,
+          exit_task: :user_task,
+          message_selector: fn msg ->
+            case msg do
+              :exit_user_task -> true
+              _ -> nil
+            end
+          end
+        }
+      ],
+      initial_task: :user_task
+    }
+  end
+
+  test "exit event on user task" do
+    PS.clear_state()
+    PS.load_process_model(get_event_on_user_task())
+    data = %{}
+
+    {:ok, ppid, _uid} = PE.start_process(:event_on_user_task_process, data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
+    Process.sleep(100)
+
+    # IO.inspect(PS.get_completed_process(uid))
+  end
 
   test "call json service" do
     PS.clear_state()
@@ -75,8 +169,8 @@ defmodule Mozart.ProcessEngineTest do
 
     Process.sleep(1000)
 
-    receive_process =  PS.get_completed_process(r_uid)
-    send_process =  PS.get_completed_process(s_uid)
+    receive_process = PS.get_completed_process(r_uid)
+    send_process = PS.get_completed_process(s_uid)
 
     assert receive_process.complete == true
     assert send_process.complete == true
@@ -100,27 +194,59 @@ defmodule Mozart.ProcessEngineTest do
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data ==  %{x: 1, y: 0}
+    assert completed_process.data == %{x: 1, y: 0}
     assert completed_process.complete == true
 
     assert Enum.all?(completed_process.completed_tasks, fn t -> t.duration end) == true
   end
 
-  # test "call process with a receive event task" do
-  # PS.clear_state()
-  #   PS.load_process_models(TestModels.call_process_receive_event_task())
-  #   data = %{value: 0}
+  def call_process_receive_event_task do
+    %ProcessModel{
+      name: :process_with_receive_event_task,
+      tasks: [
+        %Receive{
+          name: :receive_task,
+          message_selector: fn msg ->
+            case msg do
+              {:get_sum, a, b} -> %{sum: a + b}
+              _ -> nil
+            end
+          end
+        }
+      ],
+      initial_task: :receive_task
+    }
+  end
 
-  #   {:ok, ppid, uid} = PE.start_process(:process_with_receive_event_task, data)
-  #   PE.execute_and_wait(ppid)
+  test "receive non matching event task" do
+    PS.clear_state()
+    PS.load_process_model(call_process_receive_event_task())
+    data = %{}
 
-  #   PubSub.broadcast(:pubsub, "pe_topic", {:message, {2, 2}})
-  #   Process.sleep(100)
+    {:ok, ppid, uid} = PE.start_process(:process_with_receive_event_task, data)
+    PE.execute_and_wait(ppid)
 
-  #   completed_process = PS.get_completed_process(uid)
-  #   assert completed_process.data == %{value: 4}
-  #   assert completed_process.complete == true
-  # end
+    PubSub.broadcast(:pubsub, "pe_topic", {:message, {:get_product, 2, 2}})
+    Process.sleep(10)
+
+    assert PS.get_completed_process(uid) == nil
+  end
+
+  test "call process with a receive event task" do
+    PS.clear_state()
+    PS.load_process_model(call_process_receive_event_task())
+    data = %{}
+
+    {:ok, ppid, uid} = PE.start_process(:process_with_receive_event_task, data)
+    PE.execute_and_wait(ppid)
+
+    PubSub.broadcast(:pubsub, "pe_topic", {:message, {:get_sum, 2, 2}})
+    Process.sleep(10)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{sum: 4}
+    assert completed_process.complete == true
+  end
 
   test "call process with one timer task" do
     PS.clear_state()
@@ -196,7 +322,7 @@ defmodule Mozart.ProcessEngineTest do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process: :service_subprocess_model,
+            sub_process_model_name: :service_subprocess_model,
             next: :service_task1
           },
           %Service{

@@ -5,11 +5,15 @@ defmodule Mozart.ProcessServiceTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessModels.TestModels
-  alias Mozart.Data.MozartUser
 
+  alias Mozart.Data.MozartUser
   alias Mozart.Data.ProcessModel
+
   alias Mozart.Task.User
   alias Mozart.Task.Choice
+  alias Mozart.Task.Subprocess
+
+  alias Mozart.Event.TaskExit
 
   setup do
     PS.clear_user_tasks()
@@ -146,6 +150,57 @@ defmodule Mozart.ProcessServiceTest do
     PS.clear_user_tasks()
     tasks = PS.get_user_tasks_for_user("crirvine")
     assert tasks == []
+  end
+
+  defp get_exit_event_on_sub_process do
+    [
+      %ProcessModel{
+        name: :simple_call_process_model,
+        tasks: [
+          %Subprocess{
+            name: :call_process_task,
+            sub_process_model_name: :sub_process_with_one_user_task
+          }
+        ],
+        events: [
+          %TaskExit{
+            name: :exit_sub_process,
+            exit_task: :call_process_task,
+            message_selector: fn msg ->
+              case msg do
+                :exit_user_task -> true
+                _ -> nil
+              end
+            end
+          }
+        ],
+        initial_task: :call_process_task
+      },
+    %ProcessModel{
+      name: :sub_process_with_one_user_task,
+      tasks: [
+        %User{
+          name: :user_task,
+          assigned_groups: ["admin"]
+        }
+      ],
+      initial_task: :user_task
+    }
+  ]
+  end
+
+  test "load and retrieve process models" do
+    PS.clear_state()
+    PS.load_process_models(get_exit_event_on_sub_process())
+    assert length(PS.get_process_models()) == 2
+
+    simple_call_process_model = PS.get_process_model(:simple_call_process_model)
+    assert simple_call_process_model != nil
+    assert simple_call_process_model.name == :simple_call_process_model
+
+    sub_process_with_one_user_task = PS.get_process_model(:sub_process_with_one_user_task)
+    assert sub_process_with_one_user_task != nil
+    assert sub_process_with_one_user_task.name == :sub_process_with_one_user_task
   end
 
   test "complete a user task" do
