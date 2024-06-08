@@ -374,7 +374,7 @@ defmodule Mozart.ProcessEngine do
     Map.put(state, :open_tasks, open_tasks)
   end
 
-  defp do_side_effects(_, _, _), do: nil
+  defp do_side_effects(_, _, state), do: state
 
   defp create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
     existing_task = get_existing_task_instance(state, next_task_name)
