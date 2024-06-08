@@ -185,7 +185,7 @@ defmodule Mozart.ProcessEngine do
     now = DateTime.utc_now()
 
     state =
-      Map.put(state, :complete, true)
+      Map.put(state, :complete, :exit_on_task_event)
       |> Map.put(:end_time, now)
       |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
@@ -275,6 +275,7 @@ defmodule Mozart.ProcessEngine do
 
   defp exit_task(task_name, state) do
     task = Enum.find(Map.values(state.open_tasks), fn t -> t.name == task_name end)
+    task = Map.put(task, :complete, :exit_on_task_event)
 
     if task.type == :sub_process do
       complete_on_task_exit_event(task.sub_process_pid)
