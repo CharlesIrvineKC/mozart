@@ -184,10 +184,24 @@ defmodule Mozart.ProcessEngineTest do
     assert Enum.all?(receive_tasks, fn t -> t.duration end) == true
     assert Enum.all?(send_tasks, fn t -> t.duration end) == true
   end
+  
+  def single_service_task do
+      %ProcessModel{
+        name: :process_with_single_service_task,
+        tasks: [
+          %Service{
+            name: :service_task,
+            input_fields: [:x],
+            function: fn data -> Map.put(data, :x, data.x + 1) end
+          },
+        ],
+        initial_task: :service_task
+      }
+  end
 
   test "process with a single service task" do
     PS.clear_state()
-    PS.load_process_models(TestModels.single_service_task())
+    PS.load_process_model(single_service_task())
     data = %{x: 0, y: 0}
 
     {:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
