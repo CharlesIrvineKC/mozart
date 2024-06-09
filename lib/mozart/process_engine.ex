@@ -259,12 +259,10 @@ defmodule Mozart.ProcessEngine do
     model = PS.get_process_model(state.model_name)
 
     state =
-      if model.events do
-        [event] = model.events
-        if event.message_selector.(payload), do: exit_task(event, state), else: state
-      else
-        state
-      end
+      with [event] <- model.events,
+         true <- event.message_selector.(payload),
+      do: exit_task(event.exit_task, state),
+      else: (_ -> state)
 
     {:noreply, state}
   end
