@@ -189,7 +189,7 @@ defmodule Mozart.ProcessEngine do
       |> Map.put(:end_time, now)
       |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
-    Logger.info("Process complete due to task exit even [#{state.model_name}][#{state.uid}]")
+    Logger.info("Process complete due to task exit event [#{state.model_name}][#{state.uid}]")
 
     PS.insert_completed_process(state)
 
@@ -258,32 +258,26 @@ defmodule Mozart.ProcessEngine do
   def handle_info({:event, payload}, state) do
     model = PS.get_process_model(state.model_name)
 
-    if model.events do
-      [event] = model.events
-
-      if event.message_selector.(payload) do
-        exit_task(event.exit_task, state)
+    state =
+      if model.events do
+        [event] = model.events
+        if event.message_selector.(payload), do: exit_task(event, state), else: state
       else
         state
       end
-    else
-      state
-    end
 
     {:noreply, state}
   end
 
-  defp exit_task(task_name, state) do
-    task = Enum.find(Map.values(state.open_tasks), fn t -> t.name == task_name end)
+  defp exit_task(event, state) do
+    task = Enum.find(Map.values(state.open_tasks), fn t -> t.name == event.exit_task end)
     task = Map.put(task, :complete, :exit_on_task_event)
 
     if task.type == :sub_process do
       complete_on_task_exit_event(task.sub_process_pid)
     end
 
-    Map.put(state, :completed_tasks, [task | state.completed_tasks])
-    |> Map.put(:open_tasks, Map.delete(state.open_tasks, task.uid))
-    |> execute_process()
+    update_completed_task_state(state, task, event.next) |> execute_process()
   end
 
   def terminate(reason, state) do
@@ -441,24 +435,24 @@ defmodule Mozart.ProcessEngine do
     |> Map.put(:completed_tasks, completed_tasks)
   end
 
-  defp update_completed_task_state(state, task) do
+  defp update_completed_task_state(state, task, next_task) do
     state = update_for_completed_task(state, task)
-    if task.next, do: create_next_tasks(state, task.next, task.name), else: state
+    if next_task, do: create_next_tasks(state, next_task, task.name), else: state
   end
 
   defp complete_send_event_task(state, task) do
     Logger.info("Complete send event task [#{task.name}[#{task.uid}]")
-    update_completed_task_state(state, task) |> execute_process()
+    update_completed_task_state(state, task, task.next) |> execute_process()
   end
 
   defp complete_join_task(state, task) do
     Logger.info("Complete join task [#{task.name}]")
-    update_completed_task_state(state, task) |> execute_process()
+    update_completed_task_state(state, task, task.next) |> execute_process()
   end
 
   defp complete_timer_task(state, task) do
     Logger.info("Complete timer task [#{task.name}]")
-    update_completed_task_state(state, task) |> execute_process()
+    update_completed_task_state(state, task, task.next) |> execute_process()
   end
 
   defp complete_service_task(state, task) do
@@ -474,7 +468,7 @@ defmodule Mozart.ProcessEngine do
     output_data = task.function.(input_data)
 
     Map.put(state, :data, Map.merge(state.data, output_data))
-    |> update_completed_task_state(task)
+    |> update_completed_task_state(task, task.next)
     |> execute_process()
   end
 
@@ -482,7 +476,7 @@ defmodule Mozart.ProcessEngine do
     Logger.info("Complete run task [#{task.name}[#{task.uid}]")
     arguments = Map.take(state.data, task.input_fields) |> Map.to_list()
     data = Map.merge(state.data, Tablex.decide(task.rule_table, arguments))
-    Map.put(state, :data, data) |> update_completed_task_state(task) |> execute_process()
+    Map.put(state, :data, data) |> update_completed_task_state(task, task.next) |> execute_process()
   end
 
   defp complete_parallel_task(state, task) do
@@ -498,7 +492,7 @@ defmodule Mozart.ProcessEngine do
     Logger.info("Complete receive event task [#{task.name}]")
 
     Map.put(state, :data, Map.merge(state.data, task.data))
-    |> update_completed_task_state(task)
+    |> update_completed_task_state(task, task.next)
     |> execute_process()
   end
 
@@ -513,14 +507,14 @@ defmodule Mozart.ProcessEngine do
 
     state
     |> create_next_tasks(next_task_name, task.name)
-    |> update_completed_task_state(task)
+    |> update_completed_task_state(task, task.next)
     |> execute_process()
   end
 
   defp complete_subprocess_task(state, task) do
     Logger.info("Complete subprocess task [#{task.name}][#{task.uid}]")
     data = Map.merge(task.data, state.data)
-    Map.put(state, :data, data) |> update_completed_task_state(task) |> execute_process()
+    Map.put(state, :data, data) |> update_completed_task_state(task, task.next) |> execute_process()
   end
 
   defp get_task_def(task_name, state) do

@@ -20,6 +20,10 @@ defmodule Mozart.ProcessEngineTest do
           %Subprocess{
             name: :call_process_task,
             sub_process_model_name: :sub_process_with_one_user_task
+          },
+          %Service{
+            name: :service_after_task_exit,
+            function: fn data -> Map.put(data, :service_after_task_exit, true) end
           }
         ],
         events: [
@@ -31,7 +35,8 @@ defmodule Mozart.ProcessEngineTest do
                 :exit_user_task -> true
                 _ -> nil
               end
-            end
+            end,
+            next: :service_after_task_exit
           }
         ],
         initial_task: :call_process_task
@@ -184,7 +189,7 @@ defmodule Mozart.ProcessEngineTest do
     assert Enum.all?(receive_tasks, fn t -> t.duration end) == true
     assert Enum.all?(send_tasks, fn t -> t.duration end) == true
   end
-  
+
   def single_service_task do
       %ProcessModel{
         name: :process_with_single_service_task,

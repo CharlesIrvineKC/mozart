@@ -5,6 +5,7 @@ defmodule Mozart.Event.TaskExit do
     :function,
     :message_selector,
     :exit_task,
+    :next,
     type: :task_exit
   ]
 end
