@@ -16,8 +16,8 @@ defmodule Mozart.ProcessEngine do
   ## Client API
 
   @doc false
-  def start_link(uid, model_name, data, parent \\ nil) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, parent})
+  def start_link(uid, model_name, data, parent_uid \\ nil) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, parent_uid})
     {:ok, pid, uid}
   end
 
@@ -46,17 +46,12 @@ defmodule Mozart.ProcessEngine do
   name of the process model to be executed and any initialization data. The
   engine will start executing tasks with the execute/1 function is called.
   """
-  def start_process(model_name, data, parent \\ nil) do
-    uid =
-      if parent do
-        get_uid(parent)
-      else
-        UUID.generate()
-      end
+  def start_process(model_name, data, parent_uid \\ nil) do
+    uid = parent_uid || UUID.generate()
 
     child_spec = %{
       id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent]},
+      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent_uid]},
       restart: :transient
     }
 
@@ -70,7 +65,6 @@ defmodule Mozart.ProcessEngine do
     GenServer.cast(ppid, :complete_on_task_exit_event)
   end
 
-  @doc false
   def get_state(ppid) do
     GenServer.call(ppid, :get_state)
   end
@@ -119,13 +113,14 @@ defmodule Mozart.ProcessEngine do
 
   @doc false
   def notify_child_complete(parent_pid, sub_process_name, data) do
+    IO.puts "************** notify child complete *************"
     GenServer.cast(parent_pid, {:notify_child_complete, sub_process_name, data})
   end
 
   ## GenServer callbacks
 
   @doc false
-  def init({uid, model_name, data, parent}) do
+  def init({uid, model_name, data, parent_uid}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
     state =
@@ -134,7 +129,7 @@ defmodule Mozart.ProcessEngine do
           model_name: model_name,
           data: data,
           uid: uid,
-          parent: parent,
+          parent_uid: parent_uid,
           start_time: DateTime.utc_now()
         }
 
@@ -203,8 +198,11 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast({:notify_child_complete, sp_name, sp_data}, state) do
+    IO.puts "***************************"
     {_uid, sp_task} =
       Enum.find(state.open_tasks, fn {_uid, ti} -> ti.sub_process_model_name == sp_name end)
+
+    IO.inspect(sp_task, label: "&&&&&subprocess task")
 
     sp_task = Map.put(sp_task, :complete, true)
     open_tasks = Map.put(state.open_tasks, sp_task.uid, sp_task)
@@ -265,9 +263,11 @@ defmodule Mozart.ProcessEngine do
 
     state =
       with [event] <- model.events,
-           true <- event.message_selector.(payload),
-           do: exit_task(event.exit_task, state),
-           else: (_ -> state)
+           true <- event.message_selector.(payload) do
+        exit_task(event.exit_task, state)
+      else
+        _ -> state
+      end
 
     {:noreply, state}
   end
@@ -363,7 +363,7 @@ defmodule Mozart.ProcessEngine do
 
   defp do_side_effects(:sub_process, new_task, state) do
     data = state.data
-    {:ok, process_pid, _uid} = start_process(new_task.sub_process_model_name, data, self())
+    {:ok, process_pid, _uid} = start_process(new_task.sub_process_model_name, data, state.uid)
     execute(process_pid)
 
     new_task = Map.put(new_task, :sub_process_pid, process_pid)
@@ -614,8 +614,10 @@ defmodule Mozart.ProcessEngine do
       end
     else
       ## no work remaining so process is complete
-      if state.parent do
-        notify_child_complete(state.parent, state.model_name, state.data)
+      if state.parent_uid do
+        parent_pid = PS.get_process_pid_from_uid(state.parent_uid)
+        IO.inspect(parent_pid, label: "notifying parent")
+        notify_child_complete(parent_pid, state.model_name, state.data)
       end
 
       now = DateTime.utc_now()
@@ -628,7 +630,7 @@ defmodule Mozart.ProcessEngine do
       Logger.info("Process complete [#{state.model_name}][#{state.uid}]")
 
       PS.insert_completed_process(state)
-
+      Process.sleep(2000)
       Process.exit(self(), :shutdown)
       state
     end

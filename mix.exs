@@ -18,7 +18,7 @@ defmodule Mozart.MixProject do
   defp description() do
     """
     Mozart is a BPM platform written in Elixir. It is currently in active development, but it has sufficient
-    functionality for at least experimental use.
+    functionality for the development of BPM POCs.
     """
   end
 
@@ -43,7 +43,8 @@ defmodule Mozart.MixProject do
       "guides/app_overview.md",
       "guides/first_process_execution.md",
       "guides/task_types.md",
-      "guides/home_loan.md"
+      "guides/home_loan.md",
+      "guides/event_types.md"
     ]
   end
 

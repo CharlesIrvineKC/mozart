@@ -31,6 +31,13 @@ defmodule Mozart.ProcessService do
   end
 
   @doc """
+  Get a process pid from it UID
+  """
+  def get_process_pid_from_uid(uid) do
+    GenServer.call(__MODULE__, {:get_process_pid_from_uid, uid})
+  end
+
+  @doc """
   Returns the user tasks that can be completed by users belonging to one of the input groups.
   """
   def get_user_tasks_for_groups(groups) do
@@ -80,7 +87,6 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:process_completed_process_instance, process_state})
   end
 
-  @doc false
   def get_state() do
     GenServer.call(__MODULE__, :get_state)
   end
@@ -223,6 +229,10 @@ defmodule Mozart.ProcessService do
 
   def handle_call(:get_completed_processes, _from, state) do
     {:reply, get_completed_processes_local(state), state}
+  end
+
+  def handle_call({:get_process_pid_from_uid, uid}, _from, state) do
+    {:reply, Map.get(state.process_instances, uid), state}
   end
 
   def handle_call({:get_process_ppid, process_uid}, _from, state) do
