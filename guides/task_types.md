@@ -80,7 +80,7 @@ and should see something like this:
 iex [12:21 :: 11] > PS.get_completed_process(uid)
 %Mozart.Data.ProcessState{
   uid: "53d0220b-4e0c-42bb-9154-7e4aeff83837",
-  parent: nil,
+  parent_pid: nil,
   model_name: :process_with_single_service_task,
   start_time: ~U[2024-05-30 17:22:49.156516Z],
   end_time: ~U[2024-05-30 17:22:49.161447Z],
@@ -230,7 +230,7 @@ and should see something like this:
 iex [13:28 :: 12] > PS.get_completed_process(uid)
 %Mozart.Data.ProcessState{
   uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82",
-  parent: nil,
+  parent_pid: nil,
   model_name: :user_task_process_model,
   start_time: ~U[2024-05-30 18:29:25.954801Z],
   end_time: ~U[2024-05-30 21:35:58.017106Z],
@@ -336,7 +336,7 @@ and should see something like this:
 iex [20:45 :: 11] > PS.get_completed_process(uid)
 %Mozart.Data.ProcessState{
   uid: "b79fe224-52b9-4457-b885-1234c47c0eb3",
-  parent: nil,
+  parent_pid: nil,
   model_name: :loan_approval,
   start_time: ~U[2024-06-01 01:45:57.687401Z],
   end_time: ~U[2024-06-01 01:45:57.695101Z],
@@ -460,7 +460,7 @@ and should see something like this:
 iex [10:32 :: 11] > PE.get_state(ppid)
 %Mozart.Data.ProcessState{
   uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b",
-  parent: nil,
+  parent_pid: nil,
   model_name: :parallel_process_model,
   start_time: ~U[2024-06-01 15:33:23.663777Z],
   end_time: nil,
@@ -592,7 +592,7 @@ iex [12:30 :: 12] > PS.get_completed_processes()
 [
   %Mozart.Data.ProcessState{
     uid: "0a04f109-505b-4059-a5e2-0980c3229ce2",
-    parent: #PID<0.299.0>,
+    parent_pid: #PID<0.299.0>,
     model_name: :service_subprocess_model,
     start_time: ~U[2024-06-02 17:30:33.946285Z],
     end_time: ~U[2024-06-02 17:30:33.946645Z],
@@ -615,7 +615,7 @@ iex [12:30 :: 12] > PS.get_completed_processes()
   },
   %Mozart.Data.ProcessState{
     uid: "83769669-388d-490a-a326-cd5c3c684361",
-    parent: nil,
+    parent_pid: nil,
     model_name: :call_process_model,
     start_time: ~U[2024-06-02 17:30:33.939824Z],
     end_time: ~U[2024-06-02 17:30:33.947097Z],
@@ -716,7 +716,7 @@ and should see something like this:
 [
   %Mozart.Data.ProcessState{
     uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b",
-    parent: nil,
+    parent_pid: nil,
     model_name: :call_timer_task,
     start_time: ~U[2024-06-02 18:07:18.670993Z],
     end_time: ~U[2024-06-02 18:07:23.677426Z],
@@ -834,7 +834,7 @@ and should see something like this:
 [
   %Mozart.Data.ProcessState{
     uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a",
-    parent: nil,
+    parent_pid: nil,
     model_name: :parallel_process_model,
     start_time: ~U[2024-06-03 15:02:40.056941Z],
     end_time: ~U[2024-06-03 15:02:50.065079Z],
@@ -998,7 +998,7 @@ and should see something like this:
 [
   %Mozart.Data.ProcessState{
     uid: "29e8f3b7-21df-4e47-b689-9e3fd82cf34a",
-    parent: nil,
+    parent_pid: nil,
     model_name: :process_with_single_send_task,
     start_time: ~U[2024-06-03 15:30:18.247638Z],
     end_time: ~U[2024-06-03 15:30:18.248965Z],
@@ -1020,7 +1020,7 @@ and should see something like this:
   },
   %Mozart.Data.ProcessState{
     uid: "3dfad9f6-2629-4e73-8ec2-c6209e84aab9",
-    parent: nil,
+    parent_pid: nil,
     model_name: :process_with_receive_task,
     start_time: ~U[2024-06-03 15:30:13.241838Z],
     end_time: ~U[2024-06-03 15:30:18.248982Z],

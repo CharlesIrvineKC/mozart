@@ -129,7 +129,7 @@ and you should see:
 iex [12:22 :: 14] > PS.get_completed_process(uid)
 %Mozart.Data.ProcessState{
   uid: "0800de9a-8ec5-4906-bf50-bd09321f5982",
-  parent: nil,
+  parent_pid: nil,
   model_name: :process_with_single_service_task,
   start_time: ~U[2024-05-28 17:27:40.898328Z],
   end_time: ~U[2024-05-28 17:27:40.899505Z],

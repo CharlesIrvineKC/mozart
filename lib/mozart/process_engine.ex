@@ -16,8 +16,8 @@ defmodule Mozart.ProcessEngine do
   ## Client API
 
   @doc false
-  def start_link(uid, model_name, data, parent \\ nil) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, parent})
+  def start_link(uid, model_name, data, parent_pid \\ nil) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, parent_pid})
     {:ok, pid, uid}
   end
 
@@ -46,12 +46,12 @@ defmodule Mozart.ProcessEngine do
   name of the process model to be executed and any initialization data. The
   engine will start executing tasks with the execute/1 function is called.
   """
-  def start_process(model_name, data, parent \\ nil) do
+  def start_process(model_name, data, parent_pid \\ nil) do
     uid = UUID.generate()
 
     child_spec = %{
       id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent]},
+      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent_pid]},
       restart: :transient
     }
 
@@ -113,14 +113,13 @@ defmodule Mozart.ProcessEngine do
 
   @doc false
   def notify_child_complete(parent_pid, sub_process_name, data) do
-    IO.puts "************** notify child complete *************"
     GenServer.cast(parent_pid, {:notify_child_complete, sub_process_name, data})
   end
 
   ## GenServer callbacks
 
   @doc false
-  def init({uid, model_name, data, parent}) do
+  def init({uid, model_name, data, parent_pid}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
     state =
@@ -129,7 +128,7 @@ defmodule Mozart.ProcessEngine do
           model_name: model_name,
           data: data,
           uid: uid,
-          parent: parent,
+          parent_pid: parent_pid,
           start_time: DateTime.utc_now()
         }
 
@@ -198,11 +197,8 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast({:notify_child_complete, sp_name, sp_data}, state) do
-    IO.puts "***************************"
     {_uid, sp_task} =
       Enum.find(state.open_tasks, fn {_uid, ti} -> ti.sub_process_model_name == sp_name end)
-
-    IO.inspect(sp_task, label: "&&&&&subprocess task")
 
     sp_task = Map.put(sp_task, :complete, true)
     open_tasks = Map.put(state.open_tasks, sp_task.uid, sp_task)
@@ -614,8 +610,8 @@ defmodule Mozart.ProcessEngine do
       end
     else
       ## no work remaining so process is complete
-      if state.parent do
-        notify_child_complete(state.parent, state.model_name, state.data)
+      if state.parent_pid do
+        notify_child_complete(state.parent_pid, state.model_name, state.data)
       end
 
       now = DateTime.utc_now()
