@@ -47,7 +47,12 @@ defmodule Mozart.ProcessEngine do
   engine will start executing tasks with the execute/1 function is called.
   """
   def start_process(model_name, data, parent \\ nil) do
-    uid = UUID.generate()
+    uid =
+      if parent do
+        get_uid(parent)
+      else
+        UUID.generate()
+      end
 
     child_spec = %{
       id: MyProcessEngine,
@@ -260,9 +265,9 @@ defmodule Mozart.ProcessEngine do
 
     state =
       with [event] <- model.events,
-         true <- event.message_selector.(payload),
-      do: exit_task(event.exit_task, state),
-      else: (_ -> state)
+           true <- event.message_selector.(payload),
+           do: exit_task(event.exit_task, state),
+           else: (_ -> state)
 
     {:noreply, state}
   end
@@ -474,7 +479,10 @@ defmodule Mozart.ProcessEngine do
     Logger.info("Complete run task [#{task.name}[#{task.uid}]")
     arguments = Map.take(state.data, task.input_fields) |> Map.to_list()
     data = Map.merge(state.data, Tablex.decide(task.rule_table, arguments))
-    Map.put(state, :data, data) |> update_completed_task_state(task, task.next) |> execute_process()
+
+    Map.put(state, :data, data)
+    |> update_completed_task_state(task, task.next)
+    |> execute_process()
   end
 
   defp complete_parallel_task(state, task) do
@@ -512,7 +520,10 @@ defmodule Mozart.ProcessEngine do
   defp complete_subprocess_task(state, task) do
     Logger.info("Complete subprocess task [#{task.name}][#{task.uid}]")
     data = Map.merge(task.data, state.data)
-    Map.put(state, :data, data) |> update_completed_task_state(task, task.next) |> execute_process()
+
+    Map.put(state, :data, data)
+    |> update_completed_task_state(task, task.next)
+    |> execute_process()
   end
 
   defp get_task_def(task_name, state) do
