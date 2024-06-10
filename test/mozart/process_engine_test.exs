@@ -369,10 +369,9 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(get_subprocess_models())
     data = %{value: 1}
     {:ok, ppid, uid} = PE.start_process(:call_process_model, data)
-    PE.execute_and_wait(ppid)
+    PE.execute(ppid)
 
-    Process.monitor(ppid)
-    assert_receive(_msg, 500)
+    Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
     assert length(completed_process.completed_tasks) == 2
