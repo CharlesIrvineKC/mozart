@@ -110,7 +110,7 @@ defmodule Mozart.ProcessServiceTest do
     PS.clear_state()
     PS.load_process_model(get_home_loan_process())
     data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
-    {:ok, ppid, uid} = PE.start_process(:home_loan_process, data)
+    {:ok, ppid, uid, _process_key} = PE.start_process(:home_loan_process, data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -204,7 +204,7 @@ defmodule Mozart.ProcessServiceTest do
   test "complete a user task" do
     PS.clear_then_load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
-    {:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
+    {:ok, ppid, uid, _process_key} = PE.start_process(:user_task_process_model, data)
     PE.execute_and_wait(ppid)
 
     [task_instance] = Map.values(PE.get_open_tasks(ppid))
@@ -218,7 +218,7 @@ defmodule Mozart.ProcessServiceTest do
   test "assign a task to a user" do
     PS.clear_then_load_process_models(TestModels.get_testing_process_models())
     PS.clear_user_tasks()
-    {:ok, ppid, _uid} = PE.start_process(:one_user_task_process, %{value: 1})
+    {:ok, ppid, _uid, _process_key} = PE.start_process(:one_user_task_process, %{value: 1})
     PE.execute(ppid)
     Process.sleep(10)
     [task] = PS.get_user_tasks_for_user("crirvine")
@@ -229,12 +229,30 @@ defmodule Mozart.ProcessServiceTest do
 
   test "start a process engine" do
     PS.clear_then_load_process_models(TestModels.get_parallel_process_models())
-    {:ok, ppid, uid} = PE.start_process(:parallel_process_model, %{value: 1})
+    {:ok, ppid, uid, _process_key} = PE.start_process(:parallel_process_model, %{value: 1})
     PE.execute(ppid)
     Process.sleep(10)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{value: 1, final: :final, foo: :foo, bar: :bar, foo_bar: :foo_bar}
     assert completed_process.complete == true
+  end
+
+  test "set active process groups" do
+    state = %{active_process_groups: %{}}
+    key = :key_1
+    uid = :uid_1; pid = :pid_1;
+    state = PS.get_active_process_groups(uid, pid, key, state)
+    uid = :uid_2; pid = :pid_2
+    state = PS.get_active_process_groups(uid, pid, key, state)
+    key = :key_2
+    uid = :uid_3; pid = "pid_4"
+    state = PS.get_active_process_groups(uid, pid, key, state)
+    assert state == %{
+      active_process_groups: %{
+        key_1: %{uid_1: :pid_1, uid_2: :pid_2},
+        key_2: %{uid_3: "pid_4"}
+      }
+    }
   end
 end

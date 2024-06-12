@@ -4,6 +4,7 @@ defmodule Mozart.Data.ProcessState do
 ```
 defstruct [
     :uid,
+    :process_key,
     :parent_pid,
     :model_name,
     :start_time,
@@ -24,6 +25,7 @@ Example: (incrementally populated throughout process execution.)
 ```
 %Mozart.Data.ProcessState{
   uid: "74146e68-088e-42b6-965e-20f4d7dbae16",
+  process_key: "74146e68-088e-42b6-965e-20f4d7123456"
   parent_pid: nil,
   model_name: :call_external_service,
   start_time: ~U[2024-05-27 15:22:01.847683Z],
@@ -57,6 +59,7 @@ Example: (incrementally populated throughout process execution.)
 """
   defstruct [
     :uid,
+    :process_key,
     :parent_pid,
     :model_name,
     :start_time,

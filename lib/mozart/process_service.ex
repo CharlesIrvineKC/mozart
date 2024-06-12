@@ -44,8 +44,8 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_user_tasks_for_groups, groups})
   end
 
-  def insert_completed_process(process_state) do
-    GenServer.call(__MODULE__, {:insert_completed_process, process_state})
+  def update_for_completed_process(process_state) do
+    GenServer.call(__MODULE__, {:update_for_completed_process, process_state})
   end
 
   @doc """
@@ -78,8 +78,8 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
-  def register_process_instance(uid, pid) do
-    GenServer.cast(__MODULE__, {:register_process_instance, uid, pid})
+  def register_process_instance(uid, pid, process_key) do
+    GenServer.cast(__MODULE__, {:register_process_instance, uid, pid, process_key})
   end
 
   @doc false
@@ -182,7 +182,8 @@ defmodule Mozart.ProcessService do
     {:ok, process_model_db} = CubDB.start_link(data_dir: "database/process_model_db")
 
     initial_state = %{
-      process_instances: %{},
+      active_process_groups: %{},
+      active_processes: %{},
       restart_state_cache: %{},
       user_task_db: user_task_db,
       completed_process_db: completed_process_db,
@@ -213,7 +214,8 @@ defmodule Mozart.ProcessService do
     CubDB.clear(state.process_model_db)
 
     new_state = %{
-      process_instances: %{},
+      active_processes: %{},
+      active_process_groups: %{},
       restart_state_cache: %{},
       user_task_db: state.user_task_db,
       completed_process_db: state.completed_process_db,
@@ -232,11 +234,11 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_call({:get_process_pid_from_uid, uid}, _from, state) do
-    {:reply, Map.get(state.process_instances, uid), state}
+    {:reply, Map.get(state.active_processes, uid), state}
   end
 
   def handle_call({:get_process_ppid, process_uid}, _from, state) do
-    {:reply, Map.get(state.process_instances, process_uid), state}
+    {:reply, Map.get(state.active_processes, process_uid), state}
   end
 
   def handle_call({:get_completed_process, uid}, _from, state) do
@@ -306,14 +308,17 @@ defmodule Mozart.ProcessService do
     {:reply, models, Map.put(state, :process_models, models)}
   end
 
-  def handle_call({:insert_completed_process, pe_process}, _from, state) do
+  def handle_call({:update_for_completed_process, pe_process}, _from, state) do
+    state = Map.put(state, :active_processes, Map.delete(state.active_processes, pe_process.uid))
     CubDB.put(state.completed_process_db, pe_process.uid, pe_process)
     {:reply, pe_process, state}
   end
 
-  def handle_cast({:register_process_instance, uid, pid}, state) do
-    process_instances = Map.put(state.process_instances, uid, pid)
-    {:noreply, Map.put(state, :process_instances, process_instances)}
+  def handle_cast({:register_process_instance, uid, pid, process_key}, state) do
+    active_processes = Map.put(state.active_processes, uid, pid)
+    state = Map.put(state, :active_processes, active_processes)
+    state = get_active_process_groups(uid, pid, process_key, state)
+    {:noreply, state}
   end
 
   def handle_cast({:complete_user_task, ppid, user_task_uid, data}, state) do
@@ -336,6 +341,13 @@ defmodule Mozart.ProcessService do
   def handle_cast({:insert_user_task, task}, state) do
     insert_user_task(state, task)
     {:noreply, state}
+  end
+
+  def get_active_process_groups(uid, pid, process_key, state) do
+    processes = Map.get(state.active_process_groups, process_key) || %{}
+    processes = Map.put(processes, uid, pid)
+    active_process_groups = Map.put(state.active_process_groups, process_key, processes)
+    Map.put(state, :active_process_groups, active_process_groups)
   end
 
   defp insert_user_task(state, task) do

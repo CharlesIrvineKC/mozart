@@ -16,9 +16,9 @@ defmodule Mozart.ProcessEngine do
   ## Client API
 
   @doc false
-  def start_link(uid, model_name, data, parent_pid \\ nil) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, parent_pid})
-    {:ok, pid, uid}
+  def start_link(uid, model_name, data, process_key, parent_pid) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, process_key, parent_pid})
+    {:ok, pid, {uid, process_key}}
   end
 
   @doc """
@@ -46,16 +46,18 @@ defmodule Mozart.ProcessEngine do
   name of the process model to be executed and any initialization data. The
   engine will start executing tasks with the execute/1 function is called.
   """
-  def start_process(model_name, data, parent_pid \\ nil) do
+  def start_process(model_name, data, process_key \\ nil, parent_pid \\ nil) do
     uid = UUID.generate()
+    process_key = process_key || UUID.generate()
 
     child_spec = %{
       id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, parent_pid]},
+      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, process_key, parent_pid]},
       restart: :transient
     }
 
-    DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
+    {:ok, pid, {uid, process_key}} = DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
+    {:ok, pid, uid, process_key}
   end
 
   @doc """
@@ -119,7 +121,7 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   @doc false
-  def init({uid, model_name, data, parent_pid}) do
+  def init({uid, model_name, data, process_key, parent_pid}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
     state =
@@ -129,6 +131,7 @@ defmodule Mozart.ProcessEngine do
           data: data,
           uid: uid,
           parent_pid: parent_pid,
+          process_key: process_key,
           start_time: DateTime.utc_now()
         }
 
@@ -143,7 +146,7 @@ defmodule Mozart.ProcessEngine do
 
   @doc false
   def handle_continue({:register_and_subscribe, uid}, state) do
-    PS.register_process_instance(uid, self())
+    PS.register_process_instance(uid, self(), state.process_key)
     Phoenix.PubSub.subscribe(:pubsub, "pe_topic")
     {:noreply, state}
   end
@@ -180,6 +183,13 @@ defmodule Mozart.ProcessEngine do
     {:reply, state, state}
   end
 
+  def handle_cast(:execute, state) do
+    model = PS.get_process_model(state.model_name)
+    state = create_next_tasks(state, model.initial_task)
+    state = execute_process(state)
+    {:noreply, state}
+  end
+
   def handle_cast(:complete_on_task_exit_event, state) do
     now = DateTime.utc_now()
 
@@ -190,7 +200,7 @@ defmodule Mozart.ProcessEngine do
 
     Logger.info("Process complete due to task exit event [#{state.model_name}][#{state.uid}]")
 
-    PS.insert_completed_process(state)
+    PS.update_for_completed_process(state)
 
     Process.exit(self(), :shutdown)
     {:noreply, state}
@@ -213,13 +223,6 @@ defmodule Mozart.ProcessEngine do
 
   def handle_cast({:complete_user_task, task_uid, return_data}, state) do
     state = complete_user_task_impl(state, task_uid, return_data)
-    {:noreply, state}
-  end
-
-  def handle_cast(:execute, state) do
-    model = PS.get_process_model(state.model_name)
-    state = create_next_tasks(state, model.initial_task)
-    state = execute_process(state)
     {:noreply, state}
   end
 
@@ -260,7 +263,7 @@ defmodule Mozart.ProcessEngine do
     state =
       with [event] <- model.events,
            true <- event.message_selector.(payload) do
-        exit_task(event.exit_task, state)
+        exit_task(event, state)
       else
         _ -> state
       end
@@ -269,7 +272,8 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp exit_task(event, state) do
-    task = Enum.find(Map.values(state.open_tasks), fn t -> t.name == event.exit_task end)
+    open_tasks = Map.values(state.open_tasks)
+    task = Enum.find(open_tasks, fn t -> t.name == event.exit_task end)
     task = Map.put(task, :complete, :exit_on_task_event)
 
     if task.type == :sub_process do
@@ -359,7 +363,7 @@ defmodule Mozart.ProcessEngine do
 
   defp do_side_effects(:sub_process, new_task, state) do
     data = state.data
-    {:ok, process_pid, _uid} = start_process(new_task.sub_process_model_name, data, self())
+    {:ok, process_pid, _uid, _process_key} = start_process(new_task.sub_process_model_name, data, state.process_key, self())
     execute(process_pid)
 
     new_task = Map.put(new_task, :sub_process_pid, process_pid)
@@ -623,7 +627,7 @@ defmodule Mozart.ProcessEngine do
 
       Logger.info("Process complete [#{state.model_name}][#{state.uid}]")
 
-      PS.insert_completed_process(state)
+      PS.update_for_completed_process(state)
       Process.exit(self(), :shutdown)
       state
     end
