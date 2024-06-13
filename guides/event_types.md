@@ -34,6 +34,7 @@ Now paste the following alias' into your iex session
  alias Mozart.Task.User
  alias Mozart.Task.Subprocess
  alias Mozart.Event.TaskExit
+ alias Phoenix.PubSub
 
 ```
 
@@ -184,3 +185,26 @@ iex [15:58 :: 15] > PS.get_processes_for_process_key(process_key)
 ```
 
 As we expected, we see that there are two processes, each having one open task. The high level process has an open subprocess task. The subprocess has a user task open.
+
+Now, we want to generate a task exit event on the open task in the high level process. In practice, this might be done using a send task in another process engine instance. For the purpose of our example, we will just broadcast a PubSub event as follows:
+
+```
+ PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
+
+```
+
+This should result in the following output:
+
+```
+iex [19:12 :: 17] > PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
+:ok
+19:14:04.732 [info] Process complete due to task exit event [sub_process_with_one_user_task][97f945f1-b508-44ec-87ad-812d7dbb1a3d]
+19:14:04.732 [info] New task instance [service_after_task_exit][20e12b5f-dbe9-4d17-b008-57342963ac45]
+19:14:04.732 [info] Complete service task [service_after_task_exit[20e12b5f-dbe9-4d17-b008-57342963ac45]
+19:14:04.732 [info] Process complete [simple_call_process_model][059eccc4-a0f6-4f1a-8009-6fcf7b622e87]
+```
+
+* The first log statement tells us that the subprocess exited due to a task exit event.
+* The second log statement shows that a new service task was opened and it is the task specified in the **next** field of the **TaskExit** event.
+* The third log statement shows that the service task completed.
+* And, finally, the last log statement shows that out top level process completed.
