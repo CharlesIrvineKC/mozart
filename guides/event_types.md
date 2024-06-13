@@ -91,50 +91,96 @@ PS.clear_state()
 PS.load_process_models(models)
 data = %{}
 
-{:ok, ppid, _uid} = PE.start_process(:simple_call_process_model, data)
+{:ok, ppid, _uid, process_key} = PE.start_process(:simple_call_process_model, data)
 PE.execute(ppid)
 
 ```
 
-Now, let's look at the state of the top level process:
+and we should see in our logs:
 
 ```
-PE.get_state(ppid)
+15:59:17.305 [info] Start process instance [simple_call_process_model][3a205a5b-07a3-4ecc-926e-0f405eddd0ac]
+{:ok, #PID<0.285.0>, "3a205a5b-07a3-4ecc-926e-0f405eddd0ac",
+ "272c2c9c-adcb-444d-a010-479aa68e6025"}
+iex [15:58 :: 14] > PE.execute(ppid)
+:ok
+15:59:17.308 [info] New task instance [call_process_task][7404314e-3590-459a-a71f-458a5416966a]
+15:59:17.308 [info] Start process instance [sub_process_with_one_user_task][cf66c2a2-75e9-4649-b4bd-070ca9e3746a]
+15:59:17.309 [info] New task instance [user_task][106e85b5-082a-47b9-ab66-4606617efc7e]
+```
+
+Notice that two processes have been started - the top level process we explicitly started, and a subprocess. Let's use the process key to examine the state of both processes:
+
+```
+PS.get_processes_for_process_key(process_key)
 
 ```
 
 We should see something like this:
 
 ```
-iex [15:38 :: 24] > PE.get_state(ppid)
-%Mozart.Data.ProcessState{
-  uid: "9e0c232f-d22b-43a0-8a1a-cea0aca356d1",
-  parent_uid: nil,
-  model_name: :simple_call_process_model,
-  start_time: ~U[2024-06-09 20:42:40.936413Z],
-  end_time: nil,
-  execute_duration: nil,
-  open_tasks: %{
-    "db1706e9-6cf7-4b4e-b717-284cef723db4" => %{
-      complete: false,
-      data: %{},
-      name: :call_process_task,
-      type: :sub_process,
-      next: nil,
-      __struct__: Mozart.Task.Subprocess,
-      uid: "db1706e9-6cf7-4b4e-b717-284cef723db4",
-      sub_process_model_name: :sub_process_with_one_user_task,
-      sub_process_pid: #PID<0.291.0>,
-      start_time: ~U[2024-06-09 20:42:40.939348Z],
-      finish_time: nil,
-      duration: nil,
-      process_uid: "9e0c232f-d22b-43a0-8a1a-cea0aca356d1"
-    }
+iex [15:58 :: 15] > PS.get_processes_for_process_key(process_key)
+[
+  %Mozart.Data.ProcessState{
+    uid: "3a205a5b-07a3-4ecc-926e-0f405eddd0ac",
+    process_key: "272c2c9c-adcb-444d-a010-479aa68e6025",
+    parent_pid: nil,
+    model_name: :simple_call_process_model,
+    start_time: ~U[2024-06-12 20:59:17.302851Z],
+    end_time: nil,
+    execute_duration: nil,
+    open_tasks: %{
+      "7404314e-3590-459a-a71f-458a5416966a" => %{
+        complete: false,
+        data: %{},
+        name: :call_process_task,
+        type: :sub_process,
+        next: nil,
+        __struct__: Mozart.Task.Subprocess,
+        uid: "7404314e-3590-459a-a71f-458a5416966a",
+        sub_process_model_name: :sub_process_with_one_user_task,
+        sub_process_pid: #PID<0.286.0>,
+        start_time: ~U[2024-06-12 20:59:17.308810Z],
+        finish_time: nil,
+        duration: nil,
+        process_uid: "3a205a5b-07a3-4ecc-926e-0f405eddd0ac"
+      }
+    },
+    completed_tasks: [],
+    data: %{},
+    complete: false
   },
-  completed_tasks: [],
-  data: %{},
-  complete: false
-}
-
+  %Mozart.Data.ProcessState{
+    uid: "cf66c2a2-75e9-4649-b4bd-070ca9e3746a",
+    process_key: "272c2c9c-adcb-444d-a010-479aa68e6025",
+    parent_pid: #PID<0.285.0>,
+    model_name: :sub_process_with_one_user_task,
+    start_time: ~U[2024-06-12 20:59:17.308880Z],
+    end_time: nil,
+    execute_duration: nil,
+    open_tasks: %{
+      "106e85b5-082a-47b9-ab66-4606617efc7e" => %{
+        complete: false,
+        function: nil,
+        name: :user_task,
+        type: :user,
+        next: nil,
+        __struct__: Mozart.Task.User,
+        uid: "106e85b5-082a-47b9-ab66-4606617efc7e",
+        assigned_groups: ["admin"],
+        start_time: ~U[2024-06-12 20:59:17.309097Z],
+        finish_time: nil,
+        duration: nil,
+        input_fields: nil,
+        process_uid: "cf66c2a2-75e9-4649-b4bd-070ca9e3746a"
+      }
+    },
+    completed_tasks: [],
+    data: %{},
+    complete: false
+  }
+]
 
 ```
+
+As we expected, we see that there are two processes, each having one open task. The high level process has an open subprocess task. The subprocess has a user task open.

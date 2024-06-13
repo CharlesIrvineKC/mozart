@@ -26,5 +26,5 @@ defmodule Mozart.Data.ProcessModel do
   ```
 
   """
-  defstruct [:name, :tasks, :events, :initial_task]
+  defstruct [:name, :initial_task, tasks: [], events: []]
 end

@@ -59,14 +59,16 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(get_exit_event_on_sub_process())
     data = %{}
 
-    {:ok, ppid, _uid, _process_key} = PE.start_process(:simple_call_process_model, data)
+    {:ok, ppid, _uid, process_key} = PE.start_process(:simple_call_process_model, data)
     PE.execute(ppid)
     Process.sleep(100)
+
+    assert length(PS.get_processes_for_process_key(process_key)) == 2
 
     PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
     Process.sleep(500)
 
-    IO.inspect(PS.get_state())
+    assert length(PS.get_completed_processes()) == 2
   end
 
   defp get_event_on_user_task do
@@ -104,9 +106,6 @@ defmodule Mozart.ProcessEngineTest do
     Process.sleep(100)
 
     PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
-    Process.sleep(100)
-
-    # IO.inspect(PS.get_completed_process(uid))
   end
 
   test "call json service" do
@@ -376,8 +375,6 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.data == %{value: 2, subprocess_data: "subprocess data"}
     assert completed_process.complete == true
     assert length(PS.get_completed_processes()) == 2
-    IO.inspect(PS.get_completed_processes())
-    IO.inspect(PS.get_state())
   end
 
   test "execute process with parallel task and join" do

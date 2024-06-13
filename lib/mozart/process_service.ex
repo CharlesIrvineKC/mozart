@@ -23,6 +23,10 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_cached_state, uid})
   end
 
+  def get_processes_for_process_key(process_key) do
+    GenServer.call(__MODULE__, {:get_processes_for_process_key, process_key})
+  end
+
   @doc """
   Returns the state of the completed process corresponding to the process engine's uid
   """
@@ -195,6 +199,13 @@ defmodule Mozart.ProcessService do
     {:ok, initial_state}
   end
 
+  def handle_call({:get_processes_for_process_key, process_key}, _from, state) do
+    process_group = Map.get(state.active_process_groups, process_key)
+    process_pids = Map.values(process_group)
+    process_states = Enum.map(process_pids, fn pid -> PE.get_state(pid) end)
+    {:reply, process_states, state}
+  end
+
   def handle_call(:get_process_model_db, _from, state) do
     {:reply, state.process_model_db, state}
   end
@@ -310,6 +321,14 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:update_for_completed_process, pe_process}, _from, state) do
     state = Map.put(state, :active_processes, Map.delete(state.active_processes, pe_process.uid))
+
+    state =
+      Map.put(
+        state,
+        :active_process_groups,
+        Map.delete(state.active_process_groups, pe_process.process_key)
+      )
+
     CubDB.put(state.completed_process_db, pe_process.uid, pe_process)
     {:reply, pe_process, state}
   end

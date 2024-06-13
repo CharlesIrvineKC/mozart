@@ -17,7 +17,9 @@ defmodule Mozart.ProcessEngine do
 
   @doc false
   def start_link(uid, model_name, data, process_key, parent_pid) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, model_name, data, process_key, parent_pid})
+    {:ok, pid} =
+      GenServer.start_link(__MODULE__, {uid, model_name, data, process_key, parent_pid})
+
     {:ok, pid, {uid, process_key}}
   end
 
@@ -52,11 +54,14 @@ defmodule Mozart.ProcessEngine do
 
     child_spec = %{
       id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start_link, [uid, model_name, data, process_key, parent_pid]},
+      start:
+        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, process_key, parent_pid]},
       restart: :transient
     }
 
-    {:ok, pid, {uid, process_key}} = DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
+    {:ok, pid, {uid, process_key}} =
+      DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
+
     {:ok, pid, uid, process_key}
   end
 
@@ -259,15 +264,8 @@ defmodule Mozart.ProcessEngine do
 
   def handle_info({:event, payload}, state) do
     model = PS.get_process_model(state.model_name)
-
-    state =
-      with [event] <- model.events,
-           true <- event.message_selector.(payload) do
-        exit_task(event, state)
-      else
-        _ -> state
-      end
-
+    event = Enum.find(model.events, fn e -> e.message_selector.(payload) end)
+    state = if event, do: exit_task(event, state), else: state
     {:noreply, state}
   end
 
@@ -363,7 +361,10 @@ defmodule Mozart.ProcessEngine do
 
   defp do_side_effects(:sub_process, new_task, state) do
     data = state.data
-    {:ok, process_pid, _uid, _process_key} = start_process(new_task.sub_process_model_name, data, state.process_key, self())
+
+    {:ok, process_pid, _uid, _process_key} =
+      start_process(new_task.sub_process_model_name, data, state.process_key, self())
+
     execute(process_pid)
 
     new_task = Map.put(new_task, :sub_process_pid, process_pid)
