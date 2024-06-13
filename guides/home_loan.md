@@ -125,7 +125,7 @@ Now let's start executing this process. Paste the following into your iex sessio
 PS.clear_state()
 PS.load_process_model(model)
 data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
-{:ok, ppid, _uid} = PE.start_process(:home_loan_process, data)
+{:ok, ppid, _uid, _process_key} = PE.start_process(:home_loan_process, data)
 PE.execute(ppid)
 
 ```
@@ -246,7 +246,7 @@ Now let's start over at the beginning, and enter data so that the process comple
 PS.clear_state()
 PS.load_process_model(model)
 data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
-{:ok, ppid, _uid} = PE.start_process(:home_loan_process, data)
+{:ok, ppid, _uid, _process_key} = PE.start_process(:home_loan_process, data)
 PE.execute(ppid)
 
 ```

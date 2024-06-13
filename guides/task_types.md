@@ -62,7 +62,7 @@ Now paste the following into your iex session to execute your process model:
 ```
 PS.load_process_model(model)
 data = %{x: 1, y: 1}
-{:ok, ppid, uid} = PE.start_process(:process_with_single_service_task, data)
+{:ok, ppid, uid, _process_key} = PE.start_process(:process_with_single_service_task, data)
 PE.execute(ppid)
 
 ```
@@ -162,7 +162,7 @@ Now paste the following into your iex session to execute your process model:
 PS.clear_user_tasks()
 PS.load_process_model(model)
 data = %{x: 1, y: 1}
-{:ok, ppid, uid} = PE.start_process(:user_task_process_model, data)
+{:ok, ppid, uid, _process_key} = PE.start_process(:user_task_process_model, data)
 PE.execute(ppid)
 
 ```
@@ -318,7 +318,7 @@ Now paste the following into your iex session to execute your process model:
 ```
 PS.load_process_model(model)
 data = %{income: 3000}
-{:ok, ppid, uid} = PE.start_process(:loan_approval, data)
+{:ok, ppid, uid, _process_key} = PE.start_process(:loan_approval, data)
 PE.execute(ppid)
 
 ```
@@ -442,7 +442,7 @@ Now paste the following into your iex session to execute your process model:
 ```
 PS.load_process_model(model)
 data = %{user_task_1_input: :input_1, user_task_2_input: :input_2}
-{:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)
+{:ok, ppid, uid, _process_key} = PE.start_process(:parallel_process_model, data)
 PE.execute(ppid)
 
 ```
@@ -573,7 +573,7 @@ Now paste the following into your iex session to execute your process model:
 PS.clear_state()
 PS.load_process_models(models)
 data = %{value: 1}
-{:ok, ppid, uid} = PE.start_process(:call_process_model, data)
+{:ok, ppid, uid, _process_key} = PE.start_process(:call_process_model, data)
 PE.execute(ppid)
 
 ```
@@ -698,7 +698,7 @@ Now paste the following into your iex session to execute your process model:
 PS.clear_state()
 PS.load_process_model(model)
 data = %{}
-{:ok, ppid, uid} = PE.start_process(:call_timer_task, data)
+{:ok, ppid, uid, _process_key} = PE.start_process(:call_timer_task, data)
 PE.execute(ppid)
 
 ```
@@ -816,7 +816,7 @@ Now paste the following into your iex session to execute your process model:
 PS.clear_state()
 PS.load_process_model(model)
 data = %{}
-{:ok, ppid, uid} = PE.start_process(:parallel_process_model, data)
+{:ok, ppid, uid, _process_key} = PE.start_process(:parallel_process_model, data)
 PE.execute(ppid)
 
 ```
@@ -976,11 +976,11 @@ PS.clear_state()
 PS.load_process_models(models)
 data = %{}
 
-{:ok, r_ppid, r_uid} = PE.start_process(:process_with_receive_task, data)
+{:ok, r_ppid, r_uid, _process_key} = PE.start_process(:process_with_receive_task, data)
 PE.execute(r_ppid)
 Process.sleep(5000)
 
-{:ok, s_ppid, s_uid} = PE.start_process(:process_with_single_send_task, data)
+{:ok, s_ppid, s_uid, _process_key} = PE.start_process(:process_with_single_send_task, data)
 PE.execute(s_ppid)
 
 ```

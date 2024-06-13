@@ -109,7 +109,7 @@ First, we started a process using `Mozart.ProcessEngin.start_process/2`. We pass
 After creating the process engine instance, we then call `Mozart.ProcessEngine.execute/1` which causes the process engine to start completing any tasks that are ready to be completed. After calling the **execute** function, you should see something like:
 
 ```
-iex [12:22 :: 12] > {:ok, pid, uid} = PE.start_process(:process_with_single_service_task, %{x: 0})
+iex [12:22 :: 12] > {:ok, pid, uid, _process_key} = PE.start_process(:process_with_single_service_task, %{x: 0})
 12:27:40.898 [info] Start process instance [process_with_single_service_task][0800de9a-8ec5-4906-bf50-bd09321f5982]
 {:ok, #PID<0.277.0>, "0800de9a-8ec5-4906-bf50-bd09321f5982", "0800de9a-8ec5-4906-bf50-bd09321f1234"}
 iex [12:22 :: 13] > PE.execute(pid)
