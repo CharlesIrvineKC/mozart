@@ -94,17 +94,24 @@ iex [12:52 :: 8] > PS.get_process_model(:process_with_single_service_task)
 Now let us start a process engine, initializing it with our process model and some data. Then we call the function that will invoke process execution. Copy the following into your iex session:
 
 ```elixir
-{:ok, pid, uid} = PE.start_process(:process_with_single_service_task, %{x: 0})
+{:ok, pid, uid, _process_key} = 
+  PE.start_process(:process_with_single_service_task, %{x: 0})
 PE.execute(pid)
 
 ```
 
-You should see something like:
+First, we started a process using `Mozart.ProcessEngin.start_process/2`. We passed it the name of the process model to be executed and some initial data required for process execution. The function returns a tuple with three values: 
+
+* The **pid** of the resulting process engine.
+* The **uid** of the process instance. Every process execution will need a unique identifier. You will see how this is used going forward.
+* Finally, a **process_key** is returned. Process modes are hierarchial, meaning they can be composed of multiple, nested subprocesses. The top level business process and all of its subprocesses will share the same *process_key*.
+
+After creating the process engine instance, we then call `Mozart.ProcessEngine.execute/1` which causes the process engine to start completing any tasks that are ready to be completed. After calling the **execute** function, you should see something like:
 
 ```
 iex [12:22 :: 12] > {:ok, pid, uid} = PE.start_process(:process_with_single_service_task, %{x: 0})
 12:27:40.898 [info] Start process instance [process_with_single_service_task][0800de9a-8ec5-4906-bf50-bd09321f5982]
-{:ok, #PID<0.277.0>, "0800de9a-8ec5-4906-bf50-bd09321f5982"}
+{:ok, #PID<0.277.0>, "0800de9a-8ec5-4906-bf50-bd09321f5982", "0800de9a-8ec5-4906-bf50-bd09321f1234"}
 iex [12:22 :: 13] > PE.execute(pid)
 :ok
 12:27:40.899 [info] New task instance [service_task][da19b03a-009a-42aa-948c-4ad139d0fe66]
@@ -112,7 +119,12 @@ iex [12:22 :: 13] > PE.execute(pid)
 12:27:40.899 [info] Process complete [process_with_single_service_task][0800de9a-8ec5-4906-bf50-bd09321f5982]
 ```
 
-We created an instance of a process engine (`Mozart.ProcessEngine`) specifying the name of the process model to run and some initial data. Notice that the data includes the property **x** that our service task will use to do its computation.
+The logs show that:
+
+1. A new process engine was created.
+1. A new service task was opened.
+1. The service task completed.
+1. And finally the process engine completed executing the process model.
 
 ## Verify the Results
 

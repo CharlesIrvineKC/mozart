@@ -6,11 +6,11 @@ One of the primary concepts of *Mozart* is the **Process Model** implemented by 
 
 If you are a developer working for a bank, you might be asked to develop a process model for handling a customer loan application.
 
-But what does it mean for a process model to be executable? That's where another major concept comes in - the **Process Engine** implemented by `Mozart.ProcessEngine`. A process model and some initial data are loaded into a process engine, after which process execution initiated.
+But what does it mean for a process model to be executable? That's where another major concept comes in - the **Process Engine** implemented by `Mozart.ProcessEngine`. A process model and some initial data are loaded into a process engine, after which process execution is initiated.
 
 ## Process Model Tasks
 
-What happens when a process engine executes a process model? That brings us to the notion of **Tasks**. Tasks are defined in the process model. Each task represents some work that needs to be completed. The job of the process engine is to drive completion of all of the tasks specified in the process model.
+What happens when a process engine executes a process model? That brings us to the notion of **Tasks**. Tasks are defined in the process model. Each task represents some work that needs to be completed. The job of the process engine is to drive completion of the tasks specified in the process model. You will hear the terminology of **task completion** frequently. To **complete** a task means to perform the work required of the task.
 
 Mozart provides arounds a dozen different type of *tasks*. The two most ofen used are the `Mozart.Task.User` task and the `Mozart.Task.Service` task. 
 
@@ -24,14 +24,14 @@ The task types currently supported are:
 | Timer Task              | Waits for expiration of a timer. |
 | Receive Task            | Waits for a subscribed PubSub event. |
 | Send Task               | Sends a PubSub event. |
-| Rule Task               | Perform by evaluating a run block (Tablex) |
+| Rule Task               | Performed by evaluating a set of rules represented in a table. |
 | Choice Task             | Selects one of many process paths. |
-| Parallel Task           | Initiates two or more process paths. |
+| Parallel Task           | Initiates two or more parallel process paths. |
 | Join Task               | Sychronizes on completion of two or more process paths. |
 
 ## Process Service
  
-When a process model has been developed, it is stored in a process model repository for later use. The repository is implemented by `Mozart.ProcessService`. When system users are ready to execute a process model, they retrieve it from the repository and use it to start a process engine execution.
+(Needs an update for more process services functions) When a process model has been developed, it is stored in a process model repository for later use. The repository is implemented by `Mozart.ProcessService`. When system users are ready to execute a process model, they retrieve it from the repository and use it to start a process engine execution.
 
 ## Processes Model Execution
 
@@ -39,7 +39,7 @@ Earlier we said that the job of the process engine is to drive a process model e
 
 ### Completing Tasks
 
-Every process model must specify an **initial task**. This will be the first task opened for completion. Completion of the initial task will often, though not always, trigger the opening of addition tasks. Every task that completes will potentially trigger the opening of additional tasks. At least one task in a process model will not trigger any downstream tasks. Eventually, a process model will stop generating new open tasks and it's process engine will terminate.
+Every process model must specify an **initial task**. This will be the first task opened for completion. Completion of the initial task will often, though not always, trigger the opening of additional tasks. Every task that completes will potentially trigger the opening of additional tasks. At least one task in a process model will not trigger any downstream tasks. Eventually, a process model will stop generating new open tasks and it's process engine will terminate.
 
 So, completing the execution of a process model equates to repeatedly opening and completing tasks until the process as a whole is complete.
 
