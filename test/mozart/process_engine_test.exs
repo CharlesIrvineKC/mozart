@@ -66,7 +66,7 @@ defmodule Mozart.ProcessEngineTest do
     assert length(PS.get_processes_for_process_key(process_key)) == 2
 
     PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
-    Process.sleep(500)
+    Process.sleep(1000)
 
     assert length(PS.get_completed_processes()) == 2
   end
