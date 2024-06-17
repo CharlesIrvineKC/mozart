@@ -1,8 +1,8 @@
 defprocess choice_process_model do
-    choice
-        value < 1000000 do
+    choice value < 1000000 do
             call_service is_high do is_high = true end
-        end
+            call_subprocess subprocess_model
+        esle
         value >= 1000000 do 
             call_service is_low do is_high = false end
         end

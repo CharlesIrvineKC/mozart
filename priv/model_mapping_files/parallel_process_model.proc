@@ -1,11 +1,10 @@
 defprocess paralled_process_model do
-    parallel
+    parallel 
         do
             call_service add_one do value = value + 1 end
             call_service add_two do value = value + 2 end
-        end
+        end 
         do
             call_service add_three do value = value + 3 end
         end
-    end
 end
