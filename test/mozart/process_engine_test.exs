@@ -368,7 +368,7 @@ defmodule Mozart.ProcessEngineTest do
     {:ok, ppid, uid, _process_key} = PE.start_process(:call_process_model, data)
     PE.execute(ppid)
 
-    Process.sleep(100)
+    Process.sleep(500)
 
     completed_process = PS.get_completed_process(uid)
     assert length(completed_process.completed_tasks) == 2
@@ -490,7 +490,7 @@ defmodule Mozart.ProcessEngineTest do
     # by the first user task.
     [task_instance] = Map.values(PE.get_open_tasks(ppid))
     catch_exit(PE.complete_user_task(ppid, task_instance.uid, %{user_task_2: true}))
-    Process.sleep(100)
+    Process.sleep(500)
 
     # Get the restarted process pid from PS and make sure the state is as expected.
     new_pid = PS.get_process_ppid(uid)
@@ -608,7 +608,7 @@ defmodule Mozart.ProcessEngineTest do
 
     Process.monitor(ppid)
     assert_receive({:DOWN, _ref, :process, _object, _reason})
-    Process.sleep(100)
+    Process.sleep(500)
 
     # Process will have been restarted. Get new pid.
     new_pid = PS.get_process_ppid(uid)
