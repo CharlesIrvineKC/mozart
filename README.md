@@ -10,11 +10,13 @@ View documentation for Mozart in hexdocs at [https://hexdocs.pm/mozart/api-refer
 
 ## Introduction
 
-Mozart is an open source BPM platform written using Elixir. Process models are defined using a set of Elixir structs providing a modelling language which is somewhat inspired by AWS Step Functions. See [AWS Step Functions](https://docs.aws.amazon.com/step-functions/?icmpid=docs_homepage_appintegration).  
+Mozart is an open source BPM platform written using Elixir. A distinguishing feature is that each business process model is executed in a separate Elixir process (GenServer) instance. This is possible due to Elixir's (and Erlang's) unique capacity for highly performant, fault tolerant and massively concurrent multi-processing. 
 
-The most distinguishing feature of Mozart is that each business process model is executed in a GenServer instance, made possible by the well known character of Elixir (and Erlang) multi-processing.
+For now, process models are defined using a set of Elixir structs providing a modelling language which is somewhat inspired by [AWS Step Functions](https://docs.aws.amazon.com/step-functions/?icmpid=docs_homepage_appintegration). However, a user-friendly, BPM specific DSL is currently under development. The goal is to create a developer-targeted DSL which can be incorporated into modern CI/CD devops infrastructures.
 
-Another important feature is that process models are not graphically constructed using BPMN2. Instead, they are textually represented by struct based Elxir data structures. This makes BPM, hopefully, just another tool in the software developers toolkit.
+Conversely, process models will not be graphically constructed using a visual programming environment typical of BPMN2. We believe that this kind of development is avoided by a substantial segment of the software development community and in some instances is not condusive to CI/CD developmemnt processes.
+
+However, visual modelling tools are highly regarded by business process analysts and the resulting graphical process depictions are highly readable by developers and process analysts alike. So, it is essential that the DSL currently under development produce process models that are are as readily understood by process analysts as are BPMN2 process models.
 
 ## Current Use Cases (and Non Use Cases)
 
@@ -38,8 +40,7 @@ end
 
 ## Major Todo Items
 
-* Some preliminary performance testing has been done and the results look very promising. More needs to be done and actual metics reported.
-* Develop a textual business processs modeling language with will be translated at runtime into native Elixir data structures. The language will be highly readable to process modelers with no programming experience.
+* Develop a DSL which will be translated at runtime into native Elixir data structures. The language will be highly readable to process modelers with no programming experience. **(Currently in active development.)**
 * Develop rudimentary GUIs for:
   * Runtime trouble shooting and monitoring.
   * User and group administration.
