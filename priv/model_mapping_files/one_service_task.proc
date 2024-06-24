@@ -1,3 +1,0 @@
-defprocess one_service_task do
-  service_task add_one do value = value + 1 end
-end

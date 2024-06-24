@@ -1,3 +1,0 @@
-defprocess one_user_task do
-  user_task provide_loan_amount assigned_groups ["under writing"]
-end

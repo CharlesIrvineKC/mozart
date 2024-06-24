@@ -2,6 +2,7 @@ defmodule Mozart.Dsl.BpmProcess do
   alias Mozart.Task.Script
   alias Mozart.Task.User
   alias Mozart.Task.Subprocess
+  alias Mozart.Task.Service
   alias Mozart.Data.ProcessModel
 
   defmacro __using__(_opts) do
@@ -27,7 +28,7 @@ defmodule Mozart.Dsl.BpmProcess do
   def insert_new_task(task, []), do: [task]
   def insert_new_task(task, [pre | rest]), do: [task, Map.put(pre, :next, task.name) | rest]
 
-  defmacro call_subprocess(name, model: subprocess_name) do
+  defmacro subprocess_task(name, model: subprocess_name) do
     quote do
       subprocess =
         %Subprocess{name: unquote(name), sub_process_model_name: unquote(subprocess_name)}
@@ -35,15 +36,26 @@ defmodule Mozart.Dsl.BpmProcess do
     end
   end
 
+  defmacro service_task(name, mod: mod, func: func, inputs: inputs) do
+    quote do
+      module = Module.concat([unquote(mod)])
+      function = String.to_atom(unquote(func))
+      service =
+        %Service{name: unquote(name), module: module, function: function, input_fields: unquote(inputs)}
+
+      @tasks insert_new_task(service, @tasks)
+    end
+  end
+
   defmacro script_task(name, inputs: inputs, fn: service) do
     quote do
-      service = %Script{
+      script = %Script{
         name: unquote(name),
         input_fields: unquote(inputs),
         function: unquote(service)
       }
 
-      @tasks insert_new_task(service, @tasks)
+      @tasks insert_new_task(script, @tasks)
     end
   end
 
