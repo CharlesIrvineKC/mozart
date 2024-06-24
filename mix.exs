@@ -6,6 +6,7 @@ defmodule Mozart.MixProject do
       app: :mozart,
       version: "0.2.3",
       elixir: "~> 1.16",
+      elixirc_paths: ["lib", "test/support"],
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "Mozart",
