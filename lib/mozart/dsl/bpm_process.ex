@@ -29,13 +29,7 @@ defmodule Mozart.Dsl.BpmProcess do
 
   defmacro __before_compile__(_env) do
     quote do
-      def get_processes do
-        @processes
-      end
-
-      def get_tasks do
-        @tasks
-      end
+      def get_processes, do: @processes
     end
   end
 end
