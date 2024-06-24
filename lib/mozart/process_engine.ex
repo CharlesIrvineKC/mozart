@@ -343,8 +343,8 @@ defmodule Mozart.ProcessEngine do
 
   defp do_side_effects(:user, new_task, state) do
     input_data =
-      if new_task.input_fields do
-        Map.take(state.data, new_task.input_fields)
+      if new_task.inputs do
+        Map.take(state.data, new_task.inputs)
       else
         state.data
       end
@@ -463,8 +463,8 @@ defmodule Mozart.ProcessEngine do
     Logger.info("Complete service task [#{task.name}[#{task.uid}]")
 
     input_data =
-      if task.input_fields do
-        Map.take(state.data, task.input_fields)
+      if task.inputs do
+        Map.take(state.data, task.inputs)
       else
         state.data
       end
@@ -478,7 +478,7 @@ defmodule Mozart.ProcessEngine do
 
   defp complete_rule_task(state, task) do
     Logger.info("Complete run task [#{task.name}[#{task.uid}]")
-    arguments = Map.take(state.data, task.input_fields) |> Map.to_list()
+    arguments = Map.take(state.data, task.inputs) |> Map.to_list()
     data = Map.merge(state.data, Tablex.decide(task.rule_table, arguments))
 
     Map.put(state, :data, data)

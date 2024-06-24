@@ -12,10 +12,10 @@ All of the task types have the following properties:
 
 A **Service Task** (`Mozart.Task.Script`) performs its work by calling an Elixir function. This function could perform a computation, call an external JSON service, retrieve data from a database, etc.
 
-A service task has two unique fields: **:function** and **:input_fields**.
+A service task has two unique fields: **:function** and **:inputs**.
 
 * The **:function** field specifies the function that the service task should apply for the purpose of returning output data into the process state.
-* The **:input_fields** field is used to select which process data fields are passed to the task's function. If no value is supplied for this field, the entire process data is passed.
+* The **:inputs** field is used to select which process data fields are passed to the task's function. If no value is supplied for this field, the entire process data is passed.
 
 ### Service Task example
 
@@ -44,7 +44,7 @@ model = %ProcessModel{
     tasks: [
       %Script{
         name: :service_task,
-        input_fields: [:x, :y],
+        inputs: [:x, :y],
         function: fn data -> Map.put(data, :sum, data.x + data.y) end
       }
     ],
@@ -94,7 +94,7 @@ iex [12:21 :: 11] > PS.get_completed_process(uid)
       next: nil,
       __struct__: Mozart.Task.Script,
       uid: "443319db-9cef-47c0-9366-9b95ec1fa42b",
-      input_fields: [:x, :y],
+      inputs: [:x, :y],
       process_uid: "53d0220b-4e0c-42bb-9154-7e4aeff83837"
     }
   ],
@@ -111,10 +111,10 @@ A **User Task** (`Mozart.Task.User`) works by having a user complete some requir
 
 **Important Note**: Users interact with a BPM platfrom such as Mozart by way of user application of some kind. The user application will allow the user to find tasks which may be assigned to him. Once the user accepts responsibility for a task, the application will then provide a user interface appropriate for accomplishing the given task. 
 
-A user task has two unique fields: **:assigned_groups** and **:input_fields**.
+A user task has two unique fields: **:assigned_groups** and **:inputs**.
 
 * The **:assigned_groups** field specifies the user groups that are elibigle to complete the task. 
-* The **:input_fields** field is used to select which process data fields are passed to the user that will compleete the task. If no value is supplied for this field, the entire process data is passed.
+* The **:inputs** field is used to select which process data fields are passed to the user that will compleete the task. If no value is supplied for this field, the entire process data is passed.
 
 ### User Task example
 
@@ -143,7 +143,7 @@ model = %ProcessModel{
       tasks: [
         %User{
           name: :user_task,
-          input_fields: [:x, :y],
+          inputs: [:x, :y],
           assigned_groups: ["admin"]
         }
       ],
@@ -190,7 +190,7 @@ iex [13:28 :: 11] > PS.get_user_tasks_for_groups(["admin"])
     __struct__: Mozart.Task.User,
     uid: "09fe2c87-d2c8-401b-a4df-83a7edab987d",
     assigned_groups: ["admin"],
-    input_fields: [:x, :y],
+    inputs: [:x, :y],
     process_uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82"
   }
 ]
@@ -246,7 +246,7 @@ iex [13:28 :: 12] > PS.get_completed_process(uid)
       __struct__: Mozart.Task.User,
       uid: "09fe2c87-d2c8-401b-a4df-83a7edab987d",
       assigned_groups: ["admin"],
-      input_fields: [:x, :y],
+      inputs: [:x, :y],
       process_uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82"
     }
   ],
@@ -265,7 +265,7 @@ Rule tasks use [Tablex](https://hexdocs.pm/tablex/0.3.1/readme.html), an incredi
 
 A rule task has two unique fields: **:decision_args** and **:rule_table**.
 
-* The **:input_fields** field specifies the state data fields used to evaluate the rule table.
+* The **:inputs** field specifies the state data fields used to evaluate the rule table.
 * The **:rule_table** field holds the Tablex table definition.
 
 ### Rule Task example
@@ -295,7 +295,7 @@ model = %ProcessModel{
     tasks: [
       %Rule{
         name: :loan_decision,
-        input_fields: [:income],
+        inputs: [:income],
         rule_table:
           Tablex.new("""
           F     income      || status
@@ -349,7 +349,7 @@ iex [20:45 :: 11] > PS.get_completed_process(uid)
       next: nil,
       __struct__: Mozart.Task.Rule,
       uid: "a045ccfe-21d1-410f-aa87-6e020017e48d",
-      input_fields: [:income],
+      inputs: [:income],
       rule_table: %Tablex.Table{
         hit_policy: :first_hit,
         inputs: [
@@ -421,12 +421,12 @@ model = %ProcessModel{
           },
           %User{
             name: :user_task_1,
-            input_fields: [:user_task_1_input],
+            inputs: [:user_task_1_input],
             assigned_groups: ["admin"]
           },
           %User{
             name: :user_task_2,
-            input_fields: [:user_task_2_input],
+            inputs: [:user_task_2_input],
             assigned_groups: ["admin"]
           }
         ],
@@ -475,7 +475,7 @@ iex [10:32 :: 11] > PE.get_state(ppid)
       __struct__: Mozart.Task.User,
       uid: "0fe80867-0a8c-4721-ad57-838dbb0901ac",
       assigned_groups: ["admin"],
-      input_fields: [:user_task_2_input],
+      inputs: [:user_task_2_input],
       process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
     },
     "12925277-c6e0-4310-a87b-8945573017ba" => %{
@@ -487,7 +487,7 @@ iex [10:32 :: 11] > PE.get_state(ppid)
       __struct__: Mozart.Task.User,
       uid: "12925277-c6e0-4310-a87b-8945573017ba",
       assigned_groups: ["admin"],
-      input_fields: [:user_task_1_input],
+      inputs: [:user_task_1_input],
       process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
     }
   },
@@ -606,7 +606,7 @@ iex [12:30 :: 12] > PS.get_completed_processes()
         next: nil,
         __struct__: Mozart.Task.Script,
         uid: "c4466a99-6f07-465c-802a-2b8836499940",
-        input_fields: nil,
+        inputs: nil,
         process_uid: "0a04f109-505b-4059-a5e2-0980c3229ce2"
       }
     ],
@@ -629,7 +629,7 @@ iex [12:30 :: 12] > PS.get_completed_processes()
         next: nil,
         __struct__: Mozart.Task.Script,
         uid: "692c0af0-b5f5-4474-a478-6de3cdd84ec8",
-        input_fields: nil,
+        inputs: nil,
         process_uid: "83769669-388d-490a-a326-cd5c3c684361"
       },
       %{
@@ -848,7 +848,7 @@ and should see something like this:
         next: nil,
         __struct__: Mozart.Task.Script,
         uid: "3c64e2ea-7e42-47dd-b606-2fb61b505b7b",
-        input_fields: nil,
+        inputs: nil,
         process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
       },
       %{
@@ -867,7 +867,7 @@ and should see something like this:
         next: :join_task,
         __struct__: Mozart.Task.Script,
         uid: "28c9aef1-0e69-4a7f-a3b7-549e582dfe24",
-        input_fields: nil,
+        inputs: nil,
         process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
       },
       %{
@@ -888,7 +888,7 @@ and should see something like this:
         next: :join_task,
         __struct__: Mozart.Task.Script,
         uid: "d9e8f3eb-5d56-4772-94a3-e5d6243277e3",
-        input_fields: nil,
+        inputs: nil,
         process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
       },
       %{

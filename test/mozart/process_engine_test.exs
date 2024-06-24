@@ -195,7 +195,7 @@ defmodule Mozart.ProcessEngineTest do
       tasks: [
         %Script{
           name: :service_task,
-          input_fields: [:x],
+          inputs: [:x],
           function: fn data -> Map.put(data, :x, data.x + 1) end
         }
       ],
@@ -442,7 +442,7 @@ defmodule Mozart.ProcessEngineTest do
       tasks: [
         %User{
           name: :user_task,
-          input_fields: [:x, :y],
+          inputs: [:x, :y],
           assigned_groups: ["admin"]
         }
       ],

@@ -24,7 +24,7 @@ First, let us construct a simple process model that will have a single service t
         tasks: [
           %Script{
             name: :service_task,
-            input_fields: [:x],
+            inputs: [:x],
             function: fn data -> Map.put(data, :x, data.x + 1) end
           }
         ],
@@ -55,7 +55,7 @@ process_model =
         tasks: [
           %Script{
             name: :service_task,
-            input_fields: [:x],
+            inputs: [:x],
             function: fn data -> Map.put(data, :x, data.x + 1) end
           }
         ],

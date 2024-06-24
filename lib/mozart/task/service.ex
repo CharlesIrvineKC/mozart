@@ -11,7 +11,7 @@ defmodule Mozart.Task.Service do
         tasks: [
           %Script{
             name: :service_task,
-            input_fields: [],
+            inputs: [],
             function: fn data -> Map.merge(data, %{single_service: true}) end
           }
         ],
@@ -26,7 +26,7 @@ defmodule Mozart.Task.Service do
     :name,
     :module,
     :function,
-    :input_fields,
+    :inputs,
     :next,
     :uid,
     :start_time,

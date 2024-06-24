@@ -3,6 +3,7 @@ defmodule Mozart.Dsl.BpmProcess do
   alias Mozart.Task.User
   alias Mozart.Task.Subprocess
   alias Mozart.Task.Service
+  alias Mozart.Task.Rule
   alias Mozart.Data.ProcessModel
 
   defmacro __using__(_opts) do
@@ -18,7 +19,7 @@ defmodule Mozart.Dsl.BpmProcess do
   defmacro defprocess(name, do: body) do
     quote do
       process = %ProcessModel{name: unquote(name)}
-      tasks = unquote(body)
+      unquote(body)
       process = Map.put(process, :tasks, Enum.reverse(@tasks))
       initial_task_name = Map.get(hd(@tasks), :name)
       process = Map.put(process, :initial_task, initial_task_name)
@@ -38,11 +39,20 @@ defmodule Mozart.Dsl.BpmProcess do
     String.split(groups_string, ",")
   end
 
+  defmacro rule_task(name, inputs: inputs, rule_table: rule_table) do
+    quote do
+      inputs = parse_inputs(unquote(inputs))
+      rule_table = Tablex.new(unquote(rule_table))
+      rule_task = %Rule{name: unquote(name), inputs: inputs, rule_table: rule_table}
+      @tasks insert_new_task(rule_task, @tasks)
+    end
+  end
+
   defmacro subprocess_task(name, model: subprocess_name) do
     quote do
       subprocess =
         %Subprocess{name: unquote(name), sub_process_model_name: unquote(subprocess_name)}
-        @tasks insert_new_task(subprocess, @tasks)
+      @tasks insert_new_task(subprocess, @tasks)
     end
   end
 
@@ -52,7 +62,7 @@ defmodule Mozart.Dsl.BpmProcess do
       function = String.to_atom(unquote(func))
       inputs = parse_inputs(unquote(inputs))
       service =
-        %Service{name: unquote(name), module: module, function: function, input_fields: inputs}
+        %Service{name: unquote(name), module: module, function: function, inputs: inputs}
 
       @tasks insert_new_task(service, @tasks)
     end
@@ -62,7 +72,7 @@ defmodule Mozart.Dsl.BpmProcess do
     quote do
       script = %Script{
         name: unquote(name),
-        input_fields: unquote(inputs),
+        inputs: unquote(inputs),
         function: unquote(service)
       }
 

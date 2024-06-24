@@ -29,7 +29,7 @@ defmodule Mozart.ProcessServiceTest do
       tasks: [
         %User{
           name: :perform_pre_approval,
-          input_fields: [:credit_score, :income, :debt_amount],
+          inputs: [:credit_score, :income, :debt_amount],
           assigned_groups: ["credit"],
           next: :route_on_pre_approval_completion
         },
@@ -48,13 +48,13 @@ defmodule Mozart.ProcessServiceTest do
         },
         %User{
           name: :receive_mortgage_application,
-          input_fields: [:credit_score, :income, :debt_amount],
+          inputs: [:credit_score, :income, :debt_amount],
           assigned_groups: ["credit"],
           next: :process_loan
         },
         %User{
           name: :process_loan,
-          input_fields: [:purchase_price, :credit_score, :income, :debt_amount],
+          inputs: [:purchase_price, :credit_score, :income, :debt_amount],
           assigned_groups: ["credit"],
           next: :process_loan_outcome
         },
@@ -73,7 +73,7 @@ defmodule Mozart.ProcessServiceTest do
         },
         %User{
           name: :perform_underwriting,
-          input_fields: [:purchase_price, :credit_score, :income, :debt_amount, :loan_verified],
+          inputs: [:purchase_price, :credit_score, :income, :debt_amount, :loan_verified],
           assigned_groups: ["underwriting"],
           next: :route_from_underwriting
         },
@@ -93,12 +93,12 @@ defmodule Mozart.ProcessServiceTest do
         },
         %User{
           name: :communicate_approval,
-          input_fields: [:loan_approved],
+          inputs: [:loan_approved],
           assigned_groups: ["credit"]
         },
         %User{
           name: :communicate_loan_denied,
-          input_fields: [:loan_approved],
+          inputs: [:loan_approved],
           assigned_groups: ["credit"]
         },
       ],

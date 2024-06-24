@@ -23,7 +23,7 @@ defmodule Mozart.Task.User do
     :function,
     :uid,
     :next,
-    :input_fields,
+    :inputs,
     :start_time,
     :finish_time,
     :duration,

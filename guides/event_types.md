@@ -172,7 +172,7 @@ iex [15:58 :: 15] > PS.get_processes_for_process_key(process_key)
         start_time: ~U[2024-06-12 20:59:17.309097Z],
         finish_time: nil,
         duration: nil,
-        input_fields: nil,
+        inputs: nil,
         process_uid: "cf66c2a2-75e9-4649-b4bd-070ca9e3746a"
       }
     },

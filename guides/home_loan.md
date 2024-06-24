@@ -41,7 +41,7 @@ model =
       tasks: [
         %User{
           name: :perform_pre_approval,
-          input_fields: [:credit_score, :income, :debt_amount],
+          inputs: [:credit_score, :income, :debt_amount],
           assigned_groups: ["credit"],
           next: :route_on_pre_approval_completion
         },
@@ -60,13 +60,13 @@ model =
         },
         %User{
           name: :receive_mortgage_application,
-          input_fields: [:credit_score, :income, :debt_amount],
+          inputs: [:credit_score, :income, :debt_amount],
           assigned_groups: ["credit"],
           next: :process_loan
         },
         %User{
           name: :process_loan,
-          input_fields: [:purchase_price, :credit_score, :income, :debt_amount],
+          inputs: [:purchase_price, :credit_score, :income, :debt_amount],
           assigned_groups: ["credit"],
           next: :process_loan_outcome
         },
@@ -85,7 +85,7 @@ model =
         },
         %User{
           name: :perform_underwriting,
-          input_fields: [:purchase_price, :credit_score, :income, :debt_amount, :loan_verified],
+          inputs: [:purchase_price, :credit_score, :income, :debt_amount, :loan_verified],
           assigned_groups: ["underwriting"],
           next: :route_from_underwriting
         },
@@ -105,12 +105,12 @@ model =
         },
         %User{
           name: :communicate_approval,
-          input_fields: [:loan_approved],
+          inputs: [:loan_approved],
           assigned_groups: ["credit"]
         },
         %User{
           name: :communicate_loan_denied,
-          input_fields: [:loan_approved],
+          inputs: [:loan_approved],
           assigned_groups: ["credit"]
         },
       ],
@@ -152,7 +152,7 @@ iex [11:54 :: 13] > [user_task] = PS.get_user_tasks_for_groups(["credit"])
     __struct__: Mozart.Task.User,
     uid: "a987e7f0-15ba-422d-a26d-7ff6a6bdaaad",
     assigned_groups: ["credit"],
-    input_fields: [:credit_score, :income, :debt_amount],
+    inputs: [:credit_score, :income, :debt_amount],
     process_uid: "5ece8627-623b-46f1-afa2-0fb11659a874"
   }
 ]
@@ -202,7 +202,7 @@ iex [18:16 :: 17] > [user_task] = PS.get_user_tasks_for_groups(["credit"])
     __struct__: Mozart.Task.User,
     uid: "2aa15c30-b147-469d-b8a5-34946b2165df",
     assigned_groups: ["credit"],
-    input_fields: [:purchase_price, :credit_score, :income, :debt_amount],
+    inputs: [:purchase_price, :credit_score, :income, :debt_amount],
     process_uid: "8d106b1c-32f4-43b6-a168-e663bb59056f"
   }
 ]

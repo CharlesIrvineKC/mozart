@@ -20,7 +20,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Rule{
             name: :loan_decision,
-            input_fields: [:income],
+            inputs: [:income],
             rule_table:
               Tablex.new("""
               F     income      || status
@@ -86,7 +86,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Script{
             name: :service_task,
-            input_fields: [:x],
+            inputs: [:x],
             function: fn data -> Map.put(data, :x, data.x + 1) end
           },
         ],
