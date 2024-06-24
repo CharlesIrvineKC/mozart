@@ -30,7 +30,7 @@ Now paste the following alias' into your iex session
  alias Mozart.Data.ProcessModel
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
- alias Mozart.Task.Service
+ alias Mozart.Task.Script
  alias Mozart.Task.User
  alias Mozart.Task.Subprocess
  alias Mozart.Event.TaskExit
@@ -51,7 +51,7 @@ models = [
             name: :call_process_task,
             sub_process_model_name: :sub_process_with_one_user_task
           },
-          %Service{
+          %Script{
             name: :service_after_task_exit,
             function: fn data -> Map.put(data, :service_after_task_exit, true) end
           }

@@ -12,17 +12,17 @@ defmodule Mozart.Task.Join do
             name: :parallel_task,
             multi_next: [:foo, :bar]
           },
-          %Service{
+          %Script{
             name: :foo,
             function: fn data -> Map.merge(data, %{foo: :foo}) end,
             next: :join_task
           },
-          %Service{
+          %Script{
             name: :bar,
             function: fn data -> Map.merge(data, %{bar: :bar}) end,
             next: :foo_bar
           },
-          %Service{
+          %Script{
             name: :foo_bar,
             function: fn data -> Map.merge(data, %{foo_bar: :foo_bar}) end,
             next: :join_task
@@ -33,7 +33,7 @@ defmodule Mozart.Task.Join do
             inputs: [:foo, :foo_bar],
             next: :final_service
           },
-          %Service{
+          %Script{
             name: :final_service,
             function: fn data -> Map.merge(data, %{final: :final}) end
           }

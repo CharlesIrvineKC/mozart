@@ -7,7 +7,7 @@
       sub_process_model_name: :subprocess_model,
       next: :service_task1
     },
-    %Service{
+    %Script{
       name: :service_task,
       type: :service,
       function: fn data -> Map.put(data, :value, data.value + 1) end,
@@ -21,7 +21,7 @@
 %ProcessModel{
   name: :subprocess_model,
   tasks: [
-    %Service{
+    %Script{
       name: :service_task1,
       type: :service,
       function: fn data -> Map.put(data, :value, data.value + 1) end,

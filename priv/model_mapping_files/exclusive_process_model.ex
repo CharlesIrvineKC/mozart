@@ -14,11 +14,11 @@
         }
       ]
     },
-    %Service{
+    %Script{
       name: :is_high,
       function: fn data -> Map.merge(data, %{is_high: true}) end
     },
-    %Service{
+    %Script{
       name: :is_low,
       function: fn data -> Map.merge(data, %{bar: :bar}) end
     }

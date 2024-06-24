@@ -29,7 +29,7 @@ defmodule Mozart.ProcessEngine do
 
   Note: Some types of task are complete-able immediately and some are not. For
   example:
-    * A `Mozart.Task.Service` task is complete-able as soon as it is opened.
+    * A `Mozart.Task.Script` task is complete-able as soon as it is opened.
     * A `Mozart.Task.User` task when a user completes the task.
     * A `Mozart.Task.Receive` task is complete-able when a matching
       `Mozart.Task.Send` task is received.

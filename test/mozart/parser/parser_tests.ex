@@ -3,7 +3,7 @@ defmodule Mozart.Parser.ParserTests do
 
   alias Mozart.Task.Choice
   alias Mozart.Task.User
-  alias Mozart.Task.Service
+  alias Mozart.Task.Script
   alias Mozart.Task.Subprocess
   alias Mozart.Data.ProcessModel
 
@@ -18,7 +18,7 @@ defmodule Mozart.Parser.ParserTests do
             sub_process_model_name: :top_subprocess,
             next: :service_task
           },
-          %Service{
+          %Script{
             name: :service_task,
             function: fn data -> Map.put(data, :value, data.value + 1) end,
             next: :user_task
@@ -33,7 +33,7 @@ defmodule Mozart.Parser.ParserTests do
         name: :top_subprocess,
         initial_task: :service_task_1,
         tasks: [
-          %Service{
+          %Script{
             name: :service_task_1,
             function: fn data -> Map.put(data, :value, data.value + 1) end,
             next: :choice_process_task
@@ -61,11 +61,11 @@ defmodule Mozart.Parser.ParserTests do
               }
             ]
           },
-          %Service{
+          %Script{
             name: :is_low_service,
             function: fn data -> Map.put(data, :is_high, false) end
           },
-          %Service{
+          %Script{
             name: :is_high_service,
             funcgtion: fn data -> Map.put(data, :is_high, true) end
           }

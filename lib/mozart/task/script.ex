@@ -1,4 +1,4 @@
-defmodule Mozart.Task.Service do
+defmodule Mozart.Task.Script do
   @moduledoc """
   Used to model a Service task. A service task calls a function and returns
   data that is into the state data.
@@ -9,7 +9,7 @@ defmodule Mozart.Task.Service do
   %ProcessModel{
         name: :process_with_single_service_task,
         tasks: [
-          %Service{
+          %Script{
             name: :service_task,
             input_fields: [],
             function: fn data -> Map.merge(data, %{single_service: true}) end

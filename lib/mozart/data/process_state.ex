@@ -39,7 +39,7 @@ Example: (incrementally populated throughout process execution.)
       name: :get_api_data,
       type: :service,
       next: nil,
-      __struct__: Mozart.Task.Service,
+      __struct__: Mozart.Task.Script,
       uid: "e3326041-d203-46b2-8141-907f71421398",
       process_uid: "74146e68-088e-42b6-965e-20f4d7dbae16"
     }

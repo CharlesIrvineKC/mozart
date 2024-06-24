@@ -2,14 +2,12 @@ defmodule Mozart.Dsl.ApproveLoan do
   use Mozart.Dsl.BpmProcess
 
     defprocess "Approve Loan" do
-      call_service("Check Credit Score")
-      call_service("Perform Loan Processing")
-      call_service("Perform Underwriting")
+      script_task("Check Credit Score", inputs: "x", fn: "x = x = 1")
+      user_task("Do Underwriting", groups: "admin")
+      call_subprocess("Perform Loan Sutup", model: "Perform Loan Sutup Model")
     end
 
-    defprocess "Process Loan" do
-      call_service("Check Credit Score")
-      call_service("Perform Loan Processing")
-      call_service("Perform Underwriting")
+    defprocess "Perform Loan Sutup Model" do
+      script_task("Send Approval Notice", inputs: "customer_info", fn: "x = x = 1")
     end
 end

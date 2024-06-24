@@ -9,19 +9,19 @@ alias Mozart.Task.Task
       type: parallel,
       multi_next: [:add_one, :add_three]
     },
-    %Service{
+    %Script{
       name: :add_one,
       type: :service,
       function: fn data -> Map.put(data, :value, data.value + 1) end,
       next: :add_two
     },
-    %Service{
+    %Script{
       name: :add_two,
       type: :service,
       function: fn data -> Map.put(data, :value, data.value + 2) end,
       next: nil
     },
-    %Service{
+    %Script{
       name: :add_three,
       type: :service,
       function: fn data -> Map.put(data, :value, data.value + 3) end,
