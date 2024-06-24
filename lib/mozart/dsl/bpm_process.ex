@@ -20,6 +20,8 @@ defmodule Mozart.Dsl.BpmProcess do
       process = %ProcessModel{name: unquote(name)}
       tasks = unquote(body)
       process = Map.put(process, :tasks, Enum.reverse(@tasks))
+      initial_task_name = Map.get(hd(@tasks), :name)
+      process = Map.put(process, :initial_task, initial_task_name)
       @processes [process | @processes]
       @tasks []
     end
@@ -27,6 +29,14 @@ defmodule Mozart.Dsl.BpmProcess do
 
   def insert_new_task(task, []), do: [task]
   def insert_new_task(task, [pre | rest]), do: [task, Map.put(pre, :next, task.name) | rest]
+
+  def parse_inputs(inputs_string) do
+    Enum.map(String.split(inputs_string, ","), fn input -> String.to_atom(input) end)
+  end
+
+  def parse_user_groups(groups_string) do
+    String.split(groups_string, ",")
+  end
 
   defmacro subprocess_task(name, model: subprocess_name) do
     quote do
@@ -40,8 +50,9 @@ defmodule Mozart.Dsl.BpmProcess do
     quote do
       module = Module.concat([unquote(mod)])
       function = String.to_atom(unquote(func))
+      inputs = parse_inputs(unquote(inputs))
       service =
-        %Service{name: unquote(name), module: module, function: function, input_fields: unquote(inputs)}
+        %Service{name: unquote(name), module: module, function: function, input_fields: inputs}
 
       @tasks insert_new_task(service, @tasks)
     end
@@ -61,7 +72,8 @@ defmodule Mozart.Dsl.BpmProcess do
 
   defmacro user_task(name, groups: groups) do
     quote do
-      user_task = %User{name: unquote(name), assigned_groups: unquote(groups)}
+      groups = parse_user_groups(unquote(groups))
+      user_task = %User{name: unquote(name), assigned_groups: groups}
       @tasks insert_new_task(user_task, @tasks)
     end
   end
