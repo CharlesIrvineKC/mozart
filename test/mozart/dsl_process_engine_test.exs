@@ -4,7 +4,6 @@ defmodule Mozart.DslProcessEngineTest do
 
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
-  alias Mozart.Dsl.TestProcesses, as: TP
 
   defprocess "single user task process" do
     user_task("add one to x", groups: "admin")
@@ -12,7 +11,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "single user task process" do
     PS.clear_state()
-    PS.load_process_models(IO.inspect(get_processes(), label: "get_processes()"))
+    PS.load_process_models(get_processes())
     data = %{}
 
     {:ok, ppid, _uid, _process_key} = PE.start_process("single user task process", data)
@@ -47,7 +46,7 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 1
   end
 
-  defprocess "two exclusive route process" do
+  defprocess "two case process" do
     case_task("yes or no", [
       case_i "x > y" do
         user_task("1", groups: "admin")
@@ -58,5 +57,12 @@ defmodule Mozart.DslProcessEngineTest do
         user_task("4", groups: "admin")
       end
     ])
+  end
+
+  test "two case process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    # process = get_process("two case process")
+    # IO.inspect(process)
   end
 end

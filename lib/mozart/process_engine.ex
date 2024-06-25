@@ -286,8 +286,8 @@ defmodule Mozart.ProcessEngine do
 
     if reason_code != :shutdown do
       IO.puts("Process engine terminated with reason:")
-      IO.inspect(reason, label: "terminate reason")
-      IO.inspect(state, label: "terminate state")
+      IO.puts("terminate reason: #{inspect(reason)}")
+      IO.puts("terminate state: #{inspect(state)}")
 
       PS.cache_pe_state(state.uid, state)
     end

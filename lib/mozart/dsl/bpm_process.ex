@@ -49,9 +49,9 @@ defmodule Mozart.Dsl.BpmProcess do
 
   defmacro case_i(expr, do: tasks) do
     quote do
-      IO.inspect(unquote(tasks), label: "tasks")
-      IO.inspect(@tasks, label: "@tasks")
-      case = %{expression: unquote(expr), next: nil}
+      unquote(tasks)
+      [_second, first | _rest] = @tasks
+      case = %{expression: unquote(expr), next: first.name}
     end
   end
 
@@ -107,7 +107,7 @@ defmodule Mozart.Dsl.BpmProcess do
   defmacro __before_compile__(_env) do
     quote do
       def get_processes, do: Enum.reverse(@processes)
-
+      def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)
       def load_processes do
         process_names = Enum.map(@processes, fn p -> p.name end)
         IO.puts("loading processes[#{inspect(process_names)}]")
