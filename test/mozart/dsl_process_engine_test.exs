@@ -46,13 +46,21 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 1
   end
 
+  def x_less_than_y(data) do
+    data.x < data.y
+  end
+
+  def x_greater_or_equal_y(data) do
+    data.x >= data.y
+  end
+
   defprocess "two case process" do
     case_task("yes or no", [
-      case_i "x > y" do
+      case_i &__MODULE__.x_less_than_y/1 do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
       end,
-      case_i "x >= y" do
+      case_i &__MODULE__.x_greater_or_equal_y/1 do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
@@ -62,7 +70,15 @@ defmodule Mozart.DslProcessEngineTest do
   test "two case process" do
     PS.clear_state()
     PS.load_process_models(get_processes())
+    data = %{x: 1, y: 2}
+
+    {:ok, ppid, _uid, _process_key} = PE.start_process("two case process", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    assert PE.is_complete(ppid) == false
     # process = get_process("two case process")
     # IO.inspect(process)
+    IO.inspect(PE.get_state(ppid))
   end
 end
