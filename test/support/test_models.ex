@@ -7,7 +7,7 @@ defmodule Mozart.ProcessModels.TestModels do
   alias Mozart.Task.Subprocess
   alias Mozart.Task.Join
   alias Mozart.Task.User
-  alias Mozart.Task.Choice
+  alias Mozart.Task.Case
   alias Mozart.Task.Send
   alias Mozart.Task.Rule
   alias Mozart.Data.ProcessModel
@@ -282,11 +282,11 @@ defmodule Mozart.ProcessModels.TestModels do
         initial_task: :service_task
       },
       %ProcessModel{
-        name: :choice_process_model,
+        name: :case_process_model,
         tasks: [
-          %Choice{
-            name: :choice_task,
-            choices: [
+          %Case{
+            name: :case_task,
+            cases: [
               %{
                 expression: fn data -> data.value < 10 end,
                 next: :foo
@@ -306,7 +306,7 @@ defmodule Mozart.ProcessModels.TestModels do
             function: fn data -> Map.merge(data, %{bar: :bar}) end
           }
         ],
-        initial_task: :choice_task
+        initial_task: :case_task
       },
       %ProcessModel{
         name: :simple_process_model,

@@ -503,13 +503,13 @@ defmodule Mozart.ProcessEngine do
     |> execute_process()
   end
 
-  defp complete_choice_task(state, task) do
-    Logger.info("Complete choice task [#{task.name}][#{task.uid}]")
+  defp complete_case_task(state, task) do
+    Logger.info("Complete case task [#{task.name}][#{task.uid}]")
 
     next_task_name =
       Enum.find_value(
-        task.choices,
-        fn choice -> if choice.expression.(state.data), do: choice.next end
+        task.cases,
+        fn case -> if case.expression.(state.data), do: case.next end
       )
 
     state
@@ -586,8 +586,8 @@ defmodule Mozart.ProcessEngine do
           complete_able_task.type == :service ->
             complete_service_task(state, complete_able_task)
 
-          complete_able_task.type == :choice ->
-            complete_choice_task(state, complete_able_task)
+          complete_able_task.type == :case ->
+            complete_case_task(state, complete_able_task)
 
           complete_able_task.type == :sub_process ->
             complete_subprocess_task(state, complete_able_task)
@@ -642,7 +642,7 @@ defmodule Mozart.ProcessEngine do
   defp complete_able(t) when t.type == :send, do: true
   defp complete_able(t) when t.type == :timer, do: t.expired
   defp complete_able(t) when t.type == :parallel, do: true
-  defp complete_able(t) when t.type == :choice, do: true
+  defp complete_able(t) when t.type == :case, do: true
   defp complete_able(t) when t.type == :sub_process, do: t.complete
   defp complete_able(t) when t.type == :join, do: t.inputs == []
   defp complete_able(t) when t.type == :user, do: t.complete

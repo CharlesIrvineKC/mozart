@@ -398,11 +398,11 @@ defmodule Mozart.ProcessEngineTest do
     assert length(completed_process.completed_tasks) == 6
   end
 
-  test "execute process with choice returning :foo" do
+  test "execute process with case returning :foo" do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:choice_process_model, data)
+    {:ok, ppid, uid, _process_key} = PE.start_process(:case_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -411,11 +411,11 @@ defmodule Mozart.ProcessEngineTest do
     assert length(completed_process.completed_tasks) == 2
   end
 
-  test "execute process with choice returning :bar" do
+  test "execute process with case returning :bar" do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 11}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:choice_process_model, data)
+    {:ok, ppid, uid, _process_key} = PE.start_process(:case_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -608,7 +608,7 @@ defmodule Mozart.ProcessEngineTest do
 
     Process.monitor(ppid)
     assert_receive({:DOWN, _ref, :process, _object, _reason})
-    Process.sleep(500)
+    Process.sleep(1000)
 
     # Process will have been restarted. Get new pid.
     new_pid = PS.get_process_ppid(uid)

@@ -10,7 +10,7 @@ defmodule Mozart.ProcessServiceTest do
   alias Mozart.Data.ProcessModel
 
   alias Mozart.Task.User
-  alias Mozart.Task.Choice
+  alias Mozart.Task.Case
   alias Mozart.Task.Subprocess
 
   alias Mozart.Event.TaskExit
@@ -33,9 +33,9 @@ defmodule Mozart.ProcessServiceTest do
           assigned_groups: ["credit"],
           next: :route_on_pre_approval_completion
         },
-        %Choice{
+        %Case{
           name: :route_on_pre_approval_completion,
-          choices: [
+          cases: [
             %{
               expression: fn data -> data.pre_approval == true end,
               next: :receive_mortgage_application
@@ -58,9 +58,9 @@ defmodule Mozart.ProcessServiceTest do
           assigned_groups: ["credit"],
           next: :process_loan_outcome
         },
-        %Choice{
+        %Case{
           name: :process_loan_outcome,
-          choices: [
+          cases: [
             %{
               expression: fn data -> data.loan_verified == true end,
               next: :perform_underwriting
@@ -77,9 +77,9 @@ defmodule Mozart.ProcessServiceTest do
           assigned_groups: ["underwriting"],
           next: :route_from_underwriting
         },
-        %Choice{
+        %Case{
           name: :route_from_underwriting,
-          choices: [
+          cases: [
             %{
               expression: fn data -> data.loan_approved == true end,
               next: :communicate_approval

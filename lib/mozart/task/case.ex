@@ -1,16 +1,16 @@
-defmodule Mozart.Task.Choice do
+defmodule Mozart.Task.Case do
   @moduledoc """
-  Used to define a process model Choice Task. Serves the same purpose as a BPMN2 Exclusive Gate.
-  The **choices** field is used to specify the multiple execution paths.
+  Used to define a process model Case Task. Serves the same purpose as a BPMN2 Exclusive Gate.
+  The **cases** field is used to specify the multiple execution paths.
 
   Example:
   ```
   %ProcessModel{
-        name: :choice_process_model,
+        name: :case_process_model,
         tasks: [
-          %Choice{
-            name: :choice_task,
-            choices: [
+          %Case{
+            name: :case_task,
+            cases: [
               %{
                 expression: fn data -> data.value < 10 end,
                 next: :foo
@@ -22,7 +22,7 @@ defmodule Mozart.Task.Choice do
             ]
           }
         ],
-        initial_task: :choice_task
+        initial_task: :case_task
       }
   ```
 
@@ -35,7 +35,7 @@ defmodule Mozart.Task.Choice do
     :start_time,
     :finish_time,
     :duration,
-    choices: [],
-    type: :choice
+    cases: [],
+    type: :case
   ]
 end

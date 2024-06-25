@@ -25,7 +25,7 @@ The task types currently supported are:
 | Receive Task            | Waits for a subscribed PubSub event. |
 | Send Task               | Sends a PubSub event. |
 | Rule Task               | Performed by evaluating a set of rules represented in a table. |
-| Choice Task             | Selects one of many process paths. |
+| Case Task             | Selects one of many process paths. |
 | Parallel Task           | Initiates two or more parallel process paths. |
 | Join Task               | Sychronizes on completion of two or more process paths. |
 

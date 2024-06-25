@@ -4,6 +4,7 @@ defmodule Mozart.Dsl.BpmProcess do
   alias Mozart.Task.Subprocess
   alias Mozart.Task.Service
   alias Mozart.Task.Rule
+  alias Mozart.Task.Case
   alias Mozart.Data.ProcessModel
 
   defmacro __using__(_opts) do
@@ -37,6 +38,21 @@ defmodule Mozart.Dsl.BpmProcess do
 
   def parse_user_groups(groups_string) do
     String.split(groups_string, ",")
+  end
+
+  defmacro case_task(name, cases) do
+    quote do
+      case_task = %Case{name: unquote(name), cases: unquote(cases)}
+      @tasks insert_new_task(case_task, @tasks)
+    end
+  end
+
+  defmacro case_i(expr, do: tasks) do
+    quote do
+      IO.inspect(unquote(tasks), label: "tasks")
+      IO.inspect(@tasks, label: "@tasks")
+      case = %{expression: unquote(expr), next: nil}
+    end
   end
 
   defmacro rule_task(name, inputs: inputs, rule_table: rule_table) do

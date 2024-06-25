@@ -26,7 +26,7 @@ Now paste the following alias' into your iex session
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.Data.ProcessModel
   alias Mozart.Task.User
-  alias Mozart.Task.Choice
+  alias Mozart.Task.Case
 
 ```
 
@@ -45,9 +45,9 @@ model =
           assigned_groups: ["credit"],
           next: :route_on_pre_approval_completion
         },
-        %Choice{
+        %Case{
           name: :route_on_pre_approval_completion,
-          choices: [
+          cases: [
             %{
               expression: fn data -> data.pre_approval == true end,
               next: :receive_mortgage_application
@@ -70,9 +70,9 @@ model =
           assigned_groups: ["credit"],
           next: :process_loan_outcome
         },
-        %Choice{
+        %Case{
           name: :process_loan_outcome,
-          choices: [
+          cases: [
             %{
               expression: fn data -> data.loan_verified == true end,
               next: :perform_underwriting
@@ -89,9 +89,9 @@ model =
           assigned_groups: ["underwriting"],
           next: :route_from_underwriting
         },
-        %Choice{
+        %Case{
           name: :route_from_underwriting,
-          choices: [
+          cases: [
             %{
               expression: fn data -> data.loan_approved == true end,
               next: :communicate_approval
@@ -165,7 +165,7 @@ Let's assume that is sufficient information for granting pre-approval. We can do
 
 ```
 
-At this point, the choice task should have completed and routed the process to the user task **receive_mortgage_application**. The task will be completed when the loan applicant provides the bank with an mortgage application for a house that has been selected for purchase. The bank user will complete this task by entering the purchase price of the house.
+At this point, the case task should have completed and routed the process to the user task **receive_mortgage_application**. The task will be completed when the loan applicant provides the bank with an mortgage application for a house that has been selected for purchase. The bank user will complete this task by entering the purchase price of the house.
 
 Let's do that now:
 
@@ -266,7 +266,7 @@ iex [18:16 :: 32] > PS.complete_user_task(ppid, user_task.uid, %{pre_approval: f
 :ok
 18:53:57.138 [info] New task instance [route_on_pre_approval_completion][645b421a-11ef-461e-91a7-7aa7e7fc66e6]
 18:53:57.138 [info] Complete user task [perform_pre_approval][3ee4b0d2-1432-4d54-b248-34ae928db983]
-18:53:57.138 [info] Complete choice task [route_on_pre_approval_completion][645b421a-11ef-461e-91a7-7aa7e7fc66e6]
+18:53:57.138 [info] Complete case task [route_on_pre_approval_completion][645b421a-11ef-461e-91a7-7aa7e7fc66e6]
 18:53:57.139 [info] New task instance [communicate_loan_denied][a6a5bacd-a5a4-4b1e-a39b-99c0c8b58d04]
 ```
 
