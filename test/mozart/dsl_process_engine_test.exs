@@ -38,7 +38,6 @@ defmodule Mozart.DslProcessEngineTest do
 
     assert PE.is_complete(ppid) == false
     process = get_process("three user task process")
-    IO.inspect(process)
   end
 
   rule_table = """
