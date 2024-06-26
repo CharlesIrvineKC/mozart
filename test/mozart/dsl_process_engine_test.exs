@@ -37,7 +37,6 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(100)
 
     assert PE.is_complete(ppid) == false
-    process = get_process("three user task process")
   end
 
   rule_table = """
@@ -93,11 +92,7 @@ defmodule Mozart.DslProcessEngineTest do
 
     {:ok, ppid, _uid, _process_key} = PE.start_process("two case process", data)
     PE.execute(ppid)
-    Process.sleep(100)
 
     assert PE.is_complete(ppid) == false
-    process = get_process("two case process")
-    IO.inspect(process)
-    #IO.inspect(PE.get_state(ppid))
   end
 end

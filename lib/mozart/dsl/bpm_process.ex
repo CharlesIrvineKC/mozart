@@ -26,7 +26,6 @@ defmodule Mozart.Dsl.BpmProcess do
       unquote(body)
       tasks = set_next_tasks(@tasks)
       tasks = tasks ++ List.flatten(@subtask_sets)
-      IO.inspect(tasks, label: "tasks")
       process = Map.put(process, :tasks, tasks)
       initial_task_name = Map.get(hd(tasks), :name)
       process = Map.put(process, :initial_task, initial_task_name)
@@ -73,12 +72,11 @@ defmodule Mozart.Dsl.BpmProcess do
       @capture_subtasks true
       unquote(tasks)
       first = hd(@subtasks)
-      case = %{expression: unquote(expr), next: first.name}
       @subtasks set_next_tasks(@subtasks)
-      #IO.inspect(@subtasks, label: "@subtasks")
       @subtask_sets [@subtasks | @subtask_sets]
       @subtasks []
       @capture_subtasks false
+      %{expression: unquote(expr), next: first.name}
     end
   end
 
