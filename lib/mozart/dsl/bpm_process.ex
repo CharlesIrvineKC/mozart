@@ -98,10 +98,10 @@ defmodule Mozart.Dsl.BpmProcess do
     end
   end
 
-  defmacro service_task(name, mod: mod, func: func, inputs: inputs) do
+  defmacro service_task(name, module: mod, function: func, inputs: inputs) do
     quote do
       module = Module.concat([unquote(mod)])
-      function = String.to_atom(unquote(func))
+      function = unquote(func)
       inputs = parse_inputs(unquote(inputs))
 
       service =

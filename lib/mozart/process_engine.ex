@@ -469,7 +469,8 @@ defmodule Mozart.ProcessEngine do
         state.data
       end
 
-    output_data = task.function.(input_data)
+    output_data = apply(task.module, task.function, [input_data])
+
 
     Map.put(state, :data, Map.merge(state.data, output_data))
     |> update_completed_task_state(task, task.next)

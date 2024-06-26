@@ -8,6 +8,6 @@ defmodule Mozart.Dsl.ApproveLoan do
     end
 
     defprocess "Perform Loan Sutup Model" do
-      service_task("Send Approval Notice", mod: "Test", func: "foo", inputs: "customer_info")
+      service_task("Send Approval Notice", module: "Test", function: "foo", inputs: "customer_info")
     end
 end
