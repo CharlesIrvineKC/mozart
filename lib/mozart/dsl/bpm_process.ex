@@ -21,16 +21,22 @@ defmodule Mozart.Dsl.BpmProcess do
     quote do
       process = %ProcessModel{name: unquote(name)}
       unquote(body)
-      process = Map.put(process, :tasks, Enum.reverse(@tasks))
-      initial_task_name = Map.get(hd(@tasks), :name)
+      tasks = set_next_tasks(Enum.reverse(@tasks))
+      process = Map.put(process, :tasks, tasks)
+      initial_task_name = Map.get(hd(tasks), :name)
       process = Map.put(process, :initial_task, initial_task_name)
       @processes [process | @processes]
       @tasks []
     end
   end
 
-  def insert_new_task(task, []), do: [task]
-  def insert_new_task(task, [pre | rest]), do: [task, Map.put(pre, :next, task.name) | rest]
+  def set_next_tasks([task]), do: [task]
+  def set_next_tasks([task1, task2 | rest]) do
+    task1 = Map.put(task1, :next, task2.name)
+    [task1 | set_next_tasks([task2 | rest])]
+  end
+
+  def insert_new_task(task, tasks), do: [task | tasks]
 
   def parse_inputs(inputs_string) do
     Enum.map(String.split(inputs_string, ","), fn input -> String.to_atom(input) end)

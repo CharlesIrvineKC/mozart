@@ -21,6 +21,26 @@ defmodule Mozart.DslProcessEngineTest do
     assert PE.is_complete(ppid) == false
   end
 
+  defprocess "three user task process" do
+    user_task("1", groups: "admin")
+    user_task("2", groups: "admin")
+    user_task("3", groups: "admin")
+  end
+
+  test "three user task process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{}
+
+    {:ok, ppid, _uid, _process_key} = PE.start_process("three user task process", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    assert PE.is_complete(ppid) == false
+    process = get_process("three user task process")
+    IO.inspect(process)
+  end
+
   rule_table = """
   F     income      || status
   1     > 50000     || approved
@@ -77,8 +97,8 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(100)
 
     assert PE.is_complete(ppid) == false
-    # process = get_process("two case process")
-    # IO.inspect(process)
-    IO.inspect(PE.get_state(ppid))
+    process = get_process("two case process")
+    IO.inspect(process)
+    #IO.inspect(PE.get_state(ppid))
   end
 end
