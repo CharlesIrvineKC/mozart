@@ -11,7 +11,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "one service task process" do
-    service_task("a service task", module: __MODULE__, function: :square, inputs: "x")
+    service_task("a service task", module: ME, function: :square, inputs: "x")
   end
 
   test "one service task process" do
