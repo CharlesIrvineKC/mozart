@@ -8,6 +8,7 @@ defmodule Mozart.Dsl.BpmProcess do
   alias Mozart.Task.Case
   alias Mozart.Task.Receive
   alias Mozart.Task.Send
+  alias Mozart.Task.Timer
   alias Mozart.Data.ProcessModel
 
   defmacro __using__(_opts) do
@@ -100,6 +101,13 @@ defmodule Mozart.Dsl.BpmProcess do
       @subtasks []
       @capture_subtasks false
       %{expression: unquote(expr), next: first.name}
+    end
+  end
+
+  defmacro timer_task(name, duration: duration) do
+    quote do
+      task = %Timer{name: unquote(name), timer_duration: unquote(duration)}
+      insert_new_task(task)
     end
   end
 

@@ -7,6 +7,26 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
+  defprocess "two timer task process" do
+    timer_task("one second timer task", duration: 1000)
+    timer_task("two second timer task", duration: 2000)
+  end
+
+  test "two timer task process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process("two timer task process", data)
+    PE.execute(ppid)
+    Process.sleep(4000)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 2
+  end
+
   def receive_loan_income(msg) do
     case msg do
       {:barrower_income, income} -> %{barrower_income: income}
