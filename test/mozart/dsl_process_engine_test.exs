@@ -38,6 +38,29 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 1
   end
 
+  defprocess "send barrower income process" do
+    send_task("send barrower income", message: {:barrower_income, 100_000})
+  end
+
+  test "send and receive barrower income process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{barrower_id: "511-58-1422"}
+
+    {:ok, r_ppid, r_uid, _process_key} = PE.start_process("receive barrower income process", data)
+    PE.execute(r_ppid)
+    Process.sleep(500)
+
+    {:ok, s_ppid, _s_uid, _process_key} = PE.start_process("send barrower income process", %{})
+    PE.execute(s_ppid)
+    Process.sleep(500)
+
+    completed_process = PS.get_completed_process(r_uid)
+    assert completed_process.data == %{barrower_income: 100000, barrower_id: "511-58-1422"}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
   def square(data) do
     Map.put(data, :square, data.x * data.x)
   end
