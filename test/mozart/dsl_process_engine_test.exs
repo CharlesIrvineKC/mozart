@@ -169,4 +169,33 @@ defmodule Mozart.DslProcessEngineTest do
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 3
   end
+
+  def add_one_to_value(data) do
+    Map.put(data, :value, data.value + 1)
+  end
+
+  defprocess "two service tasks" do
+    service_task("service task 1", module: ME, function: :add_one_to_value, inputs: "value")
+    service_task("service task 2", module: ME, function: :add_one_to_value, inputs: "value")
+  end
+
+  defprocess "subprocess task process" do
+    subprocess_task("subprocess task", model: "two service tasks")
+  end
+
+  test "subprocess task process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{value: 1}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process("subprocess task process", data)
+    PE.execute(ppid)
+    Process.sleep(1000)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{value: 3}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
 end
