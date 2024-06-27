@@ -40,7 +40,7 @@ end
 
 ## Major Todo Items
 
-* Develop a DSL which will be translated at runtime into native Elixir data structures. The language will be highly readable to process modelers with no programming experience. **(Currently in active development.)**
+* Develop a DSL which will be translated at runtime into native Elixir data structures. The language will be highly readable to process modelers with no programming experience. **Currently in active development.** See [unit tests](https://github.com/CharlesIrvineKC/mozart/blob/main/test/mozart/dsl_process_engine_test.exs) to view progress and sample business process definitions.
 * Develop rudimentary GUIs for:
   * Runtime trouble shooting and monitoring.
   * User and group administration.
