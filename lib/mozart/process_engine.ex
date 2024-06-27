@@ -297,7 +297,7 @@ defmodule Mozart.ProcessEngine do
 
   defp update_receive_event_task(s_task, payload) do
     select_result = s_task.message_selector.(payload)
-
+    
     if select_result do
       Map.put(s_task, :data, select_result)
       |> Map.put(:complete, true)

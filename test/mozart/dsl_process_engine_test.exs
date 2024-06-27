@@ -1,10 +1,42 @@
 defmodule Mozart.DslProcessEngineTest do
   use ExUnit.Case
   use Mozart.Dsl.BpmProcess
+  alias Phoenix.PubSub
 
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
+
+  def receive_loan_income(msg) do
+    case msg do
+      {:barrower_income, income} -> %{barrower_income: income}
+      _ -> nil
+    end
+  end
+
+  defprocess "receive barrower income process" do
+    receive_task("receive barrower income", selector: &ME.receive_loan_income/1)
+  end
+
+  test "receive barrower income process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{barrower_id: "511-58-1422"}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process("receive barrower income process", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    assert PE.is_complete(ppid) == false
+
+    PubSub.broadcast(:pubsub, "pe_topic", {:message, {:barrower_income, 100_000}})
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{barrower_income: 100000, barrower_id: "511-58-1422"}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
 
   def square(data) do
     Map.put(data, :square, data.x * data.x)

@@ -5,6 +5,7 @@ defmodule Mozart.Dsl.BpmProcess do
   alias Mozart.Task.Service
   alias Mozart.Task.Rule
   alias Mozart.Task.Case
+  alias Mozart.Task.Receive
   alias Mozart.Data.ProcessModel
 
   defmacro __using__(_opts) do
@@ -108,6 +109,14 @@ defmodule Mozart.Dsl.BpmProcess do
         %Service{name: unquote(name), module: module, function: function, inputs: inputs}
 
       insert_new_task(service)
+    end
+  end
+
+  defmacro receive_task(name, selector: function) do
+    quote do
+      task = %Receive{name: unquote(name), message_selector: unquote(function)}
+
+      insert_new_task(task)
     end
   end
 
