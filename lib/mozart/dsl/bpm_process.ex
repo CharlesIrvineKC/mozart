@@ -2,6 +2,7 @@ defmodule Mozart.Dsl.BpmProcess do
   alias Mozart.Task.Script
   alias Mozart.Task.User
   alias Mozart.Task.Subprocess
+  alias Mozart.Task.Parallel
   alias Mozart.Task.Service
   alias Mozart.Task.Rule
   alias Mozart.Task.Case
@@ -50,6 +51,26 @@ defmodule Mozart.Dsl.BpmProcess do
       else
         @tasks @tasks ++ [unquote(task)]
       end
+    end
+  end
+
+  defmacro parallel_task(name, routes) do
+    quote do
+      task = %Parallel{name: unquote(name), multi_next: unquote(routes)}
+      insert_new_task(task)
+    end
+  end
+
+  defmacro route(do: tasks) do
+    quote do
+      @capture_subtasks true
+      unquote(tasks)
+      first = hd(@subtasks)
+      @subtasks set_next_tasks(@subtasks)
+      @subtask_sets [@subtasks | @subtask_sets]
+      @subtasks []
+      @capture_subtasks false
+      first.name
     end
   end
 

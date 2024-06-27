@@ -120,6 +120,30 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 1
   end
 
+  defprocess "two parallel routes process" do
+    parallel_task("a parallel task", [
+      route do
+        user_task("1", groups: "admin")
+        user_task("2", groups: "admin")
+      end,
+      route do
+        user_task("3", groups: "admin")
+        user_task("4", groups: "admin")
+      end
+    ])
+  end
+
+  test "two parallel routes process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{}
+
+    {:ok, ppid, _uid, _process_key} = PE.start_process("two parallel routes process", data)
+    PE.execute(ppid)
+
+    assert PE.is_complete(ppid) == false
+  end
+
   def x_less_than_y(data) do
     data.x < data.y
   end
