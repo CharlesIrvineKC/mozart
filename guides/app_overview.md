@@ -1,33 +1,55 @@
 # Introduction to Mozart
 
-## Process Models & Engines
+## Process Models
 
-One of the primary concepts of *Mozart* is the **Process Model** implemented by `Mozart.Data.ProcessModel`. A *process model* is an executable representation of a business process. 
+The primary concept of *Mozart* is the **Process Model**. A *process model* is an executable representation of a business process. *Process models* are implemented using a collection of macros that together comprise a **Domain Specific Language (DSL)** used for the purpose of creating BPM Applications.
 
-If you are a developer working for a bank, you might be asked to develop a process model for handling a customer loan application.
+If you are a developer working for a bank, you might be asked to develop a process model for handling a customer loan application, which might look like this:
 
-But what does it mean for a process model to be executable? That's where another major concept comes in - the **Process Engine** implemented by `Mozart.ProcessEngine`. A process model and some initial data are loaded into a process engine, after which process execution is initiated.
+```elixir
+  defprocess "process loan application" do
+    user_task("record and check loan application",  groups: "customer service")
+    user_task("determine loan acceptance",          groups: "underwriting")
+    user_task("inform customer of result",          groups: "customer service")
+  end
+```
 
 ## Process Model Tasks
 
-What happens when a process engine executes a process model? That brings us to the notion of **Tasks**. Tasks are defined in the process model. Each task represents some work that needs to be completed. The job of the process engine is to drive completion of the tasks specified in the process model. You will hear the terminology of **task completion** frequently. To **complete** a task means to perform the work required of the task.
+As indicated in the example above, a *process model* is composed of a collection of **tasks**. Each task represents some work that needs to be completed. To **complete** a task means to perform the work required of the task.
 
-Mozart provides arounds a dozen different type of *tasks*. The two most ofen used are the `Mozart.Task.User` task and the `Mozart.Task.Service` task. 
+Mozart provides arounds a dozen different types of *tasks*. Tasks are defined using macros in the Mozart DSL.
 
 The task types currently supported are:
 
 | Task Type               |  Description |
 |-----|-----|
-| User Task               | Performed by a user |
-| Service Task            | Performed by calling a service. |
-| Subprocess Task         | Performed by calling a subprocess. |
-| Timer Task              | Waits for expiration of a timer. |
-| Receive Task            | Waits for a subscribed PubSub event. |
-| Send Task               | Sends a PubSub event. |
-| Rule Task               | Performed by evaluating a set of rules represented in a table. |
-| Case Task             | Selects one of many process paths. |
-| Parallel Task           | Initiates two or more parallel process paths. |
-| Join Task               | Sychronizes on completion of two or more process paths. |
+| user_task               | Performed by a user |
+| service_task            | Performed by calling a service. |
+| subprocess_task         | Performed by calling a subprocess. |
+| timer_task              | Waits for expiration of a timer. |
+| receive_task            | Waits for a subscribed PubSub event. |
+| send_task               | Sends a PubSub event. |
+| rule_task               | Performed by evaluating a set of rules represented in a table. |
+| case_task               | Selects one of many process paths. |
+| parallel_task           | Initiates two or more parallel process paths. |
+
+## Process Application
+
+A **process application** is simply a set of related **process models** grouped together in an Elixir module. There is an [example process application](https://github.com/CharlesIrvineKC/mozart/blob/main/test/support/home_loan_app.ex) in the Mozart GitHub repository.
+
+*Process applications* must **use Mozart.Dsl.BpmProcess** to gain access to the Mozart DSL:
+
+```elixir
+defmodule MyProcessApplication do
+  use Mozart.Dsl.BpmProcess
+  .... multiple process model definitions
+end
+```
+
+## Process Engine
+
+We have said the a Mozart process model is *executable**, but what does that mean? That's where the 
 
 ## Process Service
  
