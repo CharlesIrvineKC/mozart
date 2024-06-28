@@ -29,7 +29,7 @@ defmodule Mozart.ProcessEngine do
 
   Note: Some types of task are complete-able immediately and some are not. For
   example:
-    * A `Mozart.Task.Script` task is complete-able as soon as it is opened.
+    * A `Mozart.Task.Service` task is complete-able as soon as it is opened.
     * A `Mozart.Task.User` task when a user completes the task.
     * A `Mozart.Task.Receive` task is complete-able when a matching
       `Mozart.Task.Send` task is received.
@@ -318,7 +318,7 @@ defmodule Mozart.ProcessEngine do
 
   defp create_new_next_task(state, next_task_name, previous_task_name) do
     new_task = get_new_task_instance(next_task_name, state)
-    Logger.info("New task instance [#{new_task.name}][#{new_task.uid}]")
+    Logger.info("New #{new_task.type} task instance [#{new_task.name}][#{new_task.uid}]")
 
     new_task =
       if new_task.type == :join do
@@ -469,7 +469,8 @@ defmodule Mozart.ProcessEngine do
         state.data
       end
 
-    output_data = apply(task.module, task.function, [input_data])
+    #output_data = apply(task.module, task.function, [input_data])
+    output_data = task.function.(input_data)
 
 
     Map.put(state, :data, Map.merge(state.data, output_data))

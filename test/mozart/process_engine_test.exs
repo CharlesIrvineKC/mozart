@@ -6,7 +6,7 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.Task.User
   alias Mozart.Task.Subprocess
-  alias Mozart.Task.Script
+  alias Mozart.Task.Service
   alias Mozart.Task.Receive
   alias Mozart.Event.TaskExit
   alias Mozart.Data.ProcessModel
@@ -21,7 +21,7 @@ defmodule Mozart.ProcessEngineTest do
             name: :call_process_task,
             sub_process_model_name: :sub_process_with_one_user_task
           },
-          %Script{
+          %Service{
             name: :service_after_task_exit,
             function: fn data -> Map.put(data, :service_after_task_exit, true) end
           }
@@ -193,7 +193,7 @@ defmodule Mozart.ProcessEngineTest do
     %ProcessModel{
       name: :process_with_single_service_task,
       tasks: [
-        %Script{
+        %Service{
           name: :service_task,
           inputs: [:x],
           function: fn data -> Map.put(data, :x, data.x + 1) end
@@ -341,7 +341,7 @@ defmodule Mozart.ProcessEngineTest do
             sub_process_model_name: :service_subprocess_model,
             next: :service_task1
           },
-          %Script{
+          %Service{
             name: :service_task1,
             function: fn data -> Map.put(data, :value, data.value + 1) end
           }
@@ -351,7 +351,7 @@ defmodule Mozart.ProcessEngineTest do
       %ProcessModel{
         name: :service_subprocess_model,
         tasks: [
-          %Script{
+          %Service{
             name: :service_task,
             function: fn data -> Map.put(data, :subprocess_data, "subprocess data") end
           }

@@ -116,27 +116,27 @@ defmodule Mozart.ProcessServiceTest do
 
     ## complete pre approval
     [user_task] = PS.get_user_tasks_for_groups(["credit"])
-    PS.complete_user_task(ppid, user_task.uid, %{pre_approval: true})
+    PS.complete_user_task(user_task.process_uid, user_task.uid, %{pre_approval: true})
     Process.sleep(100)
 
     ## complete receive mortgage application
     [user_task] = PS.get_user_tasks_for_groups(["credit"])
-    PS.complete_user_task(ppid, user_task.uid, %{purchase_price: 500_000})
+    PS.complete_user_task(user_task.process_uid, user_task.uid, %{purchase_price: 500_000})
     Process.sleep(100)
 
     ## process loan
     [user_task] = PS.get_user_tasks_for_groups(["credit"])
-    PS.complete_user_task(ppid, user_task.uid, %{loan_verified: true})
+    PS.complete_user_task(user_task.process_uid, user_task.uid, %{loan_verified: true})
     Process.sleep(100)
 
     ## perform underwriting
     [user_task] = PS.get_user_tasks_for_groups(["underwriting"])
-    PS.complete_user_task(ppid, user_task.uid, %{loan_approved: true})
+    PS.complete_user_task(user_task.process_uid, user_task.uid, %{loan_approved: true})
     Process.sleep(100)
 
     ## communicate approval
     [user_task] = PS.get_user_tasks_for_groups(["credit"])
-    PS.complete_user_task(ppid, user_task.uid, %{loan_approved: true})
+    PS.complete_user_task(user_task.process_uid, user_task.uid, %{loan_approved: true})
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
@@ -209,7 +209,7 @@ defmodule Mozart.ProcessServiceTest do
 
     [task_instance] = Map.values(PE.get_open_tasks(ppid))
 
-    PS.complete_user_task(ppid, task_instance.uid, %{user_task_complete: true})
+    PS.complete_user_task(task_instance.process_uid, task_instance.uid, %{user_task_complete: true})
     Process.sleep(50)
 
     assert PS.get_completed_process(uid) != nil

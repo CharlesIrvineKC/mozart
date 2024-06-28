@@ -96,8 +96,8 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
-  def complete_user_task(ppid, user_task, data) do
-    GenServer.cast(__MODULE__, {:complete_user_task, ppid, user_task, data})
+  def complete_user_task(process_uid, user_task, data) do
+    GenServer.cast(__MODULE__, {:complete_user_task, process_uid, user_task, data})
   end
 
   @doc false
@@ -340,7 +340,8 @@ defmodule Mozart.ProcessService do
     {:noreply, state}
   end
 
-  def handle_cast({:complete_user_task, ppid, user_task_uid, data}, state) do
+  def handle_cast({:complete_user_task, process_uid, user_task_uid, data}, state) do
+    ppid = Map.get(state.active_processes, process_uid)
     CubDB.delete(state.user_task_db, user_task_uid)
     PE.complete_user_task_and_go(ppid, user_task_uid, data)
     {:noreply, state}

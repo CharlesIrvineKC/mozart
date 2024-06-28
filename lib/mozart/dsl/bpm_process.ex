@@ -1,5 +1,5 @@
 defmodule Mozart.Dsl.BpmProcess do
-  alias Mozart.Task.Script
+  alias Mozart.Task.Service
   alias Mozart.Task.User
   alias Mozart.Task.Subprocess
   alias Mozart.Task.Parallel
@@ -136,14 +136,13 @@ defmodule Mozart.Dsl.BpmProcess do
     end
   end
 
-  defmacro service_task(name, module: mod, function: func, inputs: inputs) do
+  defmacro service_task(name, function: func, inputs: inputs) do
     quote do
-      module = Module.concat([unquote(mod)])
       function = unquote(func)
       inputs = parse_inputs(unquote(inputs))
 
       service =
-        %Service{name: unquote(name), module: module, function: function, inputs: inputs}
+        %Service{name: unquote(name), function: function, inputs: inputs}
 
       insert_new_task(service)
     end
@@ -154,18 +153,6 @@ defmodule Mozart.Dsl.BpmProcess do
       task = %Receive{name: unquote(name), message_selector: unquote(function)}
 
       insert_new_task(task)
-    end
-  end
-
-  defmacro script_task(name, inputs: inputs, fn: service) do
-    quote do
-      script = %Script{
-        name: unquote(name),
-        inputs: unquote(inputs),
-        function: unquote(service)
-      }
-
-      insert_new_task(script)
     end
   end
 

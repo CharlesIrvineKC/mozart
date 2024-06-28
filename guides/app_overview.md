@@ -12,7 +12,7 @@ But what does it mean for a process model to be executable? That's where another
 
 What happens when a process engine executes a process model? That brings us to the notion of **Tasks**. Tasks are defined in the process model. Each task represents some work that needs to be completed. The job of the process engine is to drive completion of the tasks specified in the process model. You will hear the terminology of **task completion** frequently. To **complete** a task means to perform the work required of the task.
 
-Mozart provides arounds a dozen different type of *tasks*. The two most ofen used are the `Mozart.Task.User` task and the `Mozart.Task.Script` task. 
+Mozart provides arounds a dozen different type of *tasks*. The two most ofen used are the `Mozart.Task.User` task and the `Mozart.Task.Service` task. 
 
 The task types currently supported are:
 

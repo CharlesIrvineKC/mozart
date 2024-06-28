@@ -10,7 +10,7 @@ All of the task types have the following properties:
 
 ## Service Task
 
-A **Service Task** (`Mozart.Task.Script`) performs its work by calling an Elixir function. This function could perform a computation, call an external JSON service, retrieve data from a database, etc.
+A **Service Task** (`Mozart.Task.Service`) performs its work by calling an Elixir function. This function could perform a computation, call an external JSON service, retrieve data from a database, etc.
 
 A service task has two unique fields: **:function** and **:inputs**.
 
@@ -30,7 +30,7 @@ Now paste the following alias' into your iex session
 
 ```
  alias Mozart.Data.ProcessModel
- alias Mozart.Task.Script
+ alias Mozart.Task.Service
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -42,7 +42,7 @@ Now define a process model with a single service task and assign it to a variabl
 model = %ProcessModel{
     name: :process_with_single_service_task,
     tasks: [
-      %Script{
+      %Service{
         name: :service_task,
         inputs: [:x, :y],
         function: fn data -> Map.put(data, :sum, data.x + data.y) end
@@ -92,7 +92,7 @@ iex [12:21 :: 11] > PS.get_completed_process(uid)
       name: :service_task,
       type: :service,
       next: nil,
-      __struct__: Mozart.Task.Script,
+      __struct__: Mozart.Task.Service,
       uid: "443319db-9cef-47c0-9366-9b95ec1fa42b",
       inputs: [:x, :y],
       process_uid: "53d0220b-4e0c-42bb-9154-7e4aeff83837"
@@ -527,7 +527,7 @@ Now paste the following alias' into your iex session:
 ```
  alias Mozart.Data.ProcessModel
  alias Mozart.Task.Subprocess
- alias Mozart.Task.Script
+ alias Mozart.Task.Service
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -546,7 +546,7 @@ models =
             sub_process_model_name: :service_subprocess_model,
             next: :service_task1
           },
-          %Script{
+          %Service{
             name: :service_task1,
             function: fn data -> Map.put(data, :value, data.value + 1) end
           }
@@ -556,7 +556,7 @@ models =
       %ProcessModel{
         name: :service_subprocess_model,
         tasks: [
-          %Script{
+          %Service{
             name: :service_task,
             function: fn data -> Map.put(data, :subprocess_data, "subprocess data") end
           }
@@ -604,7 +604,7 @@ iex [12:30 :: 12] > PS.get_completed_processes()
         name: :service_task,
         type: :service,
         next: nil,
-        __struct__: Mozart.Task.Script,
+        __struct__: Mozart.Task.Service,
         uid: "c4466a99-6f07-465c-802a-2b8836499940",
         inputs: nil,
         process_uid: "0a04f109-505b-4059-a5e2-0980c3229ce2"
@@ -627,7 +627,7 @@ iex [12:30 :: 12] > PS.get_completed_processes()
         name: :service_task1,
         type: :service,
         next: nil,
-        __struct__: Mozart.Task.Script,
+        __struct__: Mozart.Task.Service,
         uid: "692c0af0-b5f5-4474-a478-6de3cdd84ec8",
         inputs: nil,
         process_uid: "83769669-388d-490a-a326-cd5c3c684361"
@@ -762,7 +762,7 @@ Now paste the following alias' into your iex session:
  alias Mozart.Data.ProcessModel
  alias Mozart.Task.Join
  alias Mozart.Task.Parallel
- alias Mozart.Task.Script
+ alias Mozart.Task.Service
  alias Mozart.Task.Timer
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
@@ -780,7 +780,7 @@ model =
             name: :parallel_task,
             multi_next: [:service_task_1, :timer_task]
           },
-          %Script{
+          %Service{
             name: :service_task_1,
             function: fn data -> Map.merge(data, %{foo: :foo}) end,
             next: :join_task
@@ -790,7 +790,7 @@ model =
             timer_duration: 10000,
             next: :service_task_after_timer
           },
-          %Script{
+          %Service{
             name: :service_task_after_timer,
             function: fn data -> Map.merge(data, %{foo_bar: :foo_bar}) end,
             next: :join_task
@@ -800,7 +800,7 @@ model =
             inputs: [:service_task_1, :service_task_after_timer],
             next: :final_service
           },
-          %Script{
+          %Service{
             name: :final_service,
             function: fn data -> Map.merge(data, %{final: :final}) end
           }
@@ -846,7 +846,7 @@ and should see something like this:
         name: :final_service,
         type: :service,
         next: nil,
-        __struct__: Mozart.Task.Script,
+        __struct__: Mozart.Task.Service,
         uid: "3c64e2ea-7e42-47dd-b606-2fb61b505b7b",
         inputs: nil,
         process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
@@ -865,7 +865,7 @@ and should see something like this:
         name: :service_task_after_timer,
         type: :service,
         next: :join_task,
-        __struct__: Mozart.Task.Script,
+        __struct__: Mozart.Task.Service,
         uid: "28c9aef1-0e69-4a7f-a3b7-549e582dfe24",
         inputs: nil,
         process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
@@ -886,7 +886,7 @@ and should see something like this:
         name: :service_task_1,
         type: :service,
         next: :join_task,
-        __struct__: Mozart.Task.Script,
+        __struct__: Mozart.Task.Service,
         uid: "d9e8f3eb-5d56-4772-94a3-e5d6243277e3",
         inputs: nil,
         process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"

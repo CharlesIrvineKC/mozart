@@ -1,8 +1,8 @@
 defmodule Mozart.DslProcessEngineTest do
   use ExUnit.Case
   use Mozart.Dsl.BpmProcess
-  alias Phoenix.PubSub
 
+  alias Phoenix.PubSub
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
@@ -86,7 +86,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "one service task process" do
-    service_task("a service task", module: ME, function: :square, inputs: "x")
+    service_task("a service task", function: &ME.square/1, inputs: "x")
   end
 
   test "one service task process" do
@@ -243,13 +243,13 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "two service task case process" do
-    service_task("decide loan approval", module: ME, function: :decide_loan, inputs: "income")
+    service_task("decide loan approval", function: &ME.decide_loan/1, inputs: "income")
     case_task("yes or no", [
       case_i &ME.loan_approved/1 do
-        service_task("send approval notice", module: ME, function: :send_approval, inputs: "income")
+        service_task("send approval notice", function: &ME.send_approval/1, inputs: "income")
       end,
       case_i &ME.loan_declined/1 do
-        service_task("send decline notice", module: ME, function: :send_decline, inputs: "income")
+        service_task("send decline notice", function: &ME.send_decline/1, inputs: "income")
       end
     ])
   end
@@ -274,8 +274,8 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "two service tasks" do
-    service_task("service task 1", module: ME, function: :add_one_to_value, inputs: "value")
-    service_task("service task 2", module: ME, function: :add_one_to_value, inputs: "value")
+    service_task("service task 1", function: &ME.add_one_to_value/1, inputs: "value")
+    service_task("service task 2", function: &ME.add_one_to_value/1, inputs: "value")
   end
 
   defprocess "subprocess task process" do

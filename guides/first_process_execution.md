@@ -22,7 +22,7 @@ First, let us construct a simple process model that will have a single service t
     %ProcessModel{
         name: :process_with_single_service_task,
         tasks: [
-          %Script{
+          %Service{
             name: :service_task,
             inputs: [:x],
             function: fn data -> Map.put(data, :x, data.x + 1) end
@@ -32,7 +32,7 @@ First, let us construct a simple process model that will have a single service t
     }
 ```
 
-The process model definition is pretty simple. It uses two Mozart structures: `Mozart.Task.Script` and `Mozart.Data.ProcessModel`. The name of the process model is **:process_with_single_service_task**. It has just one service task which is named **:service_task**, and this task is the **initial_task** that will be opened upon upon process execution. The service task does not specify a next task so the process will complete after this task is completed.
+The process model definition is pretty simple. It uses two Mozart structures: `Mozart.Task.Service` and `Mozart.Data.ProcessModel`. The name of the process model is **:process_with_single_service_task**. It has just one service task which is named **:service_task**, and this task is the **initial_task** that will be opened upon upon process execution. The service task does not specify a next task so the process will complete after this task is completed.
 
 ## Load the Process Model into repository
 
@@ -41,7 +41,7 @@ Now let's load this process model into the process model repository, which is im
 ```elixir
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
-alias Mozart.Task.Script
+alias Mozart.Task.Service
 alias Mozart.Data.ProcessModel
 
 ```
@@ -53,7 +53,7 @@ process_model =
     %ProcessModel{
         name: :process_with_single_service_task,
         tasks: [
-          %Script{
+          %Service{
             name: :service_task,
             inputs: [:x],
             function: fn data -> Map.put(data, :x, data.x + 1) end
@@ -76,7 +76,7 @@ iex [12:52 :: 8] > PS.get_process_model(:process_with_single_service_task)
 %Mozart.Data.ProcessModel{
   name: :process_with_single_service_task,
   tasks: [
-    %Mozart.Task.Script{
+    %Mozart.Task.Service{
       name: :service_task,
       function: #Function<42.105768164/1 in :erl_eval.expr/6>,
       next: nil,
@@ -154,7 +154,7 @@ iex [12:22 :: 14] > PS.get_completed_process(uid)
       name: :service_task,
       type: :service,
       next: nil,
-      __struct__: Mozart.Task.Script,
+      __struct__: Mozart.Task.Service,
       uid: "da19b03a-009a-42aa-948c-4ad139d0fe66",
       process_uid: "0800de9a-8ec5-4906-bf50-bd09321f5982"
     }

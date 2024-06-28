@@ -9,7 +9,7 @@ defmodule Mozart.Task.Service do
   %ProcessModel{
         name: :process_with_single_service_task,
         tasks: [
-          %Script{
+          %Service{
             name: :service_task,
             inputs: [],
             function: fn data -> Map.merge(data, %{single_service: true}) end
@@ -24,7 +24,6 @@ defmodule Mozart.Task.Service do
   @doc ""
   defstruct [
     :name,
-    :module,
     :function,
     :inputs,
     :next,

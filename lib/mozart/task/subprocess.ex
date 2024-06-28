@@ -14,7 +14,7 @@ defmodule Mozart.Task.Subprocess do
             sub_process_model_name: :service_subprocess_model,
             next: :service_task1
           },
-          %Script{
+          %Service{
             name: :service_task1,
             function: fn data -> Map.put(data, :value, data.value + 1) end
           }
@@ -24,7 +24,7 @@ defmodule Mozart.Task.Subprocess do
       %ProcessModel{
         name: :service_subprocess_model,
         tasks: [
-          %Script{
+          %Service{
             name: :service_task,
             function: fn data -> Map.put(data, :subprocess_data, "subprocess data") end
           }
