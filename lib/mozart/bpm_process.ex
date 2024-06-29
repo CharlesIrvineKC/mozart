@@ -28,10 +28,12 @@ defmodule Mozart.BpmProcess do
   Used to implement a business process model. Arguments are a name followed by one or
   more task functions. Example:
 
+  ```
   defprocess "two timer task process" do
     timer_task("one second timer task", duration: 1000)
     timer_task("two second timer task", duration: 2000)
   end
+  ```
   """
   defmacro defprocess(name, do: body) do
     quote do
