@@ -16,7 +16,7 @@ To follow along create a new Elxir **mix** project and then add Mozart as a depe
 
 ## Create BPM Application
 
-First you need to create a BPM application module. In it you will specify your process models and any needed supported functions.
+First you need to create a BPM application module. In it you will specify your process models and any needed supported functions. Add the following file to your project.
 
 ```elixir
 defmodule MyBpmApplication do
@@ -56,7 +56,7 @@ alias Mozart.ProcessService, as: PS
 
 ```
 
-Now we are ready to load our process modeld into the repository. Copy the following into your iex session:
+Now we are ready to load our process model into the repository. Copy the following into your iex session:
 
 ```elixir
 PS.load_process_models(MyBpmApplication.get_processes())
@@ -70,7 +70,7 @@ iex [15:06 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
 {:ok, ["add x and y process"]}
 ````
 
-The function **MyBpmApplication.get_processes/1** function use created for you automatically when you inserted **use Mozart.BpmProcess** into your module definition.
+The function **MyBpmApplication.get_processes/1** was created for you automatically when you inserted **use Mozart.BpmProcess** into your module definition.
 
 ## Start a Process Engine and Execute the Process Model
 
@@ -88,13 +88,20 @@ You should now see something like:
 {:ok, #PID<0.457.0>, "a57d93d4-fc97-4a3c-89f6-989c088c96a7", "d41dc645-2417-4778-bb18-fccf2e6e44f6"}
 ```
 
-First, we started a process using `Mozart.ProcessEngin.start_process/2`. We passed it the name of the process model to be executed and some initial data required for process execution. The function returns a tuple with three values: 
+We started a process instance using `Mozart.ProcessEngin.start_process/2`. We passed it the name of the process model to be executed and some initial data required for process execution. The function call returned a tuple with three values: 
 
 * The **pid** of the resulting process engine.
-* The **uid** of the process instance. Every process execution will need a unique identifier. You will see how this is used going forward.
-* Finally, a **process_key** is returned. Process models are hierarchial, meaning they can be composed of multiple, nested subprocesses. The top level business process and all of its subprocesses will share the same *process_key*.
+* The **uid** of the process instance. Every process execution will be given a unique identifier. You will see how this is used going forward.
+* Finally, a **process_key** is returned. Process models are hierarchial, meaning they can be composed of multiple, nested subprocesses. The top level business process and all of its subprocesses will share the same *process_key*. Here, were aren't going to be using the *process key*, but we will in subsequent examples.
 
-After creating the process engine instance, we then call `Mozart.ProcessEngine.execute/1` which causes the process engine to start completing any tasks that are ready to be completed. After calling the *ProcessEngine.execute* function, you should see something like:
+After creating the process engine instance, we then call `Mozart.ProcessEngine.execute/1` which causes the process engine to start completing any tasks that are ready to be completed. Let's do that now:
+
+```
+PE.execute(ppid)
+
+```
+
+After calling the *ProcessEngine.execute* function, you should see something like:
 
 ```elixir
 iex [08:50 :: 23] > PE.execute(ppid)
@@ -112,7 +119,7 @@ The logs show that:
 
 ## Verify the Results
 
-Let's verify the results of our process model execution. Copy the following into your iex session:
+Let's verify the results of our process model execution by calling **ProcessService.get_completed_process_data/1**. Copy the following into your iex session:
 
 ```elixir
 PS.get_completed_process_data(uid)
@@ -126,5 +133,5 @@ iex [08:50 :: 26] > PS.get_completed_process_data(uid)
 %{sum: 2, y: 1, x: 1}
 ```
 
-We see that the sum of **x** and **y** were added to process data as a result of completing our service task.
+We see that a **sum** property was added to process data whose value is the sume of the properties **x** and **y**..
 
