@@ -1,13 +1,5 @@
 # Mozart Task Types
 
-## Properties Common to All Task Types
-
-All of the task types have the following properties:
-* **name**: an atome specifying the name of the task. Must be unique within the scope of the parent process model.
-* **next**: the name of the task that should be opened after completion of the current task. Exception: The task type `Mozart.Task.Paralled` doesn't have a next field. Instead, it has a multi_next field, which specifies next tasks that should be opened in parallel.
-* **uid**: When a task is opened (instantiated) it is assigned a unique identifier, i.e. its *uid*.
-* **type**: Specifies the type of the task. This value is defaulted automatically for each task type.
-
 ## Service Task
 
 A **Service Task** (`Mozart.Task.Service`) performs its work by calling an Elixir function. This function could perform a computation, call an external JSON service, retrieve data from a database, etc.
@@ -29,27 +21,13 @@ iex -S mix
 Now paste the following alias' into your iex session
 
 ```
- alias Mozart.Data.ProcessModel
- alias Mozart.Task.Service
- alias Mozart.ProcessEngine, as: PE
- alias Mozart.ProcessService, as: PS
 
 ```
 
 Now define a process model with a single service task and assign it to a variable:
 
 ```
-model = %ProcessModel{
-    name: :process_with_single_service_task,
-    tasks: [
-      %Service{
-        name: :service_task,
-        inputs: [:x, :y],
-        function: fn data -> Map.put(data, :sum, data.x + data.y) end
-      }
-    ],
-    initial_task: :service_task
-}
+
 
 ```
 
@@ -62,7 +40,7 @@ Now paste the following into your iex session to execute your process model:
 ```
 PS.load_process_model(model)
 data = %{x: 1, y: 1}
-{:ok, ppid, uid, _process_key} = PE.start_process(:process_with_single_service_task, data)
+{:ok, ppid, uid, _process_key} = PE.start_process("process name", data)
 PE.execute(ppid)
 
 ```
