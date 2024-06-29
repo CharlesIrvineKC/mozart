@@ -4,12 +4,12 @@ Now we will put together what we've lerned so far to execute a process model.
 
 ## To Follow Along..
 
-To follow along create a new Elxir project and then add Mozart as a dependency. Your dependency should look like this:
+To follow along create a new Elxir **mix** project and then add Mozart as a dependency in your **mix.exs** project file. Your dependency should look like this:
 
 ```elixir
   defp deps do
     [
-      {:mozart, "~> 0.3"}
+      {:mozart, "~> 0.2"}
     ]
   end
 ```
