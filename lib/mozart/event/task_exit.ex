@@ -1,4 +1,5 @@
 defmodule Mozart.Event.TaskExit do
+  @moduledoc false
   defstruct [
     :name,
     :function,

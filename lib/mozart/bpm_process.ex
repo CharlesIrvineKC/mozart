@@ -24,6 +24,15 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to implement a business process model. Arguments are a name followed by one or
+  more task functions. Example:
+
+  defprocess "two timer task process" do
+    timer_task("one second timer task", duration: 1000)
+    timer_task("two second timer task", duration: 2000)
+  end
+  """
   defmacro defprocess(name, do: body) do
     quote do
       process = %ProcessModel{name: unquote(name)}
@@ -40,12 +49,14 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   def set_next_tasks([task]), do: [task]
   def set_next_tasks([task1, task2 | rest]) do
     task1 = Map.put(task1, :next, task2.name)
     [task1 | set_next_tasks([task2 | rest])]
   end
 
+  @doc false
   defmacro insert_new_task(task) do
     quote do
       if @capture_subtasks do
@@ -76,10 +87,12 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   def parse_inputs(inputs_string) do
     Enum.map(String.split(inputs_string, ","), fn input -> String.to_atom(input) end)
   end
 
+  @doc false
   def parse_user_groups(groups_string) do
     String.split(groups_string, ",")
   end
