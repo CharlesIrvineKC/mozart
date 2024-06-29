@@ -49,7 +49,16 @@ end
 
 ## Process Engine
 
-We have said the a Mozart process model is *executable**, but what does that mean? That's where the 
+We have said that a Mozart process model is **executable**. What does that mean? Each process model is loaded into an instance of a Mozart process engine, implemented by the GenServer `Mozart.ProcessEngine`. After loading the process model, a command is invoked to to begin executing the process model. Here is a corresponding code snippet:
+
+```elixir
+{:ok, ppid, uid, _process_key} = ProcessEngine.start_process("one service task process", %{x: 3})
+ProcessEngine.execute(ppid)
+```
+
+First, a *process engine* is spawned by calling **ProcessEngine.start_process/2**. The first parameter specifies the top level *process model* to be executed. As you will see later on, a hierarchy of process instances can be spawned to complete the top level process model. The second argument is data used to initiate process execution. 
+
+The first argument returned is the Elixir *process identifier* of the Elixir GenServer. The secord value returned is a unique identifier of the process execution. This will be useful beyond the lifetime of the Elixir process. Finally, the third value returned is another unique identifier corresponding to the hierarchy of processes spawned to complete the top level process model.
 
 ## Process Service
  
