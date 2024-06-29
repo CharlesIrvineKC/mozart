@@ -38,11 +38,11 @@ The task types currently supported are:
 
 A **process application** is simply a set of related **process models** grouped together in an Elixir module. There is an [example process application](https://github.com/CharlesIrvineKC/mozart/blob/main/test/support/home_loan_app.ex) in the Mozart GitHub repository.
 
-*Process applications* must **use Mozart.Dsl.BpmProcess** to gain access to the Mozart DSL:
+*Process applications* must **use Mozart.BpmProcess** to gain access to the Mozart DSL:
 
 ```elixir
 defmodule MyProcessApplication do
-  use Mozart.Dsl.BpmProcess
+  use Mozart.BpmProcess
   .... multiple process model definitions
 end
 ```

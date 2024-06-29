@@ -35,6 +35,13 @@ defmodule Mozart.ProcessService do
   end
 
   @doc """
+  Returns the data accumulated by the completed process
+  """
+  def get_completed_process_data(uid) do
+    GenServer.call(__MODULE__, {:get_completed_process_data, uid})
+  end
+
+  @doc """
   Get a process pid from it UID
   """
   def get_process_pid_from_uid(uid) do
@@ -256,6 +263,11 @@ defmodule Mozart.ProcessService do
     {:reply, CubDB.get(state.completed_process_db, uid), state}
   end
 
+  def handle_call({:get_completed_process_data, uid}, _from, state) do
+    completed_process = CubDB.get(state.completed_process_db, uid)
+    {:reply, completed_process.data, state}
+  end
+
   def handle_call({:get_user_tasks_for_groups, groups}, _from, state) do
     tasks = get_user_tasks_for_groups_local(groups, state)
     {:reply, tasks, state}
@@ -291,7 +303,7 @@ defmodule Mozart.ProcessService do
   @doc false
   def handle_call({:load_process_models, models}, _from, state) do
     Enum.each(models, fn m -> CubDB.put(state.process_model_db, m.name, m) end)
-    {:reply, models, state}
+    {:reply, {:ok, Enum.map(models, fn m -> m.name end)}, state}
   end
 
   @doc false

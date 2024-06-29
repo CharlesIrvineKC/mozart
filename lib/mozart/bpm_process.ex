@@ -1,4 +1,4 @@
-defmodule Mozart.Dsl.BpmProcess do
+defmodule Mozart.BpmProcess do
   alias Mozart.Task.Service
   alias Mozart.Task.User
   alias Mozart.Task.Subprocess
@@ -13,14 +13,14 @@ defmodule Mozart.Dsl.BpmProcess do
 
   defmacro __using__(_opts) do
     quote do
-      import Mozart.Dsl.BpmProcess
+      import Mozart.BpmProcess
 
       @tasks []
       @processes []
       @capture_subtasks false
       @subtasks []
       @subtask_sets []
-      @before_compile Mozart.Dsl.BpmProcess
+      @before_compile Mozart.BpmProcess
     end
   end
 

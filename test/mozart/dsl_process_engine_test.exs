@@ -1,6 +1,6 @@
 defmodule Mozart.DslProcessEngineTest do
   use ExUnit.Case
-  use Mozart.Dsl.BpmProcess
+  use Mozart.BpmProcess
 
   alias Phoenix.PubSub
   alias Mozart.ProcessEngine, as: PE

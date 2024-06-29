@@ -1,5 +1,5 @@
 defmodule Mozart.HomeLoanApp do
-  use Mozart.Dsl.BpmProcess
+  use Mozart.BpmProcess
 
   alias Mozart.HomeLoanApp, as: ME
 
