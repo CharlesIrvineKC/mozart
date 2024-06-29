@@ -1,29 +1,75 @@
 # Mozart - An Elixir BPM Platform
 
+Mozart is an open source BPM platform written using Elixir. 
+
 ## What is a Business Process Management
 
-See [Introduction to BPM](https://hexdocs.pm/mozart/intro_bpm.html) in hexdocs to get a basic understanding of **Business Process Management (BPM)**.
+Business Process Management (BPM) is the organized and directed activity of a company to control, monitor, speed-up and, in general, improve the quality of their business processes. They do this with the aid of a BPM platform such as Mozart.
+
+See [Introduction to BPM](https://hexdocs.pm/mozart/intro_bpm.html) in hexdocs for more information.
 
 ## Documentation
 
-View documentation for Mozart in hexdocs at [https://hexdocs.pm/mozart/api-reference.html](https://hexdocs.pm/mozart/api-reference.html)
+View complete documentation for Mozart in hexdocs at [https://hexdocs.pm/mozart/api-reference.html](https://hexdocs.pm/mozart/api-reference.html)
 
-## Introduction
+## Two Features Made Possible by Elixir
 
-Mozart is an open source BPM platform written using Elixir. A distinguishing feature is that each business process model is executed in a separate Elixir process (GenServer) instance. This is possible due to Elixir's (and Erlang's) unique capacity for highly performant, fault tolerant and massively concurrent multi-processing. 
+### A Domain Specific Language (DSL) for BPM Applications
 
-For now, process models are defined using a set of Elixir structs providing a modelling language which is somewhat inspired by [AWS Step Functions](https://docs.aws.amazon.com/step-functions/?icmpid=docs_homepage_appintegration). However, a user-friendly, BPM specific DSL is currently under development. The goal is to create a developer-targeted DSL which can be incorporated into modern CI/CD devops infrastructures.
+Elixir provides programmers with the ability to seemingly extend Elixir itself by creating domain specific programming idioms. 
 
-Conversely, process models will not be graphically constructed using a visual programming environment typical of BPMN2. We believe that this kind of development is avoided by a substantial segment of the software development community and in some instances is not condusive to CI/CD developmemnt processes.
+In the case of Mozart, this means that programmers can create BPM applications by using BPM specific programming constructs mixed with otherwise everyday Elixir code. Here a very simple but complete example:
 
-However, visual modelling tools are highly regarded by business process analysts and the resulting graphical process depictions are highly readable by developers and process analysts alike. So, it is essential that the DSL currently under development produce process models that are are as readily understood by process analysts as are BPMN2 process models.
+```elixir
+defmodule MyBpmApplication do
+  use Mozart.BpmProcess
 
-## Current Use Cases (and Non Use Cases)
+  def sum(data) do
+    %{sum: data.x + data.y}
+  end
 
-* Elixir development teams wanting to explore and potentially implement exploratory BPM applications.
-* Non Elixir development teams having the goal of exploring and experimenting with Elixir.
-* Mozart is not ready for major enterprise BPM projects. 
-* Mozart is not a **low code** or **no code** platform suitable for non developers.
+  defprocess "add x and y process" do
+    service_task("add x and y task", function: &MyBpmApplication.sum/1, inputs: "x,y")
+  end
+
+end
+```
+
+This module can be used as-is to start and execute a BPM process engine as shown below:
+
+```
+iex > ProcessService.load_process_models(MyBpmApplication.get_processes())
+iex > {:ok, ppid, uid, _key} = PE.start_process("add x and y process", %{x: 1, y: 1})
+[info] Start process instance [add x and y process][b82f5da1-6e5d-44df-b4ed-9064b877e484]
+
+iex > ProcessEngine.execute(ppid)
+[info] New service task instance [add x and y task][f396a252-fba4-4804-9fdd-360a6c24ed54]
+[info] Complete service task [add x and y task[f396a252-fba4-4804-9fdd-360a6c24ed54]
+[info] Process complete [add x and y process][b82f5da1-6e5d-44df-b4ed-9064b877e484]
+
+iex [16:38 :: 6] > PS.get_completed_process_data(uid)
+%{sum: 2, y: 1, x: 1}
+```
+
+Conversely, process models are not graphically constructed using a visual programming environment typical of most of current BPM development. We believe that this kind of development is avoided by a substantial segment of the software development community and in some instances is not condusive to CI/CD developmemnt processes.
+
+However, visual BPM modelling tools are highly regarded by business process analysts and the resulting graphical process depictions are highly readable by developers and process analysts alike. So, it was essential that the DSL developed produce process models that are as readily understood by process analysts as are BPMN2 process models. We hope you will think we have been reasonably successful achieving this goal.
+
+We anticipate that BPMN2 tools **will still** be used by Mozart development teams, but only for analysis and documentation. Actual BPM process models will be created with the Mozart BPM DSL.
+
+### A Process for Each Business Process
+
+Another distinguishing feature is that each business process model is executed in a separate Elixir process (GenServer) instance. This is possible due to Elixir's (and Erlang's) unique capacity for highly performant, fault tolerant and massively concurrent multi-processing. 
+
+The goal is extremely fast and relable business process model execution. We will be publishing performance metics in the near future to gage Mozart's performance charateristics. Initial results look very promising.
+
+## Project Status
+
+Mozart is still in an early stage but it is ready for serious experimental use. 
+
+It requires Elixir programming, so if you already use Elixir you can be immediately productive. If you aren't using Elixir, hopefully you will have time to take a look at this amazing programming language.
+
+We will be very receptive to quickly resolve any issues you encounter and answer your questions. For either of these, please create an issues in GitHub.
 
 ## Installation
 
@@ -40,11 +86,11 @@ end
 
 ## Major Todo Items
 
-* Develop a DSL which will be translated at runtime into native Elixir data structures. The language will be highly readable to process modelers with no programming experience. **Currently in active development.** See [unit tests](https://github.com/CharlesIrvineKC/mozart/blob/main/test/mozart/dsl_process_engine_test.exs) to view progress and sample business process definitions.
-* Develop rudimentary GUIs for:
-  * Runtime trouble shooting and monitoring.
-  * User and group administration.
-  * User task assignment and execution.
+Develop rudimentary GUIs for:
+
+* Runtime trouble shooting and monitoring.
+* User and group administration.
+* User task assignment and execution.
 
 ## Providing Feedback
 
