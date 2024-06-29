@@ -133,7 +133,7 @@ defmodule Mozart.ProcessService do
   end
 
   @doc """
-  Loads a list of `Mozart.Data.ProcessModel`s into the state of the
+  Loads a list of process model into the state of the
   ProcessService.
   """
   def load_process_models(models) do

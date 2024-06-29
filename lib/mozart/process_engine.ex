@@ -1,6 +1,6 @@
 defmodule Mozart.ProcessEngine do
   @moduledoc """
-  A ProcessEngine is dynamically spawned for the purpose of executing a `Mozart.Data.ProcessModel`.
+  A ProcessEngine is dynamically spawned for the purpose of executing a process model defined by **defprocess**.
   """
 
   @doc false
@@ -26,13 +26,6 @@ defmodule Mozart.ProcessEngine do
   @doc """
   Used to complete any "complete-able" open tasks. Task execution frequently spawns new
   open tasks. Execute will continue to as long as there are "complete-able" open tasks.
-
-  Note: Some types of task are complete-able immediately and some are not. For
-  example:
-    * A `Mozart.Task.Service` task is complete-able as soon as it is opened.
-    * A `Mozart.Task.User` task when a user completes the task.
-    * A `Mozart.Task.Receive` task is complete-able when a matching
-      `Mozart.Task.Send` task is received.
   """
   def execute(ppid) do
     GenServer.cast(ppid, :execute)

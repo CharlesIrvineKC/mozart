@@ -55,37 +55,13 @@ PS.get_completed_process(uid)
 and should see something like this:
 
 ```
-iex [12:21 :: 11] > PS.get_completed_process(uid)
-%Mozart.Data.ProcessState{
-  uid: "53d0220b-4e0c-42bb-9154-7e4aeff83837",
-  parent_pid: nil,
-  model_name: :process_with_single_service_task,
-  start_time: ~U[2024-05-30 17:22:49.156516Z],
-  end_time: ~U[2024-05-30 17:22:49.161447Z],
-  execute_duration: 4931,
-  open_tasks: %{},
-  completed_tasks: [
-    %{
-      function: #Function<42.105768164/1 in :erl_eval.expr/6>,
-      name: :service_task,
-      type: :service,
-      next: nil,
-      __struct__: Mozart.Task.Service,
-      uid: "443319db-9cef-47c0-9366-9b95ec1fa42b",
-      inputs: [:x, :y],
-      process_uid: "53d0220b-4e0c-42bb-9154-7e4aeff83837"
-    }
-  ],
-  data: %{sum: 2, y: 1, x: 1},
-  complete: true
-}
 ```
 
 We see that the new property **sum** has been added to the state of the completed process.
 
 ## User Task
 
-A **User Task** (`Mozart.Task.User`) works by having a user complete some required task. This often takes the form of a user using a GUI to examine a subset of process data and then supplying additional data. 
+A **User Task** works by having a user complete some required task. This often takes the form of a user using a GUI to examine a subset of process data and then supplying additional data. 
 
 **Important Note**: Users interact with a BPM platfrom such as Mozart by way of user application of some kind. The user application will allow the user to find tasks which may be assigned to him. Once the user accepts responsibility for a task, the application will then provide a user interface appropriate for accomplishing the given task. 
 
@@ -106,8 +82,6 @@ iex -S mix
 Now paste the following alias' into your iex session
 
 ```
- alias Mozart.Data.ProcessModel
- alias Mozart.Task.User
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -116,17 +90,6 @@ Now paste the following alias' into your iex session
 Now we define a process model with a single service task and assign it to a variable:
 
 ```
-model = %ProcessModel{
-      name: :user_task_process_model,
-      tasks: [
-        %User{
-          name: :user_task,
-          inputs: [:x, :y],
-          assigned_groups: ["admin"]
-        }
-      ],
-      initial_task: :user_task
-  }
 
 ```
 
@@ -155,23 +118,7 @@ At this point, a user task has been opened and is available for a user to claim 
 which gives this result:
 
 ```
-13:29:25.959 [info] New task instance [user_task][09fe2c87-d2c8-401b-a4df-83a7edab987d]
-iex [13:28 :: 11] > PS.get_user_tasks_for_groups(["admin"])
-[
-  %{
-    complete: false,
-    data: %{y: 1, x: 1},
-    function: nil,
-    name: :user_task,
-    type: :user,
-    next: nil,
-    __struct__: Mozart.Task.User,
-    uid: "09fe2c87-d2c8-401b-a4df-83a7edab987d",
-    assigned_groups: ["admin"],
-    inputs: [:x, :y],
-    process_uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82"
-  }
-]
+
 ```
 
 Now, pulling the task uid from the results above, we can complete the user task like this:
@@ -184,13 +131,7 @@ PE.complete_user_task(ppid,  user_task.uid, %{sum: 2})
 which will produce a result like this:
 
 ```
-iex [16:54 :: 12] > PE.complete_user_task(ppid,  user_task.uid, %{sum: 2})
-16:56:11.417 [info] Complete user task [user_task][9b88be91-3b99-4e9c-b362-0f0dc5fb604c]
-16:56:11.417 [info] Process complete [user_task_process_model][d7bed372-94c4-477a-be0a-dcc7417c6e60]
-** (exit) exited in: GenServer.call(#PID<0.273.0>, {:complete_user_task, "9b88be91-3b99-4e9c-b362-0f0dc5fb604c", %{sum: 2}}, 5000)
-    ** (EXIT) shutdown
-    (elixir 1.16.2) lib/gen_server.ex:1114: GenServer.call/3
-    iex:12: (file)
+
 ```
 
 Don't be concerned regarding the **shutdown** notice. It is normal. It simply means tht the process engine shutdown becuase the process had finished.
@@ -205,39 +146,14 @@ PS.get_completed_process(uid)
 and should see something like this:
 
 ```
-iex [13:28 :: 12] > PS.get_completed_process(uid)
-%Mozart.Data.ProcessState{
-  uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82",
-  parent_pid: nil,
-  model_name: :user_task_process_model,
-  start_time: ~U[2024-05-30 18:29:25.954801Z],
-  end_time: ~U[2024-05-30 21:35:58.017106Z],
-  execute_duration: 11192062305,
-  open_tasks: %{},
-  completed_tasks: [
-    %{
-      complete: false,
-      function: nil,
-      name: :user_task,
-      type: :user,
-      next: nil,
-      __struct__: Mozart.Task.User,
-      uid: "09fe2c87-d2c8-401b-a4df-83a7edab987d",
-      assigned_groups: ["admin"],
-      inputs: [:x, :y],
-      process_uid: "69b51421-cc10-45d7-8ca2-70c0e232cb82"
-    }
-  ],
-  data: %{sum: 3, y: 1, x: 1},
-  complete: true
-}
+
 ```
 
 We see that the new property **sum** has been added to the state of the completed process.
 
 ## Rule Task
 
-A **Rule Task** (`Mozart.Task.Rule`) performs its work by evaluating a rule table using process data. 
+A **Rule Task** performs its work by evaluating a rule table using process data. 
 
 Rule tasks use [Tablex](https://hexdocs.pm/tablex/0.3.1/readme.html), an incredibly useful Elixir library for evaluating [decision tables](https://en.wikipedia.org/wiki/Decision_table).
 
@@ -258,8 +174,6 @@ iex -S mix
 Now paste the following alias' into your iex session
 
 ```
- alias Mozart.Data.ProcessModel
- alias Mozart.Task.Rule
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -268,22 +182,7 @@ Now paste the following alias' into your iex session
 Now define a process model with a single service task and assign it to a variable:
 
 ```
-model = %ProcessModel{
-    name: :loan_approval,
-    tasks: [
-      %Rule{
-        name: :loan_decision,
-        inputs: [:income],
-        rule_table:
-          Tablex.new("""
-          F     income      || status
-          1     > 50000     || approved
-          2     <= 49999    || declined
-          """)
-      }
-    ],
-    initial_task: :loan_decision
-}
+
 
 ```
 
@@ -311,63 +210,14 @@ PS.get_completed_process(uid)
 and should see something like this:
 
 ```
-iex [20:45 :: 11] > PS.get_completed_process(uid)
-%Mozart.Data.ProcessState{
-  uid: "b79fe224-52b9-4457-b885-1234c47c0eb3",
-  parent_pid: nil,
-  model_name: :loan_approval,
-  start_time: ~U[2024-06-01 01:45:57.687401Z],
-  end_time: ~U[2024-06-01 01:45:57.695101Z],
-  execute_duration: 7700,
-  open_tasks: %{},
-  completed_tasks: [
-    %{
-      name: :loan_decision,
-      type: :rule,
-      next: nil,
-      __struct__: Mozart.Task.Rule,
-      uid: "a045ccfe-21d1-410f-aa87-6e020017e48d",
-      inputs: [:income],
-      rule_table: %Tablex.Table{
-        hit_policy: :first_hit,
-        inputs: [
-          %Tablex.Variable{
-            name: :income,
-            label: "income",
-            desc: nil,
-            type: :undefined,
-            path: []
-          }
-        ],
-        outputs: [
-          %Tablex.Variable{
-            name: :status,
-            label: "status",
-            desc: nil,
-            type: :undefined,
-            path: []
-          }
-        ],
-        rules: [
-          [1, {:input, [>: 50000]}, {:output, ["approved"]}],
-          [2, {:input, [<=: 49999]}, {:output, ["declined"]}]
-        ],
-        valid?: :undefined,
-        table_dir: :h
-      },
-      process_uid: "b79fe224-52b9-4457-b885-1234c47c0eb3"
-    }
-  ],
-  data: %{status: "declined", income: 3000},
-  complete: true
-}
+
 ```
 
 We see that the new property **status** with a value of **declined** has been added to the state of the completed process.
 
 ## Parallel Task
 
-A parallel task `Mozart.Task.Parallel` is used to create multiple concurrent process execution paths. It does this by specifying multipple next tasks in its **multi_next** field.
+A parallel task is used to create multiple concurrent process execution paths. It does this by specifying multipple next tasks in its **multi_next** field.
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
@@ -379,9 +229,6 @@ iex -S mix
 Now paste the following alias' into your iex session
 
 ```
- alias Mozart.Data.ProcessModel
- alias Mozart.Task.Parallel
- alias Mozart.Task.User
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -390,26 +237,7 @@ Now paste the following alias' into your iex session
 Now define a process model with a parallel task and two user tasks. When the parallel task completes, the two user tasks should be opened in parallel.
 
 ```
-model = %ProcessModel{
-        name: :parallel_process_model,
-        tasks: [
-          %Parallel{
-            name: :parallel_user_tasks,
-            multi_next: [:user_task_1, :user_task_2]
-          },
-          %User{
-            name: :user_task_1,
-            inputs: [:user_task_1_input],
-            assigned_groups: ["admin"]
-          },
-          %User{
-            name: :user_task_2,
-            inputs: [:user_task_2_input],
-            assigned_groups: ["admin"]
-          }
-        ],
-        initial_task: :parallel_user_tasks
-      }
+
 
 ```
 
@@ -435,55 +263,7 @@ PE.get_state(ppid)
 and should see something like this:
 
 ```
-iex [10:32 :: 11] > PE.get_state(ppid)
-%Mozart.Data.ProcessState{
-  uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b",
-  parent_pid: nil,
-  model_name: :parallel_process_model,
-  start_time: ~U[2024-06-01 15:33:23.663777Z],
-  end_time: nil,
-  execute_duration: nil,
-  open_tasks: %{
-    "0fe80867-0a8c-4721-ad57-838dbb0901ac" => %{
-      complete: false,
-      function: nil,
-      name: :user_task_2,
-      type: :user,
-      next: nil,
-      __struct__: Mozart.Task.User,
-      uid: "0fe80867-0a8c-4721-ad57-838dbb0901ac",
-      assigned_groups: ["admin"],
-      inputs: [:user_task_2_input],
-      process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
-    },
-    "12925277-c6e0-4310-a87b-8945573017ba" => %{
-      complete: false,
-      function: nil,
-      name: :user_task_1,
-      type: :user,
-      next: nil,
-      __struct__: Mozart.Task.User,
-      uid: "12925277-c6e0-4310-a87b-8945573017ba",
-      assigned_groups: ["admin"],
-      inputs: [:user_task_1_input],
-      process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
-    }
-  },
-  completed_tasks: [
-    %{
-      function: nil,
-      name: :parallel_user_tasks,
-      type: :parallel,
-      __struct__: Mozart.Task.Parallel,
-      uid: "aa0108cf-2f2c-4700-b97a-49ca7b002c18",
-      multi_next: [:user_task_1, :user_task_2],
-      sub_process_model_name: nil,
-      process_uid: "f7bffb0d-a66e-4381-bcba-01b9f06ac68b"
-    }
-  ],
-  data: %{user_task_1_input: :input_1, user_task_2_input: :input_2},
-  complete: false
-}
+
 
 ```
 
@@ -491,7 +271,7 @@ We see that parallel task **:parallel_user_tasks** has been completed. We also s
 
 ## Subprocess Task
 
-A subprocess task (`Mozart.Task.Subprocess`) performs its work by starting a subprocess instance as specified in its **sub_process** field.
+A subprocess task performs its work by starting a subprocess instance as specified in its **sub_process** field.
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
@@ -503,9 +283,6 @@ iex -S mix
 Now paste the following alias' into your iex session:
 
 ```
- alias Mozart.Data.ProcessModel
- alias Mozart.Task.Subprocess
- alias Mozart.Task.Service
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -514,34 +291,7 @@ Now paste the following alias' into your iex session:
 Now we need two process models. The first process model will call a subprocess task, wait for its completion, and then call a service task. The second process model will be called as a subprocess of the first process model.
 
 ```
-models = 
-    [
-      %ProcessModel{
-        name: :call_process_model,
-        tasks: [
-          %Subprocess{
-            name: :call_process_task,
-            sub_process_model_name: :service_subprocess_model,
-            next: :service_task1
-          },
-          %Service{
-            name: :service_task1,
-            function: fn data -> Map.put(data, :value, data.value + 1) end
-          }
-        ],
-        initial_task: :call_process_task
-      },
-      %ProcessModel{
-        name: :service_subprocess_model,
-        tasks: [
-          %Service{
-            name: :service_task,
-            function: fn data -> Map.put(data, :subprocess_data, "subprocess data") end
-          }
-        ],
-        initial_task: :service_task
-      }
-    ]
+
 
 ```
 
@@ -566,75 +316,14 @@ PS.get_completed_processes()
 and should see something like this:
 
 ```
-iex [12:30 :: 12] > PS.get_completed_processes()
-[
-  %Mozart.Data.ProcessState{
-    uid: "0a04f109-505b-4059-a5e2-0980c3229ce2",
-    parent_pid: #PID<0.299.0>,
-    model_name: :service_subprocess_model,
-    start_time: ~U[2024-06-02 17:30:33.946285Z],
-    end_time: ~U[2024-06-02 17:30:33.946645Z],
-    execute_duration: 360,
-    open_tasks: %{},
-    completed_tasks: [
-      %{
-        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
-        name: :service_task,
-        type: :service,
-        next: nil,
-        __struct__: Mozart.Task.Service,
-        uid: "c4466a99-6f07-465c-802a-2b8836499940",
-        inputs: nil,
-        process_uid: "0a04f109-505b-4059-a5e2-0980c3229ce2"
-      }
-    ],
-    data: %{value: 1, subprocess_data: "subprocess data"},
-    complete: true
-  },
-  %Mozart.Data.ProcessState{
-    uid: "83769669-388d-490a-a326-cd5c3c684361",
-    parent_pid: nil,
-    model_name: :call_process_model,
-    start_time: ~U[2024-06-02 17:30:33.939824Z],
-    end_time: ~U[2024-06-02 17:30:33.947097Z],
-    execute_duration: 7273,
-    open_tasks: %{},
-    completed_tasks: [
-      %{
-        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
-        name: :service_task1,
-        type: :service,
-        next: nil,
-        __struct__: Mozart.Task.Service,
-        uid: "692c0af0-b5f5-4474-a478-6de3cdd84ec8",
-        inputs: nil,
-        process_uid: "83769669-388d-490a-a326-cd5c3c684361"
-      },
-      %{
-        complete: true,
-        data: %{},
-        function: nil,
-        name: :call_process_task,
-        type: :sub_process,
-        next: :service_task1,
-        __struct__: Mozart.Task.Subprocess,
-        uid: "ee4211a0-ee8e-4b6d-992d-80121566bd41",
-        sub_process_model_name: :service_subprocess_model,
-        process_uid: "83769669-388d-490a-a326-cd5c3c684361",
-        completed_sub_tasks: []
-      }
-    ],
-    data: %{value: 2, subprocess_data: "subprocess data"},
-    complete: true
-  }
-]
+
 ```
 
 We see that two processes have completed. The process named **:call_process_model** is the top level process, and the named **:service_subprocess_model** is the subprocess. As expected, the top level process state shows two completed tasks and the subprocess state shows one completed task.
 
 ## Timer Task
 
-A **timer task** (`Mozart.Task.Timer`) performs its work by delaying a process execution path by the duration specified in its **timer_duration** field.
+A **timer task** performs its work by delaying a process execution path by the duration specified in its **timer_duration** field.
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
 
@@ -646,8 +335,6 @@ iex -S mix
 Now paste the following alias' into your iex session:
 
 ```
- alias Mozart.Data.ProcessModel
- alias Mozart.Task.Timer
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -656,17 +343,6 @@ Now paste the following alias' into your iex session:
 Now we need two process models. The first process model will call a subprocess task, wait for its completion, and then call a service task. The second process model will be called as a subprocess of the first process model.
 
 ```
-model = 
-    %ProcessModel{
-        name: :call_timer_task,
-        tasks: [
-          %Timer{
-            name: :wait_5_seconds,
-            timer_duration: 5000
-          },
-        ],
-        initial_task: :wait_5_seconds
-      }
 
 ```
 
@@ -691,32 +367,7 @@ PS.get_completed_processes()
 and should see something like this:
 
 ```
-[
-  %Mozart.Data.ProcessState{
-    uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b",
-    parent_pid: nil,
-    model_name: :call_timer_task,
-    start_time: ~U[2024-06-02 18:07:18.670993Z],
-    end_time: ~U[2024-06-02 18:07:23.677426Z],
-    execute_duration: 5006433,
-    open_tasks: %{},
-    completed_tasks: [
-      %{
-        function: nil,
-        name: :wait_5_seconds,
-        type: :timer,
-        next: nil,
-        expired: true,
-        __struct__: Mozart.Task.Timer,
-        uid: "eacaaf01-37b9-43ef-be81-d2ccb8802084",
-        timer_duration: 5000,
-        process_uid: "67e7f64e-7a06-4622-9b9e-1d89b552ae3b"
-      }
-    ],
-    data: %{},
-    complete: true
-  }
-]
+
 
 ```
 
@@ -724,7 +375,7 @@ Notice in the above that **execution_duration** is 5006433 microseconds, i.e. ju
 
 ## Join Task
 
-The **join task** (`Mozart.Task.Join`) is used to sychronize any number of parallel execution paths. The **inputs** field holds a list of task names that must finish before the join task can be completed.
+The **join task** is used to sychronize any number of parallel execution paths. The **inputs** field holds a list of task names that must finish before the join task can be completed.
 
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
@@ -737,11 +388,6 @@ iex -S mix
 Now paste the following alias' into your iex session:
 
 ```
- alias Mozart.Data.ProcessModel
- alias Mozart.Task.Join
- alias Mozart.Task.Parallel
- alias Mozart.Task.Service
- alias Mozart.Task.Timer
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -750,41 +396,7 @@ Now paste the following alias' into your iex session:
 The process model below has a parallel task that spawns tasks **:foo** and **:bar** in parallel.
 
 ```
-model = 
-    %ProcessModel{
-        name: :parallel_process_model,
-        tasks: [
-          %Parallel{
-            name: :parallel_task,
-            multi_next: [:service_task_1, :timer_task]
-          },
-          %Service{
-            name: :service_task_1,
-            function: fn data -> Map.merge(data, %{foo: :foo}) end,
-            next: :join_task
-          },
-          %Timer{
-            name: :timer_task,
-            timer_duration: 10000,
-            next: :service_task_after_timer
-          },
-          %Service{
-            name: :service_task_after_timer,
-            function: fn data -> Map.merge(data, %{foo_bar: :foo_bar}) end,
-            next: :join_task
-          },
-          %Join{
-            name: :join_task,
-            inputs: [:service_task_1, :service_task_after_timer],
-            next: :final_service
-          },
-          %Service{
-            name: :final_service,
-            function: fn data -> Map.merge(data, %{final: :final}) end
-          }
-        ],
-        initial_task: :parallel_task
-    }
+
 
 ```
 
@@ -809,79 +421,7 @@ PS.get_completed_processes()
 and should see something like this:
 
 ```
-[
-  %Mozart.Data.ProcessState{
-    uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a",
-    parent_pid: nil,
-    model_name: :parallel_process_model,
-    start_time: ~U[2024-06-03 15:02:40.056941Z],
-    end_time: ~U[2024-06-03 15:02:50.065079Z],
-    execute_duration: 10008138,
-    open_tasks: %{},
-    completed_tasks: [
-      %{
-        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
-        name: :final_service,
-        type: :service,
-        next: nil,
-        __struct__: Mozart.Task.Service,
-        uid: "3c64e2ea-7e42-47dd-b606-2fb61b505b7b",
-        inputs: nil,
-        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
-      },
-      %{
-        name: :join_task,
-        type: :join,
-        next: :final_service,
-        __struct__: Mozart.Task.Join,
-        uid: "e4545b2c-2d6a-4b7a-9bd7-a08866aa0e4c",
-        inputs: [],
-        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
-      },
-      %{
-        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
-        name: :service_task_after_timer,
-        type: :service,
-        next: :join_task,
-        __struct__: Mozart.Task.Service,
-        uid: "28c9aef1-0e69-4a7f-a3b7-549e582dfe24",
-        inputs: nil,
-        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
-      },
-      %{
-        function: nil,
-        name: :timer_task,
-        type: :timer,
-        next: :service_task_after_timer,
-        expired: true,
-        __struct__: Mozart.Task.Timer,
-        uid: "cac585aa-b858-4d21-b9f2-38324fc4170b",
-        timer_duration: 10000,
-        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
-      },
-      %{
-        function: #Function<42.105768164/1 in :erl_eval.expr/6>,
-        name: :service_task_1,
-        type: :service,
-        next: :join_task,
-        __struct__: Mozart.Task.Service,
-        uid: "d9e8f3eb-5d56-4772-94a3-e5d6243277e3",
-        inputs: nil,
-        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
-      },
-      %{
-        name: :parallel_task,
-        type: :parallel,
-        __struct__: Mozart.Task.Parallel,
-        uid: "9a5bca86-8de4-4dc0-8477-47dc97cdbd7d",
-        multi_next: [:service_task_1, :timer_task],
-        process_uid: "5e2e36c7-f43e-4586-8819-6ec046c4073a"
-      }
-    ],
-    data: %{final: :final, foo: :foo, foo_bar: :foo_bar},
-    complete: true
-  }
-]
+
 
 ```
 
@@ -892,7 +432,7 @@ Notice in the above that **execution_duration** is 10008138 microseconds, i.e. j
 
 In this section we will demo both the **send** and **receive** tasks since they will normally be used together.
 
-The **receive task** (`Mozart.Task.Receive`) waits until a message has been received from a **send task** (`Mozart.Task.Send`). The send and receive tasks can reside in either the same of different process instances.
+The **receive task** waits until a message has been received from a **send task** The send and receive tasks can reside in either the same of different process instances.
 
 
 If you are following along, open an Elixir project that has Mozart as a dependency.
@@ -905,9 +445,6 @@ iex -S mix
 Now paste the following alias' into your iex session:
 
 ```
- alias Mozart.Data.ProcessModel
- alias Mozart.Task.Send
- alias Mozart.Task.Receive
  alias Mozart.ProcessEngine, as: PE
  alias Mozart.ProcessService, as: PS
 
@@ -916,34 +453,7 @@ Now paste the following alias' into your iex session:
 The process models below contain one receiving process and one sending process.
 
 ```
-models = 
-    [
-      %ProcessModel{
-        name: :process_with_receive_task,
-        tasks: [
-          %Receive{
-            name: :receive_task,
-            message_selector: fn msg ->
-              case msg do
-                :message -> %{message: true}
-                _ -> false
-              end
-            end
-          }
-        ],
-        initial_task: :receive_task
-      },
-      %ProcessModel{
-        name: :process_with_single_send_task,
-        tasks: [
-          %Send{
-            name: :send_task,
-            message: :message
-          }
-        ],
-        initial_task: :send_task
-      }
-    ]
+
 
 ```
 
@@ -974,54 +484,7 @@ and should see something like this:
 
 ```
 [
-  %Mozart.Data.ProcessState{
-    uid: "29e8f3b7-21df-4e47-b689-9e3fd82cf34a",
-    parent_pid: nil,
-    model_name: :process_with_single_send_task,
-    start_time: ~U[2024-06-03 15:30:18.247638Z],
-    end_time: ~U[2024-06-03 15:30:18.248965Z],
-    execute_duration: 1327,
-    open_tasks: %{},
-    completed_tasks: [
-      %{
-        message: :message,
-        name: :send_task,
-        type: :send,
-        next: nil,
-        __struct__: Mozart.Task.Send,
-        uid: "7b3e4c42-d68d-4d96-8d40-72f0de8d84e1",
-        process_uid: "29e8f3b7-21df-4e47-b689-9e3fd82cf34a"
-      }
-    ],
-    data: %{},
-    complete: true
-  },
-  %Mozart.Data.ProcessState{
-    uid: "3dfad9f6-2629-4e73-8ec2-c6209e84aab9",
-    parent_pid: nil,
-    model_name: :process_with_receive_task,
-    start_time: ~U[2024-06-03 15:30:13.241838Z],
-    end_time: ~U[2024-06-03 15:30:18.248982Z],
-    execute_duration: 5007144,
-    open_tasks: %{},
-    completed_tasks: [
-      %{
-        complete: true,
-        data: %{message: true},
-        function: nil,
-        name: :receive_task,
-        type: :receive,
-        next: nil,
-        __struct__: Mozart.Task.Receive,
-        uid: "d43b54db-2f72-4fcd-bbdc-f5c66cd330a3",
-        message_selector: #Function<42.105768164/1 in :erl_eval.expr/6>,
-        process_uid: "3dfad9f6-2629-4e73-8ec2-c6209e84aab9"
-      }
-    ],
-    data: %{message: true},
-    complete: true
-  }
-]
+
 
 ```
 

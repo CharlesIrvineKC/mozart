@@ -4,7 +4,7 @@ Currently, there is just one event type as described below. This document will b
 
 ## Task Exit Event
 
-A **Task Exit Event** (`Mozart.Event.TaskExit`) allows a process execution to exit an open task in response to an external event (a Phoenix.PubSub event). When the task exits in this way, process execution will follow an alternate execution path as specified the the *task exit event*.
+A **Task Exit Event** allows a process execution to exit an open task in response to an external event (a Phoenix.PubSub event). When the task exits in this way, process execution will follow an alternate execution path as specified the the *task exit event*.
 
 The *task exit event* is implemented by a struct with the following fields:
 
