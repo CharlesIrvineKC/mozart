@@ -48,7 +48,7 @@ end
 
 ## Load the Process Model into repository
 
-Now let's load this process model into the process model repository, which is implemented by (`Mozart.ProcessService`). First, let's paste a few aliases into our iex session:
+Now let's load this process model into the process model repository, which is implemented by (`Mozart.ProcessService`). First, start an iex session with **iex -S mix** and paste a couple of aliases into your iex session:
 
 ```elixir
 alias Mozart.ProcessEngine, as: PE
@@ -62,6 +62,15 @@ Now we are ready to load our process modeld into the repository. Copy the follow
 PS.load_process_models(MyBpmApplication.get_processes())
 
 ```
+
+You should see:
+
+````
+iex [15:06 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, ["add x and y process"]}
+````
+
+The function **MyBpmApplication.get_processes/1** function use created for you automatically when you inserted **use Mozart.BpmProcess** into your module definition.
 
 ## Start a Process Engine and Execute the Process Model
 
@@ -117,5 +126,5 @@ iex [08:50 :: 26] > PS.get_completed_process_data(uid)
 %{sum: 2, y: 1, x: 1}
 ```
 
-We see the start and end times of process execution as well as the execution duration of 1177 microseconds (or 1.177 milliseconds). We see that tasks that were completed. And, finally, we see that the service task has done its job of adding 1 to the value of **x**.
+We see that the sum of **x** and **y** were added to process data as a result of completing our service task.
 
