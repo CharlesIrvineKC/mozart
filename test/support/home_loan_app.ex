@@ -1,4 +1,5 @@
 defmodule Mozart.HomeLoanApp do
+  @moduledoc false
   use Mozart.BpmProcess
 
   alias Mozart.HomeLoanApp, as: ME

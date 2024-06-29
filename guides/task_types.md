@@ -2,12 +2,12 @@
 
 ## Service Task
 
-A **Service Task** (`Mozart.Task.Service`) performs its work by calling an Elixir function. This function could perform a computation, call an external JSON service, retrieve data from a database, etc.
+A **Service Task** performs its work by calling an Elixir function. This function could perform a computation, call an external JSON service, retrieve data from a database, etc.
 
-A service task has two unique fields: **:function** and **:inputs**.
+A service task has two unique fields: **function** and **inputs**.
 
-* The **:function** field specifies the function that the service task should apply for the purpose of returning output data into the process state.
-* The **:inputs** field is used to select which process data fields are passed to the task's function. If no value is supplied for this field, the entire process data is passed.
+* The **function** field specifies the function that the service task should apply for the purpose of returning output data into the process state.
+* The **inputs** field is used to select which process data fields are passed to the task's function. If no value is supplied for this field, the entire process data is passed.
 
 ### Service Task example
 

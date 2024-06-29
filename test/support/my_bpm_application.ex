@@ -1,4 +1,5 @@
 defmodule MyBpmApplication do
+  @moduledoc false
   use Mozart.BpmProcess
 
   def sum(data) do

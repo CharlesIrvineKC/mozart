@@ -1,23 +1,5 @@
 defmodule Mozart.Task.User do
-  @moduledoc """
-  Used to model a task that must be completed by a system user.
-
-  Example:
-
-  ```
-  %ProcessModel{
-        name: :user_task_process_model,
-        tasks: [
-          %User{
-            name: :user_task,
-            assigned_groups: ["admin"]
-          }
-        ],
-        initial_task: :user_task
-      }
-  ```
-
-  """
+  @moduledoc false
   defstruct [
     :name,
     :function,

@@ -35,11 +35,11 @@ defmodule MyBpmApplication do
 end
 ```
 
-This module can be used as-is to start and execute a BPM process engine as shown below:
+This module can be used as-is to start and execute a BPM process engine as shown below. (A small quanity of system output was removed to improve clarity.)
 
 ```
 iex > ProcessService.load_process_models(MyBpmApplication.get_processes())
-iex > {:ok, ppid, uid, _key} = PE.start_process("add x and y process", %{x: 1, y: 1})
+iex > {:ok, ppid, uid, _key} = ProcessEntine.start_process("add x and y process", %{x: 1, y: 1})
 [info] Start process instance [add x and y process][b82f5da1-6e5d-44df-b4ed-9064b877e484]
 
 iex > ProcessEngine.execute(ppid)
@@ -47,7 +47,7 @@ iex > ProcessEngine.execute(ppid)
 [info] Complete service task [add x and y task[f396a252-fba4-4804-9fdd-360a6c24ed54]
 [info] Process complete [add x and y process][b82f5da1-6e5d-44df-b4ed-9064b877e484]
 
-iex [16:38 :: 6] > PS.get_completed_process_data(uid)
+iex > ProcessService.get_completed_process_data(uid)
 %{sum: 2, y: 1, x: 1}
 ```
 
