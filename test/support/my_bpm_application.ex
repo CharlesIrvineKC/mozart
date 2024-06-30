@@ -65,4 +65,21 @@ defmodule MyBpmApplication do
     ])
   end
 
+  ## Send and Receive Example
+
+  def receive_loan_income(msg) do
+    case msg do
+      {:barrower_income, income} -> %{barrower_income: income}
+      _ -> nil
+    end
+  end
+
+  defprocess "receive barrower income process" do
+    receive_task("receive barrower income", selector: &MyBpmApplication.receive_loan_income/1)
+  end
+
+  defprocess "send barrower income process" do
+    send_task("send barrower income", message: {:barrower_income, 100_000})
+  end
+
 end

@@ -427,4 +427,110 @@ Based on our input data, since x was less than y, 2 should have been subtracted 
 %{value: 6, y: 2, x: 1}
 ```
 
+## Send and Receive Task Example
+
+For this example, we will use both the Send and Receive tasks since they are typically used together. The Receive Task receive a message from the Send Task.
+
+Update the MyBpmApplication module with the following content:
+
+```elixir
+defmodule MyBpmApplication do
+  use Mozart.BpmProcess
+
+  ## Previous Content Here
+
+  ## Send and Receive Example
+
+  def receive_loan_income(msg) do
+    case msg do
+      {:barrower_income, income} -> %{barrower_income: income}
+      _ -> nil
+    end
+  end
+
+  defprocess "receive barrower income process" do
+    receive_task("receive barrower income", selector: &MyBpmApplication.receive_loan_income/1)
+  end
+
+  defprocess "send barrower income process" do
+    send_task("send barrower income", message: {:barrower_income, 100_000})
+  end
+
+end
+
+```
+
+In this example we will start the "receive barrower income process" first. The "receive barrower income" task will wait until it receives a message of the form **{:barrower_income, income}**. When it receive this message it will merge **%{barrower_income: income}** into the processes data.
+
+The purpose of the "send barrower income process" task is to send the message that the receive task is waiting for.
+
+Open an iex session, and paste in the following:
+
+```elixir
+alias Mozart.ProcessEngine, as: PE
+alias Mozart.ProcessService, as: PS
+PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, ppid, uid, process_key} = PE.start_process("receive barrower income process", %{})
+PE.execute(ppid)
+
+```
+
+and you should see:
+
+```elixir
+iex [17:23 :: 1] > alias Mozart.ProcessEngine, as: PE
+Mozart.ProcessEngine
+iex [17:23 :: 2] > alias Mozart.ProcessService, as: PS
+Mozart.ProcessService
+iex [17:23 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+{:ok,
+ ["add x and y process", "one user task process", "two service tasks",
+  "subprocess task process", "two case process",
+  "receive barrower income process", "send barrower income process"]}
+iex [17:23 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("receive barrower income process", %{})
+
+17:23:16.604 [info] Start process instance [receive barrower income process][d9534434-acc0-43a3-83ac-2f6db76cfb3d]
+{:ok, #PID<0.296.0>, "d9534434-acc0-43a3-83ac-2f6db76cfb3d",
+ "82d4ac32-e192-4a4b-a5e9-29f02c7ee46a"}
+iex [17:23 :: 5] > PE.execute(ppid)
+:ok
+
+17:23:16.608 [info] New receive task instance [receive barrower income][8286148c-a756-4db9-b21b-86acb3e8d17a]
+```
+
+At this point, we've started the process with the receive task and we see that the expected receive task has been opened. Now we need to run the process with the send task so the waiting receive task can complete. To do that, copy the following into your iex session. 
+
+Notice that when we call **PE.start_process/2**, we choose different varaible names so that our previous variable values won't be overwirtten.
+
+```elixir
+{:ok, s_ppid, s_uid, s_process_key} = PE.start_process("send barrower income process", %{})
+PE.execute(s_ppid)
+
+```
+
+
+You should see this result:
+
+```elixir
+iex [17:23 :: 6] > {:ok, ppid, uid, process_key} = PE.start_process("send barrower income process", %{})
+
+17:28:56.665 [info] Start process instance [send barrower income process][d58a5b10-1a12-48f5-9426-9ab90701e933]
+{:ok, #PID<0.299.0>, "d58a5b10-1a12-48f5-9426-9ab90701e933",
+ "7e9657d1-21ba-40e4-8c42-00f913c62926"}
+iex [17:23 :: 7] > PE.execute(ppid)
+:ok
+17:28:56.666 [info] New send task instance [send barrower income][273a9f29-783c-4306-97c4-eb9e12735a80]
+17:28:56.667 [info] Complete send event task [send barrower income[273a9f29-783c-4306-97c4-eb9e12735a80]
+17:28:56.667 [info] Complete receive event task [receive barrower income]
+17:28:56.667 [info] Process complete [send barrower income process][d58a5b10-1a12-48f5-9426-9ab90701e933]
+17:28:56.667 [info] Process complete [receive barrower income process][d9534434-acc0-43a3-83ac-2f6db76cfb3d]
+```
+
+Now we can check whether the expected data was merged into the process data of the first process:
+
+```elixir
+iex [17:38 :: 8] > PS.get_completed_process_data(uid)
+%{barrower_income: 100000}
+```
+
 
