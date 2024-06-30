@@ -1,4 +1,16 @@
 defmodule Mozart.BpmProcess do
+  @moduledoc """
+  This module implements a BPM Domain Specific Language (DSL) framework. To use, insert
+  **use Mozart.BpmProcess** into your modules.
+
+  ```elixir
+  defmodule Mozart.MyBpmApplication do
+    use Mozart.BpmProcess
+
+    # Your process model definitions
+  end
+  ```
+  """
   alias Mozart.Task.Service
   alias Mozart.Task.User
   alias Mozart.Task.Subprocess
@@ -26,7 +38,7 @@ defmodule Mozart.BpmProcess do
 
   @doc """
   Used to implement a business process model. Arguments are a name followed by one or
-  more task functions. Example:
+  more task functions.
 
   ```
   defprocess "two timer task process" do
@@ -69,6 +81,25 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to define parallel execution paths. Arguments are the task name
+  and a list of routes.
+
+  ```
+  defprocess "two parallel routes process" do
+    parallel_task("a parallel task", [
+      route do
+        user_task("1", groups: "admin")
+        user_task("2", groups: "admin")
+      end,
+      route do
+        user_task("3", groups: "admin")
+        user_task("4", groups: "admin")
+      end
+    ])
+  end
+  ```
+  """
   defmacro parallel_task(name, routes) do
     quote do
       task = %Parallel{name: unquote(name), multi_next: unquote(routes)}
@@ -76,6 +107,24 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to define one of many parallel execution paths within a parallel task. Arguments are a task name a block of tasks.
+
+  ```
+  defprocess "two parallel routes process" do
+    parallel_task("a parallel task", [
+      route do
+        user_task("1", groups: "admin")
+        user_task("2", groups: "admin")
+      end,
+      route do
+        user_task("3", groups: "admin")
+        user_task("4", groups: "admin")
+      end
+    ])
+  end
+  ```
+  """
   defmacro route(do: tasks) do
     quote do
       @capture_subtasks true
@@ -99,6 +148,24 @@ defmodule Mozart.BpmProcess do
     String.split(groups_string, ",")
   end
 
+  @doc """
+  Used to select one of many execution paths. Arguments are a task name and a list of cases.
+
+  ```
+  defprocess "two case process" do
+    case_task("yes or no", [
+      case_i &ME.x_less_than_y/1 do
+        user_task("1", groups: "admin")
+        user_task("2", groups: "admin")
+      end,
+      case_i &ME.x_greater_or_equal_y/1 do
+        user_task("3", groups: "admin")
+        user_task("4", groups: "admin")
+      end
+    ])
+  end
+  ```
+  """
   defmacro case_task(name, cases) do
     quote do
       case_task = %Case{name: unquote(name), cases: unquote(cases)}
@@ -106,6 +173,25 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to specify one of many alternate execution paths. Arguments are a task name
+  and a block of tasks.
+
+  ```
+  defprocess "two case process" do
+    case_task("yes or no", [
+      case_i &ME.x_less_than_y/1 do
+        user_task("1", groups: "admin")
+        user_task("2", groups: "admin")
+      end,
+      case_i &ME.x_greater_or_equal_y/1 do
+        user_task("3", groups: "admin")
+        user_task("4", groups: "admin")
+      end
+    ])
+  end
+  ```
+  """
   defmacro case_i(expr, do: tasks) do
     quote do
       @capture_subtasks true
@@ -119,6 +205,17 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to specify a timed delay in an execution path. Arguments are a task name and
+  a duration in milliseconds.
+
+  ```
+  defprocess "two timer task process" do
+    timer_task("one second timer task", duration: 1000)
+    timer_task("two second timer task", duration: 2000)
+  end
+  ```
+  """
   defmacro timer_task(name, duration: duration) do
     quote do
       task = %Timer{name: unquote(name), timer_duration: unquote(duration)}
@@ -126,6 +223,22 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to set data properties based on evaluation of rules in a rule table. Arguments
+  are a task name, a set of inputs and a rule table.
+
+  ```
+  rule_table = \"""
+  F     income      || status
+  1     > 50000     || approved
+  2     <= 49999    || declined
+  \"""
+
+  defprocess "single rule task process" do
+    rule_task("loan decision", inputs: "income", rule_table: rule_table)
+  end
+  ```
+  """
   defmacro rule_task(name, inputs: inputs, rule_table: rule_table) do
     quote do
       inputs = parse_inputs(unquote(inputs))
@@ -135,6 +248,16 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to specify a task completed by spawning and completing a subprocess. Arguments
+  are a task name and the name of the subprocess model.
+
+  ```
+  defprocess "subprocess task process" do
+    subprocess_task("subprocess task", model: "two service tasks")
+  end
+  ```
+  """
   defmacro subprocess_task(name, model: subprocess_name) do
     quote do
       subprocess =
@@ -144,6 +267,16 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  A task that send a PubSub event to a receiving receive_task. Arguments are a task name
+  and a PubSub message.
+
+  ```
+  defprocess "send barrower income process" do
+    send_task("send barrower income", message: {:barrower_income, 100_000})
+  end
+  ```
+  """
   defmacro send_task(name, message: message) do
     quote do
       task = %Send{name: unquote(name), message: unquote(message)}
@@ -151,6 +284,20 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to specify a task completed by calling an Elixir function. Arguments are
+  a task name, a set of comma delitmited inputs a captured Elixir function.
+
+  ```
+  def square(data) do
+    Map.put(data, :square, data.x * data.x)
+  end
+
+  defprocess "one service task process" do
+    service_task("a service task", function: &MyBpmApplication.square/1, inputs: "x")
+  end
+  ```
+  """
   defmacro service_task(name, function: func, inputs: inputs) do
     quote do
       function = unquote(func)
@@ -163,6 +310,23 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to suspend an execution path until receiving a specified PubSub event. Arguemnts
+  are a task name and captured function
+
+  ```
+  def receive_loan_income(msg) do
+    case msg do
+      {:barrower_income, income} -> %{barrower_income: income}
+      _ -> nil
+    end
+  end
+
+  defprocess "receive barrower income process" do
+    receive_task("receive barrower income", selector: &MyBpmApplication.receive_loan_income/1)
+  end
+  ```
+  """
   defmacro receive_task(name, selector: function) do
     quote do
       task = %Receive{name: unquote(name), message_selector: unquote(function)}
@@ -171,6 +335,16 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to specify a task performed by a user belonging to a specified workgroup. Arguments are
+  a task name and a set of comma delimited workgroups.
+
+  ```
+  defprocess "single user task process" do
+    user_task("add one to x", groups: "admin,customer_service")
+  end
+  ```
+  """
   defmacro user_task(name, groups: groups) do
     quote do
       groups = parse_user_groups(unquote(groups))
