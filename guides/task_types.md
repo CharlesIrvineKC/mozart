@@ -332,5 +332,99 @@ iex [13:50 :: 6] > PS.get_completed_process_data(uid)
 
 Check.
 
+## Case Task Example
+
+The **Case Task** provides a way to specify alternate execution paths depending on the current state of process execution.
+
+Add the following content to the MyBpmApplication module:
+
+```elixir
+defmodule MyBpmApplication do
+  use Mozart.BpmProcess
+
+  ## Previous content here
+
+  ## Case Task Example
+
+  def add_two_to_value(data) do
+    Map.put(data, :value, data.value + 2)
+  end
+
+  def subtract_two_from_value(data) do
+    Map.put(data, :value, data.value - 2)
+  end
+
+  def x_less_than_y(data) do
+    data.x < data.y
+  end
+
+  def x_greater_or_equal_y(data) do
+    data.x >= data.y
+  end
+
+  defprocess "two case process" do
+    case_task("yes or no", [
+      case_i &MyBpmApplication.x_less_than_y/1 do
+        service_task("1", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
+        service_task("2", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
+      end,
+      case_i &MyBpmApplication.x_greater_or_equal_y/1 do
+        service_task("3", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
+        service_task("4", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
+      end
+    ])
+  end
+
+end
+```
+
+The process named "two case process" does this:
+
+* If **x is less than y**, subtract 2 from the value parameter twice.
+* if **x is greater or equal to y**, add 2 to the value parameter twice.
+
+Let's try it out. Open an iex session, and paste in the following:
+
+```elixir
+alias Mozart.ProcessEngine, as: PE
+alias Mozart.ProcessService, as: PS
+PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, ppid, uid, process_key} = PE.start_process("two case process", %{x: 1, y: 2, value: 10})
+PE.execute(ppid)
+
+```
+and you should see:
+
+```elixir
+iex [14:33 :: 1] > alias Mozart.ProcessEngine, as: PE
+Mozart.ProcessEngine
+iex [14:33 :: 2] > alias Mozart.ProcessService, as: PS
+Mozart.ProcessService
+iex [14:33 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+{:ok,
+ ["add x and y process", "one user task process", "two service tasks",
+  "subprocess task process", "two case process"]}
+iex [14:33 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("two case process", %{x: 1, y: 2, value: 10})
+
+14:33:41.084 [info] Start process instance [two case process][4fb6889e-250c-407e-a332-f904f491b39d]
+{:ok, #PID<0.285.0>, "4fb6889e-250c-407e-a332-f904f491b39d",
+ "f5a76516-1509-4e01-99dd-949dba2c06c4"}
+iex [14:33 :: 5] > PE.execute(ppid)
+:ok
+14:33:41.088 [info] New case task instance [yes or no][4a7fd5c1-eaa5-4cfc-9edf-73bd28eaa9cb]
+14:33:41.088 [info] Complete case task [yes or no][4a7fd5c1-eaa5-4cfc-9edf-73bd28eaa9cb]
+14:33:41.088 [info] New service task instance [1][6482abb3-c56f-43d7-870f-83789b77135b]
+14:33:41.088 [info] Complete service task [1[6482abb3-c56f-43d7-870f-83789b77135b]
+14:33:41.089 [info] New service task instance [2][7ee68e1e-9823-4e92-9613-e34f1c279c3a]
+14:33:41.089 [info] Complete service task [2[7ee68e1e-9823-4e92-9613-e34f1c279c3a]
+14:33:41.089 [info] Process complete [two case process][4fb6889e-250c-407e-a332-f904f491b39d]
+```
+
+Based on our input data, since x was less than y, 2 should have been subtracted from 10 twice, leaving the **value** parameter with a value of 6. Let's see if that matches our result:
+
+```elixir
+14:33:41.089 [info] Process complete [two case process][4fb6889e-250c-407e-a332-f904f491b39d]
+%{value: 6, y: 2, x: 1}
+```
 
 

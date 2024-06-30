@@ -34,4 +34,35 @@ defmodule MyBpmApplication do
     subprocess_task("subprocess task", model: "two service tasks")
   end
 
+  ## Case Task Example
+
+  def add_two_to_value(data) do
+    Map.put(data, :value, data.value + 2)
+  end
+
+  def subtract_two_from_value(data) do
+    Map.put(data, :value, data.value - 2)
+  end
+
+  def x_less_than_y(data) do
+    data.x < data.y
+  end
+
+  def x_greater_or_equal_y(data) do
+    data.x >= data.y
+  end
+
+  defprocess "two case process" do
+    case_task("yes or no", [
+      case_i &MyBpmApplication.x_less_than_y/1 do
+        service_task("1", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
+        service_task("2", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
+      end,
+      case_i &MyBpmApplication.x_greater_or_equal_y/1 do
+        service_task("3", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
+        service_task("4", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
+      end
+    ])
+  end
+
 end
