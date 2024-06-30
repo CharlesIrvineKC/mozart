@@ -65,6 +65,7 @@ defmodule Mozart.BpmProcess do
 
   @doc false
   def set_next_tasks([task]), do: [task]
+
   def set_next_tasks([task1, task2 | rest]) do
     task1 = Map.put(task1, :next, task2.name)
     [task1 | set_next_tasks([task2 | rest])]
@@ -347,17 +348,20 @@ defmodule Mozart.BpmProcess do
   """
   defmacro user_task(name, args) do
     quote do
-      case unquote(args) do
-        [groups: groups, inputs: inputs] ->
-          groups = parse_user_groups(groups)
-          inputs = parse_inputs(inputs)
-          user_task = %User{name: unquote(name), assigned_groups: groups, inputs: inputs}
-          insert_new_task(user_task)
-        [groups: groups] ->
-          groups = parse_user_groups(groups)
-          user_task = %User{name: unquote(name), assigned_groups: groups}
-          insert_new_task(user_task)
-      end
+      {groups, inputs} =
+        case unquote(args) do
+          [groups: groups, inputs: inputs] ->
+            groups = parse_user_groups(groups)
+            inputs = parse_inputs(inputs)
+            {groups, inputs}
+
+          [groups: groups] ->
+            groups = parse_user_groups(groups)
+            {groups, nil}
+        end
+
+      user_task = %User{name: unquote(name), assigned_groups: groups, inputs: inputs}
+      insert_new_task(user_task)
     end
   end
 
