@@ -240,3 +240,97 @@ iex [13:05 :: 8] > PS.complete_user_task(uid, "7f3d7009-ab44-4955-a501-677e0a8a3
 13:16:21.327 [info] Process complete [one user task process][fca5f283-0992-4921-ba16-f9d902f9e403]
 ```
 
+## Subprocess Task Example
+
+The **Subprocess Task** is completed by calling a subprocess. When subprocess completes, the corresponding subprocess task also completes.
+
+Update your MyBpmApplication module with the following code:
+
+```elixir
+defmodule MyBpmApplication do
+  use Mozart.BpmProcess
+
+  ## Previous Code Here
+
+  ## Subprocess Task Example
+
+  def add_one_to_value(data) do
+    Map.put(data, :value, data.value + 1)
+  end
+
+  defprocess "two service tasks" do
+    service_task("service task 2", function: &MyBpmApplication.add_one_to_value/1, inputs: "value")
+    service_task("service task 3", function: &MyBpmApplication.add_one_to_value/1, inputs: "value")
+  end
+
+  defprocess "subprocess task process" do
+    service_task("service task 1", function: &MyBpmApplication.add_one_to_value/1, inputs: "value")
+    subprocess_task("subprocess task", model: "two service tasks")
+  end
+
+end
+
+```
+
+Now, we will open an iex session and to the following:
+
+1. Paste in our alias'.
+1. Load our process models.
+1. Start a process engine with the process named "subprocess task process".
+1. Execute the process.
+
+Open your iex session and paste in:
+
+```elixir
+alias Mozart.ProcessEngine, as: PE
+alias Mozart.ProcessService, as: PS
+PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, ppid, uid, process_key} = PE.start_process("subprocess task process", %{value: 0})
+PE.execute(ppid)
+
+```
+
+And you should see something like:
+
+```elixir
+iex [13:50 :: 1] > alias Mozart.ProcessEngine, as: PE
+Mozart.ProcessEngine
+iex [13:50 :: 2] > alias Mozart.ProcessService, as: PS
+Mozart.ProcessService
+iex [13:50 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+{:ok,
+ ["add x and y process", "one user task process", "two service tasks",
+  "subprocess task process"]}
+iex [13:50 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("subprocess task process", %{value: 0})
+
+13:50:13.910 [info] Start process instance [subprocess task process][903561d2-2f27-4014-9bf9-4334a0d93466]
+{:ok, #PID<0.288.0>, "903561d2-2f27-4014-9bf9-4334a0d93466",
+ "d16c2892-7419-4381-b060-e4d899d24ee6"}
+iex [13:50 :: 5] > PE.execute(ppid)
+:ok
+13:50:13.912 [info] New service task instance [service task 1][ee364170-99ad-4ff9-8eda-e4c598e3d7da]
+13:50:13.912 [info] Complete service task [service task 1[ee364170-99ad-4ff9-8eda-e4c598e3d7da]
+13:50:13.913 [info] New sub_process task instance [subprocess task][251b46d7-bf0e-4818-bf28-45a628b85087]
+13:50:13.913 [info] Start process instance [two service tasks][cd9cb03f-f50c-48f2-ba51-9ed4d31c18fa]
+13:50:13.913 [info] New service task instance [service task 2][1f09acb8-b1ef-465e-9fe3-8f9a754f55e2]
+13:50:13.913 [info] Complete service task [service task 2[1f09acb8-b1ef-465e-9fe3-8f9a754f55e2]
+13:50:13.913 [info] New service task instance [service task 3][31bc8c0b-cd65-4e80-9afe-74fa546c7412]
+13:50:13.913 [info] Complete service task [service task 3[31bc8c0b-cd65-4e80-9afe-74fa546c7412]
+13:50:13.913 [info] Complete subprocess task [subprocess task][251b46d7-bf0e-4818-bf28-45a628b85087]
+13:50:13.913 [info] Process complete [two service tasks][cd9cb03f-f50c-48f2-ba51-9ed4d31c18fa]
+13:50:13.913 [info] Process complete [subprocess task process][903561d2-2f27-4014-9bf9-4334a0d93466]
+```
+
+If we examine the logs, we should see that what we expect to happen did happen.
+
+When top level process finishes, we would expect the **value** parameter would have a value of three. Let's check if that is the case:
+
+```elixir
+iex [13:50 :: 6] > PS.get_completed_process_data(uid)
+%{value: 3}
+```
+
+Check.
+
+
+
