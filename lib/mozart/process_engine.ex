@@ -470,6 +470,11 @@ defmodule Mozart.ProcessEngine do
     update_completed_task_state(state, task, task.next) |> execute_process()
   end
 
+  defp complete_prototype_task(state, task) do
+    Logger.info("Complete prototype task [#{task.name}]")
+    update_completed_task_state(state, task, task.next) |> execute_process()
+  end
+
   defp complete_service_task(state, task) do
     Logger.info("Complete service task [#{task.name}[#{task.uid}]")
 
@@ -622,6 +627,9 @@ defmodule Mozart.ProcessEngine do
 
           complete_able_task.type == :rule ->
             complete_rule_task(state, complete_able_task)
+
+            complete_able_task.type == :prototype ->
+              complete_prototype_task(state, complete_able_task)
         end
       else
         state
@@ -659,4 +667,5 @@ defmodule Mozart.ProcessEngine do
   defp complete_able(t) when t.type == :sub_process, do: t.complete
   defp complete_able(t) when t.type == :join, do: t.inputs == []
   defp complete_able(t) when t.type == :user, do: t.complete
+  defp complete_able(t) when t.type == :prototype, do: true
 end

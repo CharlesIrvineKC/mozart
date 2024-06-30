@@ -21,6 +21,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Receive
   alias Mozart.Task.Send
   alias Mozart.Task.Timer
+  alias Mozart.Task.Prototype
   alias Mozart.Data.ProcessModel
 
   defmacro __using__(_opts) do
@@ -220,6 +221,24 @@ defmodule Mozart.BpmProcess do
   defmacro timer_task(name, duration: duration) do
     quote do
       task = %Timer{name: unquote(name), timer_duration: unquote(duration)}
+      insert_new_task(task)
+    end
+  end
+
+  @doc """
+  Used to specify a task that has no behavior. Used for prototyping. Has a single
+  name argument
+
+  ```
+  defprocess "two prototype task process" do
+    prototype_task("prototype task 1")
+    prototype_task("prototype task 2")
+  end
+  ```
+  """
+  defmacro prototype_task(name) do
+    quote do
+      task = %Prototype{name: unquote(name)}
       insert_new_task(task)
     end
   end

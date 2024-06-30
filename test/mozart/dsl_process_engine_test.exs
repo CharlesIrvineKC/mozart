@@ -298,4 +298,24 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 1
   end
 
+  defprocess "two prototype task process" do
+    prototype_task("prototype task 1")
+    prototype_task("prototype task 2")
+  end
+
+  test "two prototype task process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process("two prototype task process", data)
+    PE.execute(ppid)
+    Process.sleep(1000)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 2
+  end
+
 end
