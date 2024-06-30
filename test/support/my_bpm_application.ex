@@ -65,7 +65,7 @@ defmodule MyBpmApplication do
     ])
   end
 
-  ## Send and Receive Example
+  ## Send and Receive Task Example
 
   def receive_loan_income(msg) do
     case msg do
@@ -80,6 +80,21 @@ defmodule MyBpmApplication do
 
   defprocess "send barrower income process" do
     send_task("send barrower income", message: {:barrower_income, 100_000})
+  end
+
+  ## Parallel and Prototype Task Example
+
+  defprocess "two parallel routes process" do
+    parallel_task("a parallel task", [
+      route do
+        prototype_task("prototype task 1")
+        prototype_task("prototype task 2")
+      end,
+      route do
+        prototype_task("prototype task 3")
+        prototype_task("prototype task 4")
+      end
+    ])
   end
 
 end

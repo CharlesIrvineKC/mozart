@@ -533,4 +533,80 @@ iex [17:38 :: 8] > PS.get_completed_process_data(uid)
 %{barrower_income: 100000}
 ```
 
+## Parallel and Prototype Task Example
 
+A **Parallel Task** provides the ability to start two or more parallel execution paths. A **Prototype Task** has no behavior. A process engine will complete it automatically after it is opened. It is primarily used for stubbing tasks that will be replaced later with one of the other task types.
+
+Copy the following content into MyBpmApplication module:
+
+```elixir
+defmodule MyBpmApplication do
+  @moduledoc false
+  use Mozart.BpmProcess
+
+  ## Previous Content Here
+
+  ## Parallel and Prototype Task Example
+
+  defprocess "two parallel routes process" do
+    parallel_task("a parallel task", [
+      route do
+        prototype_task("prototype task 1")
+        prototype_task("prototype task 2")
+      end,
+      route do
+        prototype_task("prototype task 3")
+        prototype_task("prototype task 4")
+      end
+    ])
+  end
+
+end
+
+```
+
+Now open an iex session and copy is the following:
+
+```elixir
+alias Mozart.ProcessEngine, as: PE
+alias Mozart.ProcessService, as: PS
+PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, ppid, uid, process_key} = PE.start_process("two parallel routes process", %{})
+PE.execute(ppid)
+
+```
+
+You should see:
+
+```elixir
+iex [18:29 :: 1] > alias Mozart.ProcessEngine, as: PE
+Mozart.ProcessEngine
+iex [18:29 :: 2] > alias Mozart.ProcessService, as: PS
+Mozart.ProcessService
+iex [18:29 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+{:ok,
+ ["add x and y process", "one user task process", "two service tasks",
+  "subprocess task process", "two case process",
+  "receive barrower income process", "send barrower income process",
+  "two parallel routes process"]}
+iex [18:29 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("two parallel routes process", %{})
+
+18:29:26.105 [info] Start process instance [two parallel routes process][08dba7e3-820e-4ea4-985e-5184b8041c80]
+{:ok, #PID<0.323.0>, "08dba7e3-820e-4ea4-985e-5184b8041c80",
+ "f4753b53-68ad-404b-ae0c-27bc9737b032"}
+iex [18:29 :: 5] > PE.execute(ppid)
+:ok
+18:29:26.108 [info] New parallel task instance [a parallel task][f7aa1870-e01a-46fb-8e0e-9a4353001241]
+18:29:26.108 [info] Complete parallel task [a parallel task]
+18:29:26.108 [info] New prototype task instance [prototype task 1][609a01d8-c7bd-4539-ad4e-720951ab56a3]
+18:29:26.109 [info] New prototype task instance [prototype task 3][16cc3d11-d8cb-4111-9b53-439a4cb10b94]
+18:29:26.109 [info] Complete prototype task [prototype task 3]
+18:29:26.109 [info] New prototype task instance [prototype task 4][e03c4cb7-e16d-45d4-98c1-4380bd57d240]
+18:29:26.109 [info] Complete prototype task [prototype task 1]
+18:29:26.109 [info] New prototype task instance [prototype task 2][48402cb3-9274-4da8-9b50-13e0a8b4b77e]
+18:29:26.109 [info] Complete prototype task [prototype task 2]
+18:29:26.109 [info] Complete prototype task [prototype task 4]
+18:29:26.109 [info] Process complete [two parallel routes process][08dba7e3-820e-4ea4-985e-5184b8041c80]
+```
+
+Examime the log messages. You should be able to see that two execution paths were proceeding in parallel.
