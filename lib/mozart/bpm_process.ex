@@ -345,11 +345,19 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
-  defmacro user_task(name, groups: groups) do
+  defmacro user_task(name, args) do
     quote do
-      groups = parse_user_groups(unquote(groups))
-      user_task = %User{name: unquote(name), assigned_groups: groups}
-      insert_new_task(user_task)
+      case unquote(args) do
+        [groups: groups, inputs: inputs] ->
+          groups = parse_user_groups(groups)
+          inputs = parse_inputs(inputs)
+          user_task = %User{name: unquote(name), assigned_groups: groups, inputs: inputs}
+          insert_new_task(user_task)
+        [groups: groups] ->
+          groups = parse_user_groups(groups)
+          user_task = %User{name: unquote(name), assigned_groups: groups}
+          insert_new_task(user_task)
+      end
     end
   end
 

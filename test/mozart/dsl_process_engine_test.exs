@@ -104,16 +104,17 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 1
   end
 
-  defprocess "single user task process" do
+  defprocess "two user task process" do
     user_task("add one to x", groups: "admin")
+    user_task("add one to x", groups: "admin", inputs: "x")
   end
 
-  test "single user task process" do
+  test "two user task process" do
     PS.clear_state()
     PS.load_process_models(get_processes())
     data = %{}
 
-    {:ok, ppid, _uid, _process_key} = PE.start_process("single user task process", data)
+    {:ok, ppid, _uid, _process_key} = PE.start_process("two user task process", data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -122,7 +123,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   defprocess "three user task process" do
     user_task("1", groups: "admin")
-    user_task("2", groups: "admin")
+    user_task("2", groups: "admin", inputs: "x,y")
     user_task("3", groups: "admin")
   end
 

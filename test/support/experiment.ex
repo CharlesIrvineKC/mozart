@@ -5,4 +5,13 @@ defmodule Experiment do
       fn data -> data[unquote(var1)] > data[unquote(var2)] end
     end
   end
+
+  defmacro option_key_args(name, args) do
+    quote do
+      case unquote(args) do
+        [a: a] -> {a, unquote(name)}
+        [a: a, b: b] -> {a, b, unquote(name)}
+      end
+    end
+  end
 end
