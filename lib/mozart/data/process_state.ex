@@ -1,6 +1,26 @@
 defmodule Mozart.Data.ProcessState do
 @moduledoc """
 
+Defines a struct with fields specifying the state of a BPM process execution. The fields
+provide the following information:
+
+* **uid**: A unique identifier of a single process model execution.
+* **process_key**: A unique identifier for a hierarchy of process model executions
+corresponding to a hierarchial process model.
+* **parent_pid**: If the process is a child process, this is the pid of the parent process
+execution.
+* **model_name**: The name of the process model being executed.
+* **start_time**: The time when the process started executing.
+* **end_time**: The time when the process finished executing.
+* **execution_duration**: The duration of time over which the process executed.
+* **open_tasks**: a map of open tasks. The key is a process name. The value is the
+internal structure of the task.
+* **completed_tasks**: A list of completed tasks. List items are task internal
+structures.
+* **data**: A map of all accumulated process data. Keys are the property names. Values
+are the property values.
+* **complete**: Indicates whether the process has completed.
+
 ```
 defstruct [
     :uid,
@@ -16,44 +36,6 @@ defstruct [
     complete: false
   ]
 end
-```
-
-This struct is used to represent the state of a `Mozart.ProcessEngine` execution.
-
-Example: (incrementally populated throughout process execution.)
-
-```
-%Mozart.Data.ProcessState{
-  uid: "74146e68-088e-42b6-965e-20f4d7dbae16",
-  process_key: "74146e68-088e-42b6-965e-20f4d7123456"
-  parent_pid: nil,
-  model_name: :call_external_service,
-  start_time: ~U[2024-05-27 15:22:01.847683Z],
-  end_time: ~U[2024-05-27 15:22:02.277273Z],
-  execute_duration: 429590,
-  open_tasks: %{},
-  completed_tasks: [
-    %{
-      data: %{},
-      function: #Function<0.23164178/1 in Mozart.ProcessModels.TestModels.call_exteral_services/0>,
-      name: :get_api_data,
-      type: :service,
-      next: nil,
-      __struct__: Mozart.Task.Service,
-      uid: "e3326041-d203-46b2-8141-907f71421398",
-      process_uid: "74146e68-088e-42b6-965e-20f4d7dbae16"
-    }
-  ],
-  data: %{
-    todo_data: %{
-      "completed" => false,
-      "id" => 1,
-      "title" => "delectus aut autem",
-      "userId" => 1
-    }
-  },
-  complete: true
-}
 ```
 
 """
