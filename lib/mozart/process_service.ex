@@ -1,7 +1,6 @@
 defmodule Mozart.ProcessService do
   @moduledoc """
-  This modeule provides services required by individual `Mozart.ProcessEngine` instances. Currently,
-  it has no user level functions. Subject to change.
+  This modeule provides a set of utility services.
   """
 
   @doc false
@@ -23,6 +22,7 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_cached_state, uid})
   end
 
+  @doc false
   def get_processes_for_process_key(process_key) do
     GenServer.call(__MODULE__, {:get_processes_for_process_key, process_key})
   end
@@ -41,9 +41,7 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_completed_process_data, uid})
   end
 
-  @doc """
-  Get a process pid from it UID
-  """
+  @doc false
   def get_process_pid_from_uid(uid) do
     GenServer.call(__MODULE__, {:get_process_pid_from_uid, uid})
   end
@@ -55,13 +53,12 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_user_tasks_for_groups, groups})
   end
 
+  @doc false
   def update_for_completed_process(process_state) do
     GenServer.call(__MODULE__, {:update_for_completed_process, process_state})
   end
 
-  @doc """
-  Get a user task by uid
-  """
+  @doc false
   def get_user_task(uid) do
     GenServer.call(__MODULE__, {:get_user_task, uid})
   end
@@ -98,6 +95,7 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:process_completed_process_instance, process_state})
   end
 
+  @doc false
   def get_state() do
     GenServer.call(__MODULE__, :get_state)
   end
@@ -147,6 +145,7 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:get_process_model, model_name})
   end
 
+  @doc false
   def get_process_models do
     GenServer.call(__MODULE__, :get_process_models)
   end
@@ -163,23 +162,17 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:clear_then_load_process_models, models})
   end
 
-  @doc """
-  Get process model db
-  """
+  @doc false
   def get_process_model_db() do
     GenServer.call(__MODULE__, :get_process_model_db)
   end
 
-  @doc """
-  Get process model db
-  """
+  @doc false
   def get_completed_process_db() do
     GenServer.call(__MODULE__, :get_completed_process_db)
   end
 
-  @doc """
-  Get process model db
-  """
+  @doc false
   def get_user_task_db() do
     GenServer.call(__MODULE__, :get_user_task_db)
   end
@@ -375,6 +368,7 @@ defmodule Mozart.ProcessService do
     {:noreply, state}
   end
 
+  @doc false
   def get_active_process_groups(uid, pid, process_key, state) do
     processes = Map.get(state.active_process_groups, process_key) || %{}
     processes = Map.put(processes, uid, pid)
@@ -395,6 +389,7 @@ defmodule Mozart.ProcessService do
     |> Enum.to_list()
   end
 
+  @doc false
   def get_completed_processes_local(state) do
     CubDB.select(state.completed_process_db)
     |> Stream.map(fn {_k, v} -> v end)
