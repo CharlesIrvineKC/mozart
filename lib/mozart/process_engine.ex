@@ -1,6 +1,6 @@
 defmodule Mozart.ProcessEngine do
   @moduledoc """
-  A ProcessEngine is dynamically spawned for the purpose of executing a process model defined by **defprocess**.
+  A ProcessEngine is dynamically spawned for the purpose of executing a process model defined by **defprocess** function call.
   """
 
   @doc false
@@ -25,7 +25,7 @@ defmodule Mozart.ProcessEngine do
 
   @doc """
   Used to complete any "complete-able" open tasks. Task execution frequently spawns new
-  open tasks. Execute will continue to as long as there are "complete-able" open tasks.
+  open tasks. Execute will continue to called recursively as long as there are "complete-able" open tasks.
   """
   def execute(ppid) do
     GenServer.cast(ppid, :execute)
@@ -39,7 +39,24 @@ defmodule Mozart.ProcessEngine do
   @doc """
   Use this function to create a ProcessEngine instance initialized with the
   name of the process model to be executed and any initialization data. The
-  engine will start executing tasks with the execute/1 function is called.
+  engine will start executing tasks when the execute/1 function is called.
+
+  Arguments are a process model name, initial process data, an optional process_key, and a parent
+  process pid if there is a parent. If a process key is not specified, one will be assigned.
+
+  Returns a tuple of the form:
+  ```
+  {:ok, ppid, uid, process_key}
+  ```
+  where:
+  * **ppid** is the Elixir pid for the spawned GenServer.
+  * **uid** is a uniquie identifier for a process execution.
+  * **process_key** is a unique identifier for a hierarchial process execution.
+
+  Sample invocation:
+  ```
+  {:ok, ppid, uid, process_key} = ProcessEngine.start_process("a process model name", )
+  ```
   """
   def start_process(model_name, data, process_key \\ nil, parent_pid \\ nil) do
     uid = UUID.generate()
@@ -58,13 +75,14 @@ defmodule Mozart.ProcessEngine do
     {:ok, pid, uid, process_key}
   end
 
-  @doc """
-  Complete subprocess due to a TaskExit event
-  """
+  @doc false
   def complete_on_task_exit_event(ppid) do
     GenServer.cast(ppid, :complete_on_task_exit_event)
   end
 
+  @doc """
+  Returns the state of the process. Useful for debugging.
+  """
   def get_state(ppid) do
     GenServer.call(ppid, :get_state)
   end
@@ -85,7 +103,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   @doc """
-  Gets the open tasks of the given process engine
+  Gets the open tasks of the given process engine. Useful for debugging.
   """
   def get_open_tasks(ppid) do
     GenServer.call(ppid, :get_open_tasks)
