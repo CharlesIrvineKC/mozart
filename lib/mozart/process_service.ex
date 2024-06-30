@@ -100,9 +100,11 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, :get_state)
   end
 
-  @doc false
-  def complete_user_task(process_uid, user_task, data) do
-    GenServer.cast(__MODULE__, {:complete_user_task, process_uid, user_task, data})
+  @doc """
+  Completes a user task.
+  """
+  def complete_user_task(process_uid, user_task_uid, data) do
+    GenServer.cast(__MODULE__, {:complete_user_task, process_uid, user_task_uid, data})
   end
 
   @doc false
