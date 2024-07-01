@@ -31,7 +31,7 @@ BPM platforms provide the following functions:
 The goals of Business Process Management are:
 
 * Better Process Reliablibility
-* Faster Process Execugtion
+* Faster Process Execution
 * Reduced Training Requirements
 * Incremental Process Improvement
 * Provide Process Metrics
