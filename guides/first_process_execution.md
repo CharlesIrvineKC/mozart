@@ -9,7 +9,7 @@ To follow along create a new Elxir **mix** project and then add Mozart as a depe
 ```elixir
   defp deps do
     [
-      {:mozart, "~> 0.2"}
+      {:mozart, "~> 0.3"}
     ]
   end
 ```

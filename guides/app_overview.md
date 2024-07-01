@@ -33,6 +33,7 @@ The task types currently supported are:
 | rule_task               | Performed by evaluating a set of rules represented in a table. |
 | case_task               | Selects one of many process paths. |
 | parallel_task           | Initiates two or more parallel process paths. |
+| prototype_task          | Has no behavior. Used for prototyping and subbing. |
 
 ## Process Application
 
