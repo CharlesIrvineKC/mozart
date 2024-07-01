@@ -1,8 +1,8 @@
 # Home Loan Example
 
-In this guide we will construct and execute a somewhat more complex process model than we have dealt with thus far. We will mainly use **user tasks** because they allow use to easily control of the process execution path during process exploration.
+In this guide we will construct and execute a somewhat more complex process model than we have dealt with thus far. We will mainly use **user tasks** because they allow us to easily control of the process execution path during process execution.
 
-We will create a process model applying for a home loan from a bank. It will be highly simplified compared to the actual process used by lending institutions, but complicated enough for our purposes here.
+We will create a process model applying for a home loan from a bank. It will be highly simplified compared to the actual process, but complicated enough for our purposes here.
 
 Here is a summary of the loan approval process:
 
@@ -12,273 +12,177 @@ Here is a summary of the loan approval process:
 1. After the loan has been processed, it will go to the underwriting department to determine whether the loan will be approved or not.
 1. Finally, after the loan is approced, the bank will notify the applicant that the loan is approved.
 
-If you are following along, open an Elixir project that has Mozart as a dependency.
+If you are following along, open an iex session for a project Elixir project that has Mozart as a dependency.
+
+Create a file home_loan.ex with the following content. The file will contain the complete process matching the process described above.
+
+```elixir
+defmodule HomeLoanApp do
+  @moduledoc false
+  use Mozart.BpmProcess
+
+  alias HomeLoanApp, as: ME
+
+  def pre_approved(data) do
+    data.pre_approval
+  end
+
+  def pre_approval_declined(data) do
+    not data.pre_approval
+  end
+
+  defprocess "home loan process" do
+    user_task("perform pre approval", groups: "credit")
+
+    case_task("route on pre approval completion", [
+      case_i &ME.pre_approved/1 do
+
+        user_task("receive mortgage application", groups: "credit")
+        user_task("process loan", groups: "credit")
+        subprocess_task("perform loan evaluation", model: "perform loan evaluation process")
+
+      end,
+    case_i &ME.pre_approval_declined/1 do
+
+        user_task("communicate loan denied", groups: "credit")
+    end
+    ])
+  end
+
+
+def loan_verified(data) do
+  data.loan_verified
+end
+
+def loan_failed_verification(data) do
+  ! data.loan_verified
+end
+
+defprocess "perform loan evaluation process" do
+  case_task("process loan outcome", [
+    case_i &ME.loan_verified/1 do
+
+      user_task("perform underwriting", groups: "underwriting")
+      subprocess_task("route from underwriting", model: "route from underwriting process")
+
+    end,
+    case_i &ME.loan_failed_verification/1 do
+
+      user_task("communicate loan denied", groups: "credit")
+    end
+  ])
+end
+
+def loan_approved(data) do
+  data.loan_approved
+end
+
+def loan_declined(data) do
+  ! data.loan_approved
+end
+
+defprocess "route from underwriting process" do
+  case_task("route from underwriting", [
+    case_i &ME.loan_approved/1 do
+
+      user_task("communicate approval", groups: "credit")
+    end,
+    case_i &ME.loan_declined/1 do
+
+      user_task("communicate loan declined", groups: "customer_service")
+    end
+  ])
+end
+
+end
 
 ```
-iex -S mix
 
-```
+Now open an iex session on your project and paste in the following:
 
-Now paste the following alias' into your iex session
-
-```
+```elixir
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
-  alias Mozart.Data.ProcessModel
-  alias Mozart.Task.User
-  alias Mozart.Task.Case
+
+  PS.load_process_models(HomeLoanApp.get_processes())
+
+  {:ok, ppid, uid, process_key} = PE.start_process("home loan process", %{})
+
+  PE.execute(ppid)
 
 ```
 
-The following is our loan processing process model. At this point, you might try to map the process model to the summary of the process given above.
+and you should see that a user task was opened:
 
-When you are ready, paste the process model into your iex session:
-
+```elixir
+18:53:36.111 [info] New user task instance [perform pre approval][240a7811-b552-40c9-bbce-a75768e56d12]
 ```
-model = 
-    %ProcessModel{
-      name: :home_loan_process,
-      tasks: [
-        %User{
-          name: :perform_pre_approval,
-          inputs: [:credit_score, :income, :debt_amount],
-          assigned_groups: ["credit"],
-          next: :route_on_pre_approval_completion
-        },
-        %Case{
-          name: :route_on_pre_approval_completion,
-          cases: [
-            %{
-              expression: fn data -> data.pre_approval == true end,
-              next: :receive_mortgage_application
-            },
-            %{
-              expression: fn data -> data.pre_approval == false end,
-              next: :communicate_loan_denied
-            }
-          ]
-        },
-        %User{
-          name: :receive_mortgage_application,
-          inputs: [:credit_score, :income, :debt_amount],
-          assigned_groups: ["credit"],
-          next: :process_loan
-        },
-        %User{
-          name: :process_loan,
-          inputs: [:purchase_price, :credit_score, :income, :debt_amount],
-          assigned_groups: ["credit"],
-          next: :process_loan_outcome
-        },
-        %Case{
-          name: :process_loan_outcome,
-          cases: [
-            %{
-              expression: fn data -> data.loan_verified == true end,
-              next: :perform_underwriting
-            },
-            %{
-              expression: fn data -> data.loan_verified == false end,
-              next: :communicate_loan_denied
-            }
-          ]
-        },
-        %User{
-          name: :perform_underwriting,
-          inputs: [:purchase_price, :credit_score, :income, :debt_amount, :loan_verified],
-          assigned_groups: ["underwriting"],
-          next: :route_from_underwriting
-        },
-        %Case{
-          name: :route_from_underwriting,
-          cases: [
-            %{
-              expression: fn data -> data.loan_approved == true end,
-              next: :communicate_approval
-            },
-            %{
-              expression: fn data -> data.loan_approved == false end,
-              next: :communicate_loan_denied
 
-            }
-          ]
-        },
-        %User{
-          name: :communicate_approval,
-          inputs: [:loan_approved],
-          assigned_groups: ["credit"]
-        },
-        %User{
-          name: :communicate_loan_denied,
-          inputs: [:loan_approved],
-          assigned_groups: ["credit"]
-        },
-      ],
-      initial_task: :perform_pre_approval
-      }
+This task is asking us to specify whether the loan should be pre approved. Let's complete the task in the affirmative.
+
+```elixir
+PS.complete_user_task(uid, "240a7811-b552-40c9-bbce-a75768e56d12", %{pre_approval: true})
 
 ```
 
-Now let's start executing this process. Paste the following into your iex session:
+Now we see that a new task has been opened:
 
-```
-PS.clear_state()
-PS.load_process_model(model)
-data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
-{:ok, ppid, _uid, _process_key} = PE.start_process(:home_loan_process, data)
-PE.execute(ppid)
-
+```elixir
+ New user task instance [receive mortgage application][ed0adc9a-0b55-466b-a7e1-4c7fb6712d99]
 ```
 
-At this point, the user task to perform pre-approval should have been opened:
+Now we need to complete this task when receive a mortgage contract from the customer. Let's do that:
 
-```
-[user_task] = PS.get_user_tasks_for_groups(["credit"])
+```elixir
+PS.complete_user_task(uid, "ed0adc9a-0b55-466b-a7e1-4c7fb6712d99", %{})
 
 ```
 
-which returns:
+A new task was created:
 
-```
-iex [11:54 :: 13] > [user_task] = PS.get_user_tasks_for_groups(["credit"])
-[
-  %{
-    complete: false,
-    data: %{credit_score: 700, income: 100000, debt_amount: 20000},
-    function: nil,
-    name: :perform_pre_approval,
-    type: :user,
-    next: :route_on_pre_approval_completion,
-    __struct__: Mozart.Task.User,
-    uid: "a987e7f0-15ba-422d-a26d-7ff6a6bdaaad",
-    assigned_groups: ["credit"],
-    inputs: [:credit_score, :income, :debt_amount],
-    process_uid: "5ece8627-623b-46f1-afa2-0fb11659a874"
-  }
-]
+```elixir
+19:05:48.515 [info] New user task instance [process loan][75350759-1613-4c0e-8fbc-8dedda264121]
 ```
 
-Let's assume that is sufficient information for granting pre-approval. We can do this like so:
+And we will complete that task like this:
 
-```
- PS.complete_user_task(ppid, user_task.uid, %{pre_approval: true})
+```elixir
+PS.complete_user_task(uid, "75350759-1613-4c0e-8fbc-8dedda264121", %{loan_verified: true})
 
 ```
 
-At this point, the case task should have completed and routed the process to the user task **receive_mortgage_application**. The task will be completed when the loan applicant provides the bank with an mortgage application for a house that has been selected for purchase. The bank user will complete this task by entering the purchase price of the house.
+And now the following task was created, and, importantly it was created in a new subprocess. Here are the two relevant log entries:
 
-Let's do that now:
-
-```
-[user_task] = PS.get_user_tasks_for_groups(["credit"])
-PS.complete_user_task(ppid, user_task.uid, %{purchase_price: 500_000})
-
+```elixir
+19:08:41.990 [info] Start process instance [perform loan evaluation process][f0c978e9-f5f0-403f-97c1-c0a9fe459f63]
+19:08:41.990 [info] New user task instance [perform underwriting][a163d0bb-a5c2-43b9-93bf-25beb4961238]
 ```
 
-We have now accepted the customers loan application and noted that the purchase price is $500,000. We are ready to process the loan. Loan processsing is the bank's procedure to ensure that all of the information gathers thus far is in order. A user task for processing the loan should now be open. Let's check that it is:
+Now we need to complete "prform underwriting task" using the new process uid:
 
-```
-[user_task] = PS.get_user_tasks_for_groups(["credit"])
+```elixir
+PS.complete_user_task("f0c978e9-f5f0-403f-97c1-c0a9fe459f63", "a163d0bb-a5c2-43b9-93bf-25beb4961238", %{loan_approved: true})
 
 ```
 
-which produces:
+Again, a new process was started and a new task was opened in it:
 
-```
-iex [18:16 :: 17] > [user_task] = PS.get_user_tasks_for_groups(["credit"])
-[
-  %{
-    complete: false,
-    data: %{
-      credit_score: 700,
-      income: 100000,
-      debt_amount: 20000,
-      purchase_price: 500000
-    },
-    function: nil,
-    name: :process_loan,
-    type: :user,
-    next: :process_loan_outcome,
-    __struct__: Mozart.Task.User,
-    uid: "2aa15c30-b147-469d-b8a5-34946b2165df",
-    assigned_groups: ["credit"],
-    inputs: [:purchase_price, :credit_score, :income, :debt_amount],
-    process_uid: "8d106b1c-32f4-43b6-a168-e663bb59056f"
-  }
-]
+```elixir
+19:13:35.639 [info] Start process instance [route from underwriting process][a7be20fe-4d3b-473e-bf58-3b85fcba474f]
+19:13:35.640 [info] New user task instance [communicate approval][7617f9a7-660c-48f1-bf29-698f6eaa9d6e]
 ```
 
-Now let's complete that task, asserting that the loan has been verified:
+Let's complete that task:
 
-```
-PS.complete_user_task(ppid, user_task.uid, %{loan_verified: true})
+```elixir
+PS.complete_user_task("a7be20fe-4d3b-473e-bf58-3b85fcba474f", "7617f9a7-660c-48f1-bf29-698f6eaa9d6e", %{})
 
 ```
 
-Now we are ready for the underwriting department to assess whether the loan should be approved. Let's query for the task and approve the loan:
+Finally, our top level process is complete, as indicated in the log message:
 
-```
-[user_task] = PS.get_user_tasks_for_groups(["underwriting"])
-PS.complete_user_task(ppid, user_task.uid, %{loan_approved: true})
-
+```elixir
+19:17:42.130 [info] Process complete [home loan process][baa48cc2-f315-48f4-a4f1-97da78a16fe7]
 ```
 
-We are now ready for the final task of our process - informing the customer that the loan has been approved. Let's do that now:
-
-```
-[user_task] = PS.get_user_tasks_for_groups(["credit"])
-PS.complete_user_task(ppid, user_task.uid, %{loan_approved: true})
-
-```
-
-At this point, our logs should indicate that the process has finished, as indeed we do:
-
-```
-iex [18:16 :: 23] > PS.complete_user_task(ppid, user_task.uid, %{loan_approved: true})
-:ok
-18:46:03.183 [info] Complete user task [communicate_approval][53a2b9ae-ba89-49f2-beba-0fdd8f49ab1f]
-18:46:03.183 [info] Process complete [home_loan_process][8d106b1c-32f4-43b6-a168-e663bb59056f]
-```
-
-Now let's start over at the beginning, and enter data so that the process completes with the loan being declined:
-
-```
-PS.clear_state()
-PS.load_process_model(model)
-data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
-{:ok, ppid, _uid, _process_key} = PE.start_process(:home_loan_process, data)
-PE.execute(ppid)
-
-```
-
-Now, instead of granting pre-approval, let's decline the loan with the following:
-
-```
-[user_task] = PS.get_user_tasks_for_groups(["credit"])
-PS.complete_user_task(ppid, user_task.uid, %{pre_approval: false})
-
-```
-
-We see in the last log entry, that we have a new **communicate_loan_denied** task.
-
-```
-iex [18:16 :: 32] > PS.complete_user_task(ppid, user_task.uid, %{pre_approval: false})
-:ok
-18:53:57.138 [info] New task instance [route_on_pre_approval_completion][645b421a-11ef-461e-91a7-7aa7e7fc66e6]
-18:53:57.138 [info] Complete user task [perform_pre_approval][3ee4b0d2-1432-4d54-b248-34ae928db983]
-18:53:57.138 [info] Complete case task [route_on_pre_approval_completion][645b421a-11ef-461e-91a7-7aa7e7fc66e6]
-18:53:57.139 [info] New task instance [communicate_loan_denied][a6a5bacd-a5a4-4b1e-a39b-99c0c8b58d04]
-```
-
-Let's complete that task now:
-
-```
-[user_task] = PS.get_user_tasks_for_groups(["credit"])
-PS.complete_user_task(ppid, user_task.uid, %{loan_approved: false})
-
-```
-
-
-
-
-
+This might have been a bit much to fully comprehend in one pass. Try stepping through it again, perhaps completing user tasks with different parameter values. Once you fully understand this example, you have pretty figured Mozart out!

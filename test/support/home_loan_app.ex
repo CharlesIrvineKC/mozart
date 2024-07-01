@@ -1,8 +1,8 @@
-defmodule Mozart.HomeLoanApp do
+defmodule HomeLoanApp do
   @moduledoc false
   use Mozart.BpmProcess
 
-  alias Mozart.HomeLoanApp, as: ME
+  alias HomeLoanApp, as: ME
 
   def pre_approved(data) do
     data.pre_approval
