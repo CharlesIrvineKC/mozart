@@ -3,7 +3,7 @@ defmodule Mozart.LoanApprovalTest do
 
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
-  alias Mozart.HomeLoanApp
+  alias HomeLoanApp
 
 test "run loan approval" do
   PS.clear_state()
