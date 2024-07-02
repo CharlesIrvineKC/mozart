@@ -8,9 +8,63 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Task.Subprocess
   alias Mozart.Task.Service
   alias Mozart.Task.Receive
+  alias Mozart.Task.Repeat
+  alias Mozart.Task.Prototype
   alias Mozart.Event.TaskExit
   alias Mozart.Data.ProcessModel
   alias Phoenix.PubSub
+
+  defp get_repeat_process do
+    %ProcessModel{
+      name: :repeat_process_model,
+      initial_task: :first_user_task,
+      tasks: [
+        %User{
+          name: :first_user_task,
+          assigned_groups: ["admin"],
+          next: :repeat_task
+        },
+        %Repeat{
+          name: :repeat_task,
+          first: :first_prototype_task,
+          last: :last_user_task,
+          condition: fn data -> data.continue end,
+          next: :prototype_task_after_repeat
+        },
+        %Prototype{
+          name: :first_prototype_task,
+          next: :last_user_task
+        },
+        %User{
+          name: :last_user_task,
+        },
+        %Prototype{
+          name: :prototype_task_after_repeat
+        }
+      ]
+    }
+  end
+
+  test "repeat task" do
+    PS.clear_state()
+    PS.load_process_model(get_repeat_process())
+    data = %{continue: false}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process(:repeat_process_model, data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+    PS.complete_user_task(uid, user_task.uid, %{continue: true})
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+    PS.complete_user_task(uid, user_task.uid, %{continue: true})
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+    PS.complete_user_task(uid, user_task.uid, %{continue: false})
+  end
 
   defp get_exit_event_on_sub_process do
     [
