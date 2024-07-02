@@ -7,6 +7,35 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
+  def continue(data) do
+    data.continue
+  end
+
+  defprocess "repeat task process" do
+    repeat_task "repeat task", &ME.continue/1 do
+      prototype_task("prototype task 1")
+      prototype_task("prototype task 2")
+      user_task("user task", groups: "admin")
+    end
+    prototype_task("last prototype task")
+  end
+
+  test "repeat task process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+
+    {:ok, ppid, uid, _process_key} = PE.start_process("repeat task process", %{continue: true})
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+    PS.complete_user_task(uid, user_task.uid, %{continue: true})
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+    PS.complete_user_task(uid, user_task.uid, %{continue: false})
+  end
+
   defprocess "two timer task process" do
     timer_task("one second timer task", duration: 1000)
     timer_task("two second timer task", duration: 2000)

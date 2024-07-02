@@ -22,6 +22,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Send
   alias Mozart.Task.Timer
   alias Mozart.Task.Prototype
+  alias Mozart.Task.Repeat
   alias Mozart.Data.ProcessModel
 
   defmacro __using__(_opts) do
@@ -137,6 +138,23 @@ defmodule Mozart.BpmProcess do
       @subtasks []
       @capture_subtasks false
       first.name
+    end
+  end
+
+  defmacro repeat_task(name, condition, do: tasks) do
+    quote do
+      r_task = %Repeat{name: unquote(name), condition: unquote(condition)}
+      insert_new_task(r_task)
+      @capture_subtasks true
+      unquote(tasks)
+      @subtasks set_next_tasks(@subtasks)
+      first = List.first(@subtasks)
+      last = List.last(@subtasks)
+      r_task = Map.put(r_task, :first, first.name) |> Map.put(:last, last.name)
+      @tasks Enum.map(@tasks, fn t -> if t.name == unquote(name), do: r_task, else: t end)
+      @subtask_sets [@subtasks | @subtask_sets]
+      @subtasks []
+      @capture_subtasks false
     end
   end
 

@@ -488,25 +488,17 @@ defmodule Mozart.ProcessEngine do
 
   defp do_completed_task_side_effects(state, task) do
     # TODO: Use with here?
-    repeat_task = find_by_last_task(state, task.name)
-    if repeat_task do
-      # if repeat_task.condition.(state.data) do
-      #   first_task = get_new_task_instance(repeat_task.first, state)
-      #   Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
-      # else
-      #   repeat_task = Map.put(repeat_task, :complete, true)
-      #   open_tasks = Map.put(state.open_tasks, repeat_task.uid, repeat_task)
-      #   Map.put(state, :open_tasks, open_tasks)
-      # end
+    r_task = find_by_last_task(state, task.name)
+    if r_task do
 
-      handle_new_repeat_task(state, repeat_task)
+      handle_new_repeat_task(state, r_task)
     else
       state
     end
   end
 
   defp find_by_last_task(state, task_name) do
-    Enum.find_value(state.open_tasks, fn {_key, t} -> if t.last == task_name, do: t end)
+    Enum.find_value(state.open_tasks, fn {_key, t} -> if t.type == :repeat && t.last == task_name, do: t end)
   end
 
   defp update_completed_task_state(state, task, next_task) do
