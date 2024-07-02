@@ -97,4 +97,19 @@ defmodule MyBpmApplication do
     ])
   end
 
+  ## Repeat Task Example
+
+  def continue(data) do
+    data.continue
+  end
+
+  defprocess "repeat task process" do
+    repeat_task "repeat task", &MyBpmApplication.continue/1 do
+      prototype_task("prototype task 1")
+      prototype_task("prototype task 2")
+      user_task("user task", groups: "admin")
+    end
+    prototype_task("last prototype task")
+  end
+
 end

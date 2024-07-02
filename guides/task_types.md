@@ -610,3 +610,113 @@ iex [18:29 :: 5] > PE.execute(ppid)
 ```
 
 Examime the log messages. You should be able to see that two execution paths were proceeding in parallel.
+
+## Repeat Task Example
+
+The **Repeat Task** provides the ability to repeats a set of tasks as long a specified holds true.
+
+Copy the following new code into the MyBpmApplication module:
+
+```elixir
+defmodule MyBpmApplication do
+  @moduledoc false
+  use Mozart.BpmProcess
+
+  ## Previous content here
+
+  ## Repeat Task Example
+
+  def continue(data) do
+    data.continue
+  end
+
+  defprocess "repeat task process" do
+    repeat_task "repeat task", &ME.continue/1 do
+      prototype_task("prototype task 1")
+      prototype_task("prototype task 2")
+      user_task("user task", groups: "admin")
+    end
+    prototype_task("last prototype task")
+  end
+
+end
+
+```
+
+Open an iex session and paste in the following:
+
+```elixir
+alias Mozart.ProcessEngine, as: PE
+alias Mozart.ProcessService, as: PS
+PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, ppid, uid, process_key} = PE.start_process("repeat task process", %{continue: true})
+PE.execute(ppid)
+
+```
+
+and you should see:
+
+```elixir
+iex [09:10 :: 4] > alias Mozart.ProcessEngine, as: PE
+Mozart.ProcessEngine
+iex [09:10 :: 5] > alias Mozart.ProcessService, as: PS
+Mozart.ProcessService
+iex [09:10 :: 6] > PS.load_process_models(MyBpmApplication.get_processes())
+{:ok,
+ ["add x and y process", "one user task process", "two service tasks",
+  "subprocess task process", "two case process",
+  "receive barrower income process", "send barrower income process",
+  "two parallel routes process", "repeat task process"]}
+iex [09:10 :: 7] > {:ok, ppid, uid, process_key} = PE.start_process("repeat task process", %{continue: true})
+
+09:11:31.919 [info] Start process instance [repeat task process][e3963cb8-410d-4039-ad81-eb6730808783]
+{:ok, #PID<0.300.0>, "e3963cb8-410d-4039-ad81-eb6730808783",
+ "ba5bded6-fbd9-4690-9643-453ab31457fa"}
+iex [09:10 :: 8] > PE.execute(ppid)
+:ok
+09:11:31.923 [info] New repeat task instance [repeat task][b600cf3d-8f84-4d16-8378-96f0bb152440]
+09:11:31.923 [info] New prototype task instance [prototype task 1][c6f6cfca-7097-4931-bea4-61404160e5d1]
+09:11:31.923 [info] Complete prototype task [prototype task 1]
+09:11:31.923 [info] New prototype task instance [prototype task 2][4c526ace-eb2b-4d7d-b918-83f1deda831f]
+09:11:31.923 [info] Complete prototype task [prototype task 2]
+09:11:31.924 [info] New user task instance [user task][2557b2e6-d6fa-4172-b25b-a809633e5217]
+```
+
+Now, let's complete the user task specifying **continue to be true***, i.e. %{continue: true}. This should cause the repeat tasks to be executed one more time:
+
+```elixir
+PS.complete_user_task(uid, "2557b2e6-d6fa-4172-b25b-a809633e5217", %{continue: true})
+
+```
+
+The output verifies this is the case:
+
+```elixir
+iex [09:10 :: 9] > PS.complete_user_task(uid, "2557b2e6-d6fa-4172-b25b-a809633e5217", %{continue: true})
+:ok
+09:17:20.481 [info] New prototype task instance [prototype task 1][4af087bb-865b-41b5-8d6b-55e6c9511d2b]
+09:17:20.481 [info] Complete user task [user task][2557b2e6-d6fa-4172-b25b-a809633e5217]
+09:17:20.481 [info] Complete prototype task [prototype task 1]
+09:17:20.481 [info] New prototype task instance [prototype task 2][965fa775-6280-43d0-ab50-8a966ed69dac]
+09:17:20.481 [info] Complete prototype task [prototype task 2]
+09:17:20.481 [info] New user task instance [user task][2e855696-e11d-42e7-89a9-330c2a87b11f]
+```
+
+Now, let's complete the new user task with **%{continue: false}**. This should cause the repeat to complete, the final **prototype_task** to complete and then the process to complete:
+
+```elixir
+PS.complete_user_task(uid, "2e855696-e11d-42e7-89a9-330c2a87b11f", %{continue: false})
+
+```
+
+And we see the following, which verifies the expected behavior:
+
+```elixir
+iex [09:10 :: 10] > PS.complete_user_task(uid, "2e855696-e11d-42e7-89a9-330c2a87b11f", %{continue: false})
+:ok
+09:23:09.731 [info] Complete user task [user task][2e855696-e11d-42e7-89a9-330c2a87b11f]
+09:23:09.732 [info] Complete repeat task [repeat task]
+09:23:09.732 [info] New prototype task instance [last prototype task][5b6c63db-46bb-459b-a79f-d0c53a1662ca]
+09:23:09.732 [info] Complete prototype task [last prototype task]
+09:23:09.732 [info] Process complete [repeat task process][e3963cb8-410d-4039-ad81-eb6730808783]
+```

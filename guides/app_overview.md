@@ -34,6 +34,7 @@ The task types currently supported are:
 | case_task               | Selects one of many process paths. |
 | parallel_task           | Initiates two or more parallel process paths. |
 | prototype_task          | Has no behavior. Used for prototyping and subbing. |
+| repeat_task             | Repeats a set of tasks while condition is true. |
 
 ## Process Application
 
