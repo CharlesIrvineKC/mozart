@@ -344,14 +344,8 @@ defmodule Mozart.ProcessEngine do
 
     state = do_new_task_side_effects(new_task.type, new_task, state)
 
-    # if new_task.type != :subprocess do
     state =
       Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
-
-
-    # else
-    #   state
-    # end
 
     if new_task.type == :repeat do
       trigger_repeat_execution(state, new_task)
@@ -403,11 +397,6 @@ defmodule Mozart.ProcessEngine do
       start_process(new_task.model, data, state.process_key, self())
 
     execute(process_pid)
-
-    # new_task = Map.put(new_task, :subprocess_pid, process_pid)
-    # open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
-    # Map.put(state, :open_tasks, open_tasks)
-    state
   end
 
   defp do_new_task_side_effects(_, _, state), do: state
