@@ -744,7 +744,7 @@ defmodule MyBpmApplication do
 
 ```
 
-Our table assumes there is a data property named **income**. If the value of *income* is greater than *5000*, the rule will return a property named **status** with a value of **approved**. If income is less than 5000, the value of *status* will be **declined**.
+Our table assumes there is a data property named **income**. If the value of *income* is greater than *50000*, the rule will return a property named **status** with a value of **approved**. If income is less than 50000, the value of *status* will be **declined**.
 
 [**Note**: Mozart uses the Tablex library for rule tasks. Tablex is very powerful. [Complete documentation is available in hexdocs](https://hexdocs.pm/tablex/readme.html).]
 
