@@ -55,6 +55,7 @@ defmodule Mozart.BpmProcess do
       unquote(body)
       tasks = set_next_tasks(@tasks)
       tasks = tasks ++ List.flatten(@subtask_sets)
+      check_for_duplicates(tasks)
       process = Map.put(process, :tasks, tasks)
       initial_task_name = Map.get(hd(tasks), :name)
       process = Map.put(process, :initial_task, initial_task_name)
@@ -63,6 +64,12 @@ defmodule Mozart.BpmProcess do
       @subtasks []
       @subtask_sets []
     end
+  end
+
+  def check_for_duplicates(tasks) do
+    task_names = Enum.map(tasks, fn t -> t.name end)
+    dup_task_names = Enum.uniq(task_names -- Enum.uniq(task_names))
+    if dup_task_names != [], do: raise "Duplicate task names: #{inspect(dup_task_names)}"
   end
 
   @doc false
@@ -299,7 +306,7 @@ defmodule Mozart.BpmProcess do
   defmacro subprocess_task(name, model: subprocess_name) do
     quote do
       subprocess =
-        %Subprocess{name: unquote(name), sub_process_model_name: unquote(subprocess_name)}
+        %Subprocess{name: unquote(name), model: unquote(subprocess_name)}
 
       insert_new_task(subprocess)
     end
@@ -409,7 +416,6 @@ defmodule Mozart.BpmProcess do
 
       def load_processes do
         process_names = Enum.map(@processes, fn p -> p.name end)
-        IO.puts("loading processes[#{inspect(process_names)}]")
       end
     end
   end
