@@ -196,7 +196,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process_model_name: :service_subprocess_model,
+            model: :service_subprocess_model,
             next: :service_task1
           },
           %Service{
@@ -246,7 +246,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process_model_name: :one_user_task_process
+            model: :one_user_task_process
           }
         ],
         initial_task: :call_process_task
@@ -256,7 +256,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process_model_name: :service_subprocess_model
+            model: :service_subprocess_model
           }
         ],
         initial_task: :call_process_task

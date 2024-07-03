@@ -222,16 +222,18 @@ defmodule Mozart.ProcessEngine do
     {:noreply, state}
   end
 
-  def handle_cast({:notify_child_complete, sp_name, sp_data}, state) do
-    {_uid, sp_task} =
-      Enum.find(state.open_tasks, fn {_uid, ti} -> ti.sub_process_model_name == sp_name end)
+  def handle_cast({:notify_child_complete, subprocess_name, subprocess_data}, state) do
+    {_k, subprocess_task} =
+      Enum.find(state.open_tasks, fn {_uid, t} ->
+        t.type == :subprocess && t.model == subprocess_name
+      end)
 
-    sp_task = Map.put(sp_task, :complete, true)
-    open_tasks = Map.put(state.open_tasks, sp_task.uid, sp_task)
+    subprocess_task = Map.put(subprocess_task, :complete, true)
+    open_tasks = Map.put(state.open_tasks, subprocess_task.uid, subprocess_task)
 
     state
     |> Map.put(:open_tasks, open_tasks)
-    |> Map.put(:data, sp_data)
+    |> Map.put(:data, subprocess_data)
     |> execute_process()
 
     {:noreply, state}
@@ -285,7 +287,7 @@ defmodule Mozart.ProcessEngine do
     task = Enum.find(open_tasks, fn t -> t.name == event.exit_task end)
     task = Map.put(task, :complete, :exit_on_task_event)
 
-    if task.type == :sub_process do
+    if task.type == :subprocess do
       complete_on_task_exit_event(task.sub_process_pid)
     end
 
@@ -342,38 +344,28 @@ defmodule Mozart.ProcessEngine do
 
     state = do_new_task_side_effects(new_task.type, new_task, state)
 
+    # if new_task.type != :subprocess do
     state =
-      if new_task.type != :sub_process do
-        Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
-      else
-        state
-      end
+      Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
+
+
+    # else
+    #   state
+    # end
 
     if new_task.type == :repeat do
-      # if new_task.condition.(state.data) do
-      #   first_task = get_new_task_instance(new_task.first, state)
-      #   Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
-      #   Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
-      # else
-      #   new_task = Map.put(new_task, :complete, true)
-      #   open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
-      #   Map.put(state, :open_tasks, open_tasks)
-      # end
-      handle_new_repeat_task(state, new_task)
-
-      # first_task = get_new_task_instance(new_task.first, state)
-      # Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
-      # Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
+      trigger_repeat_execution(state, new_task)
     else
       state
     end
   end
 
-  defp handle_new_repeat_task(state, new_task) do
+  defp trigger_repeat_execution(state, new_task) do
     if new_task.condition.(state.data) do
       first_task = get_new_task_instance(new_task.first, state)
       Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
-      Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
+      state = Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
+      do_new_task_side_effects(first_task.type, first_task, state)
     else
       new_task = Map.put(new_task, :complete, true)
       open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
@@ -404,17 +396,18 @@ defmodule Mozart.ProcessEngine do
     state
   end
 
-  defp do_new_task_side_effects(:sub_process, new_task, state) do
+  defp do_new_task_side_effects(:subprocess, new_task, state) do
     data = state.data
 
     {:ok, process_pid, _uid, _process_key} =
-      start_process(new_task.sub_process_model_name, data, state.process_key, self())
+      start_process(new_task.model, data, state.process_key, self())
 
     execute(process_pid)
 
-    new_task = Map.put(new_task, :sub_process_pid, process_pid)
-    open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
-    Map.put(state, :open_tasks, open_tasks)
+    # new_task = Map.put(new_task, :subprocess_pid, process_pid)
+    # open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
+    # Map.put(state, :open_tasks, open_tasks)
+    state
   end
 
   defp do_new_task_side_effects(_, _, state), do: state
@@ -468,7 +461,6 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp update_for_completed_task(state, task) do
-
     now = DateTime.utc_now()
     duration = DateTime.diff(now, task.start_time, :microsecond)
 
@@ -483,22 +475,18 @@ defmodule Mozart.ProcessEngine do
     state
     |> Map.put(:open_tasks, open_tasks)
     |> Map.put(:completed_tasks, completed_tasks)
-    |> do_completed_task_side_effects(task)
+    |> check_for_repeat_task_completion(task)
   end
 
-  defp do_completed_task_side_effects(state, task) do
-    # TODO: Use with here?
+  defp check_for_repeat_task_completion(state, task) do
     r_task = find_by_last_task(state, task.name)
-    if r_task do
-
-      handle_new_repeat_task(state, r_task)
-    else
-      state
-    end
+    if r_task, do: trigger_repeat_execution(state, r_task), else: state
   end
 
   defp find_by_last_task(state, task_name) do
-    Enum.find_value(state.open_tasks, fn {_key, t} -> if t.type == :repeat && t.last == task_name, do: t end)
+    Enum.find_value(state.open_tasks, fn {_key, t} ->
+      if t.type == :repeat && t.last == task_name, do: t
+    end)
   end
 
   defp update_completed_task_state(state, task, next_task) do
@@ -626,6 +614,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp complete_user_task_impl(state, task_uid, return_data) do
+
     task_instance = get_task_instance(task_uid, state)
 
     if task_instance do
@@ -662,7 +651,7 @@ defmodule Mozart.ProcessEngine do
           complete_able_task.type == :case ->
             complete_case_task(state, complete_able_task)
 
-          complete_able_task.type == :sub_process ->
+          complete_able_task.type == :subprocess ->
             complete_subprocess_task(state, complete_able_task)
 
           complete_able_task.type == :parallel ->
@@ -686,8 +675,8 @@ defmodule Mozart.ProcessEngine do
           complete_able_task.type == :prototype ->
             complete_prototype_task(state, complete_able_task)
 
-            complete_able_task.type == :repeat ->
-              complete_repeat_task(state, complete_able_task)
+          complete_able_task.type == :repeat ->
+            complete_repeat_task(state, complete_able_task)
         end
       else
         state
@@ -722,7 +711,7 @@ defmodule Mozart.ProcessEngine do
   defp complete_able(t) when t.type == :timer, do: t.expired
   defp complete_able(t) when t.type == :parallel, do: true
   defp complete_able(t) when t.type == :case, do: true
-  defp complete_able(t) when t.type == :sub_process, do: t.complete
+  defp complete_able(t) when t.type == :subprocess, do: t.complete
   defp complete_able(t) when t.type == :join, do: t.inputs == []
   defp complete_able(t) when t.type == :user, do: t.complete
   defp complete_able(t) when t.type == :repeat, do: t.complete

@@ -73,7 +73,7 @@ defmodule Mozart.ProcessEngineTest do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process_model_name: :sub_process_with_one_user_task
+            model: :subprocess_with_one_user_task
           },
           %Service{
             name: :service_after_task_exit,
@@ -96,7 +96,7 @@ defmodule Mozart.ProcessEngineTest do
         initial_task: :call_process_task
       },
       %ProcessModel{
-        name: :sub_process_with_one_user_task,
+        name: :subprocess_with_one_user_task,
         tasks: [
           %User{
             name: :user_task,
@@ -392,7 +392,7 @@ defmodule Mozart.ProcessEngineTest do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process_model_name: :service_subprocess_model,
+            model: :service_subprocess_model,
             next: :service_task1
           },
           %Service{

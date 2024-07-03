@@ -157,7 +157,7 @@ defmodule Mozart.ProcessServiceTest do
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process_model_name: :sub_process_with_one_user_task
+            model: :subprocess_with_one_user_task
           }
         ],
         events: [
@@ -175,7 +175,7 @@ defmodule Mozart.ProcessServiceTest do
         initial_task: :call_process_task
       },
     %ProcessModel{
-      name: :sub_process_with_one_user_task,
+      name: :subprocess_with_one_user_task,
       tasks: [
         %User{
           name: :user_task,
@@ -196,9 +196,9 @@ defmodule Mozart.ProcessServiceTest do
     assert simple_call_process_model != nil
     assert simple_call_process_model.name == :simple_call_process_model
 
-    sub_process_with_one_user_task = PS.get_process_model(:sub_process_with_one_user_task)
+    sub_process_with_one_user_task = PS.get_process_model(:subprocess_with_one_user_task)
     assert sub_process_with_one_user_task != nil
-    assert sub_process_with_one_user_task.name == :sub_process_with_one_user_task
+    assert sub_process_with_one_user_task.name == :subprocess_with_one_user_task
   end
 
   test "complete a user task" do

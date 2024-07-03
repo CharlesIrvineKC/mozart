@@ -55,21 +55,23 @@ defmodule Mozart.BpmProcess do
       unquote(body)
       tasks = set_next_tasks(@tasks)
       tasks = tasks ++ List.flatten(@subtask_sets)
-      check_for_duplicates(tasks)
+      check_for_duplicates("task", tasks)
       process = Map.put(process, :tasks, tasks)
       initial_task_name = Map.get(hd(tasks), :name)
       process = Map.put(process, :initial_task, initial_task_name)
       @processes [process | @processes]
+      check_for_duplicates("process", @processes)
       @tasks []
       @subtasks []
       @subtask_sets []
     end
   end
 
-  def check_for_duplicates(tasks) do
+  @doc false
+  def check_for_duplicates(type, tasks) do
     task_names = Enum.map(tasks, fn t -> t.name end)
     dup_task_names = Enum.uniq(task_names -- Enum.uniq(task_names))
-    if dup_task_names != [], do: raise "Duplicate task names: #{inspect(dup_task_names)}"
+    if dup_task_names != [], do: raise "Duplicate #{type} names: #{inspect(dup_task_names)}"
   end
 
   @doc false

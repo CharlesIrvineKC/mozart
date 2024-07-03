@@ -7,15 +7,68 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
-  def continue(data) do
-    data.continue
+  def count_is_less_than_limit(data) do
+    data.count < data.limit
+  end
+
+  def add_1_to_count(data) do
+    %{count: data.count + 1}
+  end
+
+  defprocess "repeat with service task process" do
+    repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
+      service_task("add one to count 1", function: &ME.add_1_to_count/1, inputs: "count")
+    end
+    prototype_task("last prototype task")
+  end
+
+  test "repeat with service task process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{count: 0, limit: 2}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process("repeat with service task process", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{count: 2, limit: 2}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 4
+  end
+
+  defprocess "repeat with subprocess task process" do
+    repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
+      service_task("add one to count 1", function: &ME.add_1_to_count/1, inputs: "count")
+      subprocess_task("subprocess task", model: "subprocess with one prototype test")
+    end
+    prototype_task("last prototype task")
+  end
+
+  defprocess "subprocess with one prototype test" do
+    prototype_task("subprocess prototype task 1")
+  end
+
+  test "repeat with subprocess task process" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{count: 0, limit: 2}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process("repeat with subprocess task process", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{count: 2, limit: 2}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 4
   end
 
   defprocess "repeat task process" do
-    repeat_task "repeat task", &ME.continue/1 do
+    repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
       prototype_task("prototype task 1")
       prototype_task("prototype task 2")
-      user_task("user task", groups: "admin")
+      service_task("add one to count 1", function: &ME.add_1_to_count/1, inputs: "count")
     end
     prototype_task("last prototype task")
   end
@@ -24,16 +77,14 @@ defmodule Mozart.DslProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(get_processes())
 
-    {:ok, ppid, uid, _process_key} = PE.start_process("repeat task process", %{continue: true})
+    {:ok, ppid, uid, _process_key} = PE.start_process("repeat task process", %{count: 0, limit: 5})
     PE.execute(ppid)
     Process.sleep(100)
 
-    user_task = hd(PS.get_user_tasks())
-    PS.complete_user_task(uid, user_task.uid, %{continue: true})
-    Process.sleep(100)
-
-    user_task = hd(PS.get_user_tasks())
-    PS.complete_user_task(uid, user_task.uid, %{continue: false})
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{count: 5, limit: 5}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 17
   end
 
   defprocess "two timer task process" do
@@ -134,8 +185,8 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "two user task process" do
-    user_task("add one to x", groups: "admin")
-    user_task("add one to x", groups: "admin", inputs: "x")
+    user_task("add one to x 1", groups: "admin")
+    user_task("add one to x 2", groups: "admin", inputs: "x")
   end
 
   test "two user task process" do

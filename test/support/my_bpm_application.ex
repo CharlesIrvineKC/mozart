@@ -112,4 +112,72 @@ defmodule MyBpmApplication do
     prototype_task("last prototype task")
   end
 
+  ## Repeat Example with Subprocess
+
+  defprocess "repeat with subprocess task process" do
+    repeat_task "repeat task", &MyBpmApplication.continue/1 do
+      subprocess_task("subprocess task", model: "subprocess with 3 prototype tasks")
+      prototype_task("prototype task")
+      user_task("user task", groups: "admin")
+    end
+    prototype_task("last prototype task")
+  end
+
+  defprocess "subprocess with 3 prototype tasks" do
+    prototype_task("subprocess prototype task 1")
+    prototype_task("subprocess prototype task 2")
+    prototype_task("subprocess prototype task 3")
+  end
+
+  ## From Tests
+
+  defprocess "repeat with subprocess task process 2" do
+    repeat_task "repeat task", &MyBpmApplication.continue/1 do
+      subprocess_task("subprocess task", model: "subprocess with one prototype test")
+      user_task("user task", groups: "admin")
+    end
+    prototype_task("last prototype task")
+  end
+
+  defprocess "subprocess with one prototype test" do
+    prototype_task("subprocess prototype task 1")
+  end
+
+  ## Repeat with service tasks and subprocess
+
+  def count_is_less_than_limit(data) do
+    data.count < data.limit
+  end
+
+  def add_1_to_count(data) do
+    %{count: data.count + 1}
+  end
+
+  defprocess "repeat two service tasks" do
+    repeat_task "repeat task", &MyBpmApplication.count_is_less_than_limit/1 do
+      service_task("add one to count 1", function: &MyBpmApplication.add_1_to_count/1, inputs: "count")
+      timer_task("timer task 1", duration: 100)
+      service_task("add one to count 2", function: &MyBpmApplication.add_1_to_count/1, inputs: "count")
+      timer_task("timer task 2", duration: 100)
+    end
+    prototype_task("last prototype task")
+  end
+
+  defprocess "subprocess with  service task" do
+    service_task("add one to count", function: &MyBpmApplication.add_1_to_count/1, inputs: "count")
+  end
+
+   """
+    alias Mozart.ProcessEngine, as: PE
+    alias Mozart.ProcessService, as: PS
+    PS.load_process_models(MyBpmApplication.get_processes())
+    {:ok, ppid, uid, process_key} = PE.start_process("repeat two service tasks", %{count: 0, limit: 10})
+    PE.execute(ppid)
+
+    {:ok, ppid, uid, process_key} = PE.start_process("repeat two service tasks", %{count: 0, limit: 20})
+    PE.execute(ppid)
+
+   """
+
+
 end

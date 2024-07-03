@@ -49,7 +49,7 @@ models = [
         tasks: [
           %Subprocess{
             name: :call_process_task,
-            sub_process_model_name: :sub_process_with_one_user_task
+            model: :subprocess_with_one_user_task
           },
           %Service{
             name: :service_after_task_exit,
@@ -72,7 +72,7 @@ models = [
         initial_task: :call_process_task
       },
     %ProcessModel{
-      name: :sub_process_with_one_user_task,
+      name: :subprocess_with_one_user_task,
       tasks: [
         %User{
           name: :user_task,
@@ -135,11 +135,11 @@ iex [15:58 :: 15] > PS.get_processes_for_process_key(process_key)
         complete: false,
         data: %{},
         name: :call_process_task,
-        type: :sub_process,
+        type: :subprocess,
         next: nil,
         __struct__: Mozart.Task.Subprocess,
         uid: "7404314e-3590-459a-a71f-458a5416966a",
-        sub_process_model_name: :sub_process_with_one_user_task,
+        model: :subprocess_with_one_user_task,
         sub_process_pid: #PID<0.286.0>,
         start_time: ~U[2024-06-12 20:59:17.308810Z],
         finish_time: nil,
@@ -155,7 +155,7 @@ iex [15:58 :: 15] > PS.get_processes_for_process_key(process_key)
     uid: "cf66c2a2-75e9-4649-b4bd-070ca9e3746a",
     process_key: "272c2c9c-adcb-444d-a010-479aa68e6025",
     parent_pid: #PID<0.285.0>,
-    model_name: :sub_process_with_one_user_task,
+    model_name: :subprocess_with_one_user_task,
     start_time: ~U[2024-06-12 20:59:17.308880Z],
     end_time: nil,
     execute_duration: nil,
