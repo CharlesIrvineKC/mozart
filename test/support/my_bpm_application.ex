@@ -167,17 +167,17 @@ defmodule MyBpmApplication do
     service_task("add one to count", function: &MyBpmApplication.add_1_to_count/1, inputs: "count")
   end
 
-   """
-    alias Mozart.ProcessEngine, as: PE
-    alias Mozart.ProcessService, as: PS
-    PS.load_process_models(MyBpmApplication.get_processes())
-    {:ok, ppid, uid, process_key} = PE.start_process("repeat two service tasks", %{count: 0, limit: 10})
-    PE.execute(ppid)
+  ## Rule Task Example
 
-    {:ok, ppid, uid, process_key} = PE.start_process("repeat two service tasks", %{count: 0, limit: 20})
-    PE.execute(ppid)
+  rule_table = """
+  F     income      || status
+  1     > 50000     || approved
+  2     <= 49999    || declined
+  """
 
-   """
+  defprocess "single rule task process" do
+    rule_task("loan decision", inputs: "income", rule_table: rule_table)
+  end
 
 
 end

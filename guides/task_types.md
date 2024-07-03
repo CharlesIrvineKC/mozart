@@ -624,8 +624,6 @@ defmodule MyBpmApplication do
 
   ## Previous content here
 
-  ## Repeat Task Example
-
   def continue(data) do
     data.continue
   end
@@ -720,3 +718,70 @@ iex [09:10 :: 10] > PS.complete_user_task(uid, "2e855696-e11d-42e7-89a9-330c2a87
 09:23:09.732 [info] Complete prototype task [last prototype task]
 09:23:09.732 [info] Process complete [repeat task process][e3963cb8-410d-4039-ad81-eb6730808783]
 ```
+
+## Rule Task Example
+
+A **Rule Task** completes by evaluating a set of rules in a *rule table* and returning a derived value.
+
+Copy the following new code into the MyBpmApplication module:
+
+```elixir
+defmodule MyBpmApplication do
+  @moduledoc false
+  use Mozart.BpmProcess
+
+  ## Previous content here
+
+  rule_table = """
+  F     income      || status
+  1     > 50000     || approved
+  2     <= 49999    || declined
+  """
+
+  defprocess "single rule task process" do
+    rule_task("loan decision", inputs: "income", rule_table: rule_table)
+  end
+
+```
+
+Our table assumes there is a data property named **income**. If the value of *income* is greater than *5000*, the rule will return a property named **status** with a value of **approved**. If income is less than 5000, the value of *status* will be **declined**.
+
+[**Note**: Mozart uses the Tablex library for rule tasks. Tablex is very powerful. [Complete documentation is available in hexdocs](https://hexdocs.pm/tablex/readme.html).]
+
+Open an iex session on your project and paste in:
+
+```elixir
+alias Mozart.ProcessEngine, as: PE
+alias Mozart.ProcessService, as: PS
+PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, ppid, uid, process_key} = PE.start_process("single rule task process", %{income: 60_000})
+PE.execute(ppid)
+
+```
+
+and you should see:
+
+```elixir
+iex [16:31 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, .... deleted list of process names}
+iex [16:31 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("single rule task process", %{income: 60_000})
+16:31:29.857 [info] Start process instance [single rule task process][371b788e-33e6-4d55-9e0c-9e238f552b84]
+{:ok, #PID<0.299.0>, "371b788e-33e6-4d55-9e0c-9e238f552b84",
+ "83e7bb9a-a732-44b2-bdc3-ae4bbf6c1790"}
+iex [16:31 :: 5] > PE.execute(ppid)
+:ok
+16:31:29.860 [info] New rule task instance [loan decision][ab9ef596-0be3-44de-a66a-6fb41eaf0ab6]
+16:31:29.860 [info] Complete run task [loan decision[ab9ef596-0be3-44de-a66a-6fb41eaf0ab6]
+16:31:29.863 [info] Process complete [single rule task process][371b788e-33e6-4d55-9e0c-9e238f552b84]
+```
+
+Now let's look at the completed process data to see the property returned from the evaluation of the table:
+
+```elixir
+iex [16:31 :: 6] > PS.get_completed_process_data(uid)
+%{status: "approved", income: 60000}
+```
+
+The value of **status** is **"approved"**, as expected.
+
+
