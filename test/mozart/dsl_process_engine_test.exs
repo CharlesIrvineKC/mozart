@@ -31,12 +31,17 @@ defmodule Mozart.DslProcessEngineTest do
     PS.load_process_models(get_processes())
     data = %{}
 
-    {:ok, ppid, _uid, _process_key} = PE.start_process( "exit a user task 1", data)
+    {:ok, ppid, uid, _process_key} = PE.start_process( "exit a user task 1", data)
     PE.execute(ppid)
     Process.sleep(100)
 
     PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
     Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
   end
 
   def count_is_less_than_limit(data) do
