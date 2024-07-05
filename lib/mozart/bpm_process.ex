@@ -450,11 +450,13 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   def merge_event_tasks_to_process(event_task_process_map, processes) do
     process_name_task_list = Map.to_list(event_task_process_map)
     merge_recursive(process_name_task_list, processes)
   end
 
+  @doc false
   def merge_recursive([], processes), do: processes
   def merge_recursive([{process_name, tasks} | rest], processes) do
     merge_recursive(rest,
@@ -471,6 +473,7 @@ defmodule Mozart.BpmProcess do
     )
   end
 
+  @doc false
   def assign_events_to_processes([], processes), do: processes
   def assign_events_to_processes([{pname, event} | rest], processes) do
     assign_events_to_processes(rest, Enum.map(processes, fn p ->

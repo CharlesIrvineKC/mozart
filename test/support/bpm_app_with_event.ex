@@ -1,4 +1,5 @@
 defmodule BpmAppWithEvent do
+  @moduledoc false
   use Mozart.BpmProcess
 
   def event_selector(message) do

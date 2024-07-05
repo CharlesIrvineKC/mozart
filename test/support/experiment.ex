@@ -1,4 +1,5 @@
 defmodule Experiment do
+  @moduledoc false
 
   defmacro foo(name, opts, do: block) do
     quote do
