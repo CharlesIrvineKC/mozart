@@ -7,6 +7,38 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
+  def event_selector(message) do
+    case message do
+      :exit_user_task -> true
+      _ -> nil
+    end
+  end
+
+  defprocess "exit a user task 1" do
+    user_task("user task 1", groups: "admin")
+  end
+
+  defevent "exit loan decision 1",
+    process: "exit a user task 1",
+    exit_task: "user task 1",
+    selector: &BpmAppWithEvent.event_selector/1 do
+      prototype_task("event 1 prototype task 1")
+      prototype_task("event 1 prototype task 2")
+  end
+
+  test  "exit a user task 1" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{}
+
+    {:ok, ppid, _uid, _process_key} = PE.start_process( "exit a user task 1", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
+    Process.sleep(1000)
+  end
+
   def count_is_less_than_limit(data) do
     data.count < data.limit
   end
