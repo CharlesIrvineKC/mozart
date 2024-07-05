@@ -7,7 +7,7 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
-  def event_selector(message) do
+  def exit_user_task_event_selector(message) do
     case message do
       :exit_user_task -> true
       _ -> nil
@@ -21,7 +21,7 @@ defmodule Mozart.DslProcessEngineTest do
   defevent "exit loan decision 1",
     process: "exit a user task 1",
     exit_task: "user task 1",
-    selector: &ME.event_selector/1 do
+    selector: &ME.exit_user_task_event_selector/1 do
       prototype_task("event 1 prototype task 1")
       prototype_task("event 1 prototype task 2")
   end
