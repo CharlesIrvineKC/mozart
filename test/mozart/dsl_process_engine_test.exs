@@ -36,7 +36,7 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(100)
 
     PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
-    Process.sleep(1000)
+    Process.sleep(100)
   end
 
   def count_is_less_than_limit(data) do
