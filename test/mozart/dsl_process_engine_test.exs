@@ -21,7 +21,7 @@ defmodule Mozart.DslProcessEngineTest do
   defevent "exit loan decision 1",
     process: "exit a user task 1",
     exit_task: "user task 1",
-    selector: &BpmAppWithEvent.event_selector/1 do
+    selector: &ME.event_selector/1 do
       prototype_task("event 1 prototype task 1")
       prototype_task("event 1 prototype task 2")
   end
