@@ -10,7 +10,7 @@ The *task exit event* is implemented by a struct with the following fields:
 
 * A **name** field with uniquely identifies the event within the scope of the containing process model.
 * Optionally, a **function** field can be used to alter the process data when the event is handled.
-* **message_selector** field requires a function specification used to select Phoenix.PubSub events.
+* **selector** field requires a function specification used to select Phoenix.PubSub events.
 * The **exit_task** field specifies the name of the task that would exit in response to the event.
 * The **next** field specifies the name of the next task, if any, that should be opened in response to the event.
 * Finally, a **type** field that will default to  **:task_exit** for this event type.
@@ -60,7 +60,7 @@ models = [
           %TaskExit{
             name: :exit_sub_process,
             exit_task: :call_process_task,
-            message_selector: fn msg ->
+            selector: fn msg ->
               case msg do
                 :exit_user_task -> true
                 _ -> nil

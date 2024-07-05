@@ -23,6 +23,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Timer
   alias Mozart.Task.Prototype
   alias Mozart.Task.Repeat
+  alias Mozart.Event.TaskExit
   alias Mozart.Data.ProcessModel
 
   defmacro __using__(_opts) do
@@ -34,6 +35,9 @@ defmodule Mozart.BpmProcess do
       @capture_subtasks false
       @subtasks []
       @subtask_sets []
+      @events %{}
+      @event_tasks []
+      @event_task_process_map %{}
       @before_compile Mozart.BpmProcess
     end
   end
@@ -64,6 +68,24 @@ defmodule Mozart.BpmProcess do
       @tasks []
       @subtasks []
       @subtask_sets []
+    end
+  end
+
+  defmacro defevent(name, opts, do: tasks) do
+    quote do
+      [process: process, exit_task: exit_task, selector: selector] = unquote(opts)
+      event = %TaskExit{name: unquote(name), exit_task: exit_task, selector: selector}
+      @capture_subtasks true
+      unquote(tasks)
+      @subtasks set_next_tasks(@subtasks)
+      first = hd(@subtasks)
+      event = Map.put(event, :next, Map.get(hd(@subtasks), :name))
+      @event_task_process_map Map.put(@event_task_process_map, process, @subtasks)
+      @events Map.put(@events, process, event)
+      @tasks []
+      @subtasks []
+      @subtask_sets []
+      @capture_subtasks false
     end
   end
 
@@ -376,7 +398,7 @@ defmodule Mozart.BpmProcess do
   """
   defmacro receive_task(name, selector: function) do
     quote do
-      task = %Receive{name: unquote(name), message_selector: unquote(function)}
+      task = %Receive{name: unquote(name), selector: unquote(function)}
 
       insert_new_task(task)
     end
@@ -411,10 +433,49 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  def merge_event_tasks_to_process(event_task_process_map, processes) do
+    process_name_task_list = Map.to_list(event_task_process_map)
+    merge_recursive(process_name_task_list, processes)
+  end
+
+  def merge_recursive([], processes), do: processes
+  def merge_recursive([{process_name, tasks} | rest], processes) do
+    merge_recursive(rest,
+      Enum.map(processes,
+        fn p ->
+          if process_name == p.name do
+            tasks = p.tasks ++ tasks
+            Map.put(p, :tasks, tasks)
+          else
+            p
+          end
+        end
+      )
+    )
+  end
+
+  def assign_events_to_processes([], processes), do: processes
+  def assign_events_to_processes([{pname, event} | rest], processes) do
+    assign_events_to_processes(rest, Enum.map(processes, fn p ->
+      if pname == p.name do
+        events = [event | p.events]
+        Map.put(p, :events, events)
+      else
+        p
+      end
+    end))
+  end
+
   defmacro __before_compile__(_env) do
     quote do
+      if @event_task_process_map != %{} do
+        @processes merge_event_tasks_to_process(@event_task_process_map, @processes)
+        @processes assign_events_to_processes(Map.to_list(@events), @processes)
+      end
       def get_processes, do: Enum.reverse(@processes)
       def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)
+
+      def get_events, do: Map.to_list(@events)
 
       def load_processes do
         process_names = Enum.map(@processes, fn p -> p.name end)

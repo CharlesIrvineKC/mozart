@@ -41,7 +41,7 @@ defmodule Mozart.ProcessModels.TestModels do
         tasks: [
           %Receive{
             name: :receive_task,
-            message_selector: fn msg ->
+            selector: fn msg ->
               case msg do
                 :message -> %{message: true}
                 _ -> false
@@ -102,7 +102,7 @@ defmodule Mozart.ProcessModels.TestModels do
   #       tasks: [
   #         %Receive{
   #           name: :receive_task,
-  #           message_selector: fn msg ->
+  #           selector: fn msg ->
   #             case msg do
   #               {a, b} -> %{value: a + b}
   #               _ -> false

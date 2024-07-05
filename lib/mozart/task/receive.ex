@@ -5,7 +5,7 @@ defmodule Mozart.Task.Receive do
     :function,
     :next,
     :uid,
-    :message_selector,
+    :selector,
     :start_time,
     :finish_time,
     :duration,

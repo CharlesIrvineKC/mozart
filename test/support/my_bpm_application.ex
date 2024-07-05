@@ -179,5 +179,4 @@ defmodule MyBpmApplication do
     rule_task("loan decision", inputs: "income", rule_table: rule_table)
   end
 
-
 end

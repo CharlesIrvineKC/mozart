@@ -84,7 +84,7 @@ defmodule Mozart.ProcessEngineTest do
           %TaskExit{
             name: :exit_sub_process,
             exit_task: :call_process_task,
-            message_selector: fn msg ->
+            selector: fn msg ->
               case msg do
                 :exit_user_task -> true
                 _ -> nil
@@ -138,7 +138,7 @@ defmodule Mozart.ProcessEngineTest do
         %TaskExit{
           name: :exit_user_task,
           exit_task: :user_task,
-          message_selector: fn msg ->
+          selector: fn msg ->
             case msg do
               :exit_user_task -> true
               _ -> nil
@@ -278,7 +278,7 @@ defmodule Mozart.ProcessEngineTest do
       tasks: [
         %Receive{
           name: :receive_task,
-          message_selector: fn msg ->
+          selector: fn msg ->
             case msg do
               {:get_sum, a, b} -> %{sum: a + b}
               _ -> nil

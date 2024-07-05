@@ -3,7 +3,7 @@ defmodule Mozart.Event.TaskExit do
   defstruct [
     :name,
     :function,
-    :message_selector,
+    :selector,
     :exit_task,
     :next,
     type: :task_exit

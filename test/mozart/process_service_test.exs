@@ -164,7 +164,7 @@ defmodule Mozart.ProcessServiceTest do
           %TaskExit{
             name: :exit_sub_process,
             exit_task: :call_process_task,
-            message_selector: fn msg ->
+            selector: fn msg ->
               case msg do
                 :exit_user_task -> true
                 _ -> nil

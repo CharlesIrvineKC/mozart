@@ -277,7 +277,7 @@ defmodule Mozart.ProcessEngine do
 
   def handle_info({:event, payload}, state) do
     model = PS.get_process_model(state.model_name)
-    event = Enum.find(model.events, fn e -> e.message_selector.(payload) end)
+    event = Enum.find(model.events, fn e -> e.selector.(payload) end)
     state = if event, do: exit_task(event, state), else: state
     {:noreply, state}
   end
@@ -311,7 +311,7 @@ defmodule Mozart.ProcessEngine do
   ## callback utilities
 
   defp update_receive_event_task(s_task, payload) do
-    select_result = s_task.message_selector.(payload)
+    select_result = s_task.selector.(payload)
 
     if select_result do
       Map.put(s_task, :data, select_result)
@@ -397,6 +397,7 @@ defmodule Mozart.ProcessEngine do
       start_process(new_task.model, data, state.process_key, self())
 
     execute(process_pid)
+    state
   end
 
   defp do_new_task_side_effects(_, _, state), do: state
