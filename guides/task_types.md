@@ -549,16 +549,16 @@ defmodule MyBpmApplication do
   ## Parallel and Prototype Task Example
 
   defprocess "two parallel routes process" do
-    parallel_task("a parallel task", [
+    parallel_task "a parallel task" do
       route do
         prototype_task("prototype task 1")
         prototype_task("prototype task 2")
-      end,
+      end
       route do
         prototype_task("prototype task 3")
         prototype_task("prototype task 4")
       end
-    ])
+    end
   end
 
 end

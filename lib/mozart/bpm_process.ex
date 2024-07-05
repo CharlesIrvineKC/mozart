@@ -140,16 +140,16 @@ defmodule Mozart.BpmProcess do
 
   ```
   defprocess "two parallel routes process" do
-    parallel_task("a parallel task", [
+    parallel_task "a parallel task" do
       route do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
-      end,
+      end
       route do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
-    ])
+    end
   end
   ```
   """
@@ -168,16 +168,16 @@ defmodule Mozart.BpmProcess do
 
   ```
   defprocess "two parallel routes process" do
-    parallel_task("a parallel task", [
+    parallel_task "a parallel task" do
       route do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
-      end,
+      end
       route do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
-    ])
+    end
   end
   ```
   """
