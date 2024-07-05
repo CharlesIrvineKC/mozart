@@ -14,16 +14,16 @@ defmodule Mozart.DslProcessEngineTest do
     end
   end
 
-  defprocess "exit a user task 1" do
-    user_task("user task 1", groups: "admin")
+  defprocess "exit a user task" do
+    user_task("user task", groups: "admin")
   end
 
-  defevent "exit loan decision 1",
-    process: "exit a user task 1",
-    exit_task: "user task 1",
+  defevent "exit loan decision",
+    process: "exit a user task",
+    exit_task: "user task",
     selector: &ME.exit_user_task_event_selector/1 do
-      prototype_task("event 1 prototype task 1")
-      prototype_task("event 1 prototype task 2")
+      prototype_task("prototype task 1")
+      prototype_task("prototype task 2")
   end
 
   test  "exit a user task 1" do
@@ -31,7 +31,7 @@ defmodule Mozart.DslProcessEngineTest do
     PS.load_process_models(get_processes())
     data = %{}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process( "exit a user task 1", data)
+    {:ok, ppid, uid, _process_key} = PE.start_process( "exit a user task", data)
     PE.execute(ppid)
     Process.sleep(100)
 
