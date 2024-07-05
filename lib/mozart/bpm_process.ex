@@ -37,6 +37,8 @@ defmodule Mozart.BpmProcess do
       @subtask_sets []
       @events %{}
       @event_tasks []
+      @route_task_names []
+      @cases []
       @event_task_process_map %{}
       @before_compile Mozart.BpmProcess
     end
@@ -151,10 +153,13 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
-  defmacro parallel_task(name, routes) do
+  defmacro parallel_task(name, do: routes) do
     quote do
-      task = %Parallel{name: unquote(name), multi_next: unquote(routes)}
+      task = %Parallel{name: unquote(name)}
+      unquote(routes)
+      task = Map.put(task, :multi_next, @route_task_names)
       insert_new_task(task)
+      @route_task_names []
     end
   end
 
@@ -183,9 +188,9 @@ defmodule Mozart.BpmProcess do
       first = hd(@subtasks)
       @subtasks set_next_tasks(@subtasks)
       @subtask_sets [@subtasks | @subtask_sets]
+      @route_task_names @route_task_names ++ [first.name]
       @subtasks []
       @capture_subtasks false
-      first.name
     end
   end
 
@@ -221,23 +226,26 @@ defmodule Mozart.BpmProcess do
 
   ```
   defprocess "two case process" do
-    case_task("yes or no", [
+    case_task "yes or no" do
       case_i &ME.x_less_than_y/1 do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
-      end,
+      end
       case_i &ME.x_greater_or_equal_y/1 do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
-    ])
+    end
   end
   ```
   """
-  defmacro case_task(name, cases) do
+  defmacro case_task(name, do: cases) do
     quote do
-      case_task = %Case{name: unquote(name), cases: unquote(cases)}
-      insert_new_task(case_task)
+      task = %Case{name: unquote(name)}
+      unquote(cases)
+      task = Map.put(task, :cases, @cases)
+      insert_new_task(task)
+      @cases []
     end
   end
 
@@ -247,16 +255,16 @@ defmodule Mozart.BpmProcess do
 
   ```
   defprocess "two case process" do
-    case_task("yes or no", [
+    case_task "yes or no" do
       case_i &ME.x_less_than_y/1 do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
-      end,
+      end
       case_i &ME.x_greater_or_equal_y/1 do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
-    ])
+    end
   end
   ```
   """
@@ -267,9 +275,11 @@ defmodule Mozart.BpmProcess do
       first = hd(@subtasks)
       @subtasks set_next_tasks(@subtasks)
       @subtask_sets [@subtasks | @subtask_sets]
+      case = %{expression: unquote(expr), next: first.name}
+      @cases @cases ++ [case]
       @subtasks []
       @capture_subtasks false
-      %{expression: unquote(expr), next: first.name}
+
     end
   end
 

@@ -53,16 +53,16 @@ defmodule MyBpmApplication do
   end
 
   defprocess "two case process" do
-    case_task("yes or no", [
+    case_task "yes or no" do
       case_i &MyBpmApplication.x_less_than_y/1 do
         service_task("1", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
         service_task("2", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
-      end,
+      end
       case_i &MyBpmApplication.x_greater_or_equal_y/1 do
         service_task("3", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
         service_task("4", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
       end
-    ])
+    end
   end
 
   ## Send and Receive Task Example
@@ -85,16 +85,16 @@ defmodule MyBpmApplication do
   ## Parallel and Prototype Task Example
 
   defprocess "two parallel routes process" do
-    parallel_task("a parallel task", [
+    parallel_task "a parallel task" do
       route do
         prototype_task("prototype task 1")
         prototype_task("prototype task 2")
-      end,
+      end
       route do
         prototype_task("prototype task 3")
         prototype_task("prototype task 4")
       end
-    ])
+    end
   end
 
   ## Repeat Task Example

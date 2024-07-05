@@ -348,16 +348,16 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "two parallel routes process" do
-    parallel_task("a parallel task", [
+    parallel_task "a parallel task" do
       route do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
-      end,
+      end
       route do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
-    ])
+    end
   end
 
   test "two parallel routes process" do
@@ -380,16 +380,16 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "two case process" do
-    case_task("yes or no", [
+    case_task "yes or no" do
       case_i &ME.x_less_than_y/1 do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
-      end,
+      end
       case_i &ME.x_greater_or_equal_y/1 do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
-    ])
+    end
   end
 
   test "two case process" do
@@ -428,14 +428,14 @@ defmodule Mozart.DslProcessEngineTest do
 
   defprocess "two service task case process" do
     service_task("decide loan approval", function: &ME.decide_loan/1, inputs: "income")
-    case_task("yes or no", [
+    case_task "yes or no" do
       case_i &ME.loan_approved/1 do
         service_task("send approval notice", function: &ME.send_approval/1, inputs: "income")
-      end,
+      end
       case_i &ME.loan_declined/1 do
         service_task("send decline notice", function: &ME.send_decline/1, inputs: "income")
       end
-    ])
+    end
   end
 
   test "two service task case process" do

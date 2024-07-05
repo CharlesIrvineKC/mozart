@@ -59,18 +59,18 @@ def loan_failed_verification(data) do
 end
 
 defprocess "perform loan evaluation process" do
-  case_task("process loan outcome", [
+  case_task "process loan outcome" do
     case_i &ME.loan_verified/1 do
 
       user_task("perform underwriting", groups: "underwriting")
       subprocess_task("route from underwriting", model: "route from underwriting process")
 
-    end,
+    end
     case_i &ME.loan_failed_verification/1 do
 
       user_task("communicate loan denied", groups: "credit")
     end
-  ])
+  end
 end
 
 def loan_approved(data) do
@@ -86,7 +86,7 @@ defprocess "route from underwriting process" do
     case_i &ME.loan_approved/1 do
 
       user_task("communicate approval", groups: "credit")
-    end,
+    end
     case_i &ME.loan_declined/1 do
 
       user_task("communicate loan declined", groups: "customer_service")

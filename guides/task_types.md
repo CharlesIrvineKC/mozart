@@ -7,7 +7,7 @@ If you want to follow along, create an Elixir mix project that has Mozart as a d
 ```elixir
   defp deps do
     [
-      {:mozart, "~> 0.3"}
+      {:mozart, "~> 0.4"}
     ]
   end
 ```
@@ -363,16 +363,16 @@ defmodule MyBpmApplication do
   end
 
   defprocess "two case process" do
-    case_task("yes or no", [
+    case_task "yes or no" do
       case_i &MyBpmApplication.x_less_than_y/1 do
         service_task("1", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
         service_task("2", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
-      end,
+      end
       case_i &MyBpmApplication.x_greater_or_equal_y/1 do
         service_task("3", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
         service_task("4", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
       end
-    ])
+    end
   end
 
 end
