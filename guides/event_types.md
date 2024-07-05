@@ -6,205 +6,117 @@ Currently, there is just one event type as described below. This document will b
 
 A **Task Exit Event** allows a process execution to exit an open task in response to an external event (a Phoenix.PubSub event). When the task exits in this way, process execution will follow an alternate execution path as specified the the *task exit event*.
 
-The *task exit event* is implemented by a struct with the following fields:
+The *task exit event* is implemented by the **defevent/3** DSL function which takes the following arguments:
 
-* A **name** field with uniquely identifies the event within the scope of the containing process model.
-* Optionally, a **function** field can be used to alter the process data when the event is handled.
-* **selector** field requires a function specification used to select Phoenix.PubSub events.
-* The **exit_task** field specifies the name of the task that would exit in response to the event.
-* The **next** field specifies the name of the next task, if any, that should be opened in response to the event.
-* Finally, a **type** field that will default to  **:task_exit** for this event type.
+  * the name of the event
+  * **process**: the name of the process that the event will act upon
+  * **exit_task**: the name of the task to be exited
+  * **selector**: a function that matches on the target event
+  * **do**: one or more tasks to be executed when the target task is exited.
+  
+  Here is an example:
+
+  ```elixir
+  defevent "exit loan decision 1",
+    process: "exit a user task 1",
+    exit_task: "user task 1",
+    selector: &BpmAppWithEvent.event_selector/1 do
+      prototype_task("event 1 prototype task 1")
+      prototype_task("event 1 prototype task 2")
+  end
+  ```
 
 ## Task Exit Event Example
 
-If you are following along, open an Elixir project that has Mozart as a dependency.
 
-```
-iex -S mix
+In your MyBpmApplication module, enter the following code:
 
-```
+```elixir
+defmodule MyBpmApplication do
+  use Mozart.BpmProcess
 
-Now paste the following alias' into your iex session
+  ## Previous Content Here
 
-```
- alias Mozart.Data.ProcessModel
- alias Mozart.ProcessEngine, as: PE
- alias Mozart.ProcessService, as: PS
- alias Mozart.Task.Service
- alias Mozart.Task.User
- alias Mozart.Task.Subprocess
- alias Mozart.Event.TaskExit
- alias Phoenix.PubSub
+  ## Task Exit Event Example
 
-```
+  def exit_subprocess_task_event_selector(message) do
+    case message do
+      :exit_subprocess_task -> true
+      _ -> nil
+    end
+  end
 
-Now we define two process models - one top level model and one subprocess model. We specify a **TaskExit** event whose occurence will cause the subprocess to exit and a new service task to be opened.
+  defprocess "exit a subprocess task" do
+    subprocess_task("subprocess task", model: "subprocess process")
+  end
 
-Go ahead and paste it into your iex session:
+  defprocess "subprocess process" do
+    user_task("user task", groups: "admin")
+  end
 
-```
-models = [
-      %ProcessModel{
-        name: :simple_call_process_model,
-        tasks: [
-          %Subprocess{
-            name: :call_process_task,
-            model: :subprocess_with_one_user_task
-          },
-          %Service{
-            name: :service_after_task_exit,
-            function: fn data -> Map.put(data, :service_after_task_exit, true) end
-          }
-        ],
-        events: [
-          %TaskExit{
-            name: :exit_sub_process,
-            exit_task: :call_process_task,
-            selector: fn msg ->
-              case msg do
-                :exit_user_task -> true
-                _ -> nil
-              end
-            end,
-            next: :service_after_task_exit
-          }
-        ],
-        initial_task: :call_process_task
-      },
-    %ProcessModel{
-      name: :subprocess_with_one_user_task,
-      tasks: [
-        %User{
-          name: :user_task,
-          assigned_groups: ["admin"]
-        }
-      ],
-      initial_task: :user_task
-    }
-  ]
+  defevent "exit subprocess task",
+    process: "exit a subprocess task",
+    exit_task: "subprocess task",
+    selector: &ME.exit_subprocess_task_event_selector/1 do
+      prototype_task("prototype task 1")
+      prototype_task("prototype task 2")
+  end
+
+end
 
 ```
 
-Now let's load the process models, and then start and execute the process top level process model:
+Now start an iex session on your project and paste in the following:
 
-```
-PS.clear_state()
-PS.load_process_models(models)
-data = %{}
-
-{:ok, ppid, _uid, process_key} = PE.start_process(:simple_call_process_model, data)
+```elixir
+alias Mozart.ProcessEngine, as: PE
+alias Mozart.ProcessService, as: PS
+alias Phoenix.PubSub
+PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, ppid, uid, process_key} = PE.start_process("exit a subprocess task", %{})
 PE.execute(ppid)
 
 ```
 
-and we should see in our logs:
+And you should see the following:
 
-```
-15:59:17.305 [info] Start process instance [simple_call_process_model][3a205a5b-07a3-4ecc-926e-0f405eddd0ac]
-{:ok, #PID<0.285.0>, "3a205a5b-07a3-4ecc-926e-0f405eddd0ac",
- "272c2c9c-adcb-444d-a010-479aa68e6025"}
-iex [15:58 :: 14] > PE.execute(ppid)
+```elixir
+iex [10:21 :: 1] > alias Mozart.ProcessEngine, as: PE
+Mozart.ProcessEngine
+iex [10:21 :: 2] > alias Mozart.ProcessService, as: PS
+Mozart.ProcessService
+iex [10:21 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+{:ok, <content deleted for clarity>}
+iex [10:21 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("exit a subprocess task", %{})
+10:21:26.446 [info] Start process instance [exit a subprocess task][847016f9-4818-4a30-9f65-3c9a5dcc1db5]
+{:ok, #PID<0.296.0>, "847016f9-4818-4a30-9f65-3c9a5dcc1db5",
+ "b085931c-89e5-48ca-ae81-e62ea486aef6"}
+iex [10:21 :: 5] > PE.execute(ppid)
 :ok
-15:59:17.308 [info] New task instance [call_process_task][7404314e-3590-459a-a71f-458a5416966a]
-15:59:17.308 [info] Start process instance [sub_process_with_one_user_task][cf66c2a2-75e9-4649-b4bd-070ca9e3746a]
-15:59:17.309 [info] New task instance [user_task][106e85b5-082a-47b9-ab66-4606617efc7e]
+10:21:26.450 [info] New subprocess task instance [subprocess task][01dd052c-6cf2-4b95-b2b8-69418f3aa332]
+10:21:26.450 [info] Start process instance [subprocess process][df6eca80-8c08-48ff-86cc-d825e8d7375f]
+10:21:26.450 [info] New user task instance [user task][827cb198-b40b-4e78-8c80-39a5cbe56a6e]
 ```
 
-Notice that two processes have been started - the top level process we explicitly started, and a subprocess. Let's use the process key to examine the state of both processes:
+From the logs, we see that the subprocess started an a user task was opened.
 
-```
-PS.get_processes_for_process_key(process_key)
+Now we will send an event that will cause the subprocess to exit. Additionally, the top level subprocess task will be completed and the tasks on the event will be executed:
 
-```
-
-We should see something like this:
-
-```
-iex [15:58 :: 15] > PS.get_processes_for_process_key(process_key)
-[
-  %Mozart.Data.ProcessState{
-    uid: "3a205a5b-07a3-4ecc-926e-0f405eddd0ac",
-    process_key: "272c2c9c-adcb-444d-a010-479aa68e6025",
-    parent_pid: nil,
-    model_name: :simple_call_process_model,
-    start_time: ~U[2024-06-12 20:59:17.302851Z],
-    end_time: nil,
-    execute_duration: nil,
-    open_tasks: %{
-      "7404314e-3590-459a-a71f-458a5416966a" => %{
-        complete: false,
-        data: %{},
-        name: :call_process_task,
-        type: :subprocess,
-        next: nil,
-        __struct__: Mozart.Task.Subprocess,
-        uid: "7404314e-3590-459a-a71f-458a5416966a",
-        model: :subprocess_with_one_user_task,
-        sub_process_pid: #PID<0.286.0>,
-        start_time: ~U[2024-06-12 20:59:17.308810Z],
-        finish_time: nil,
-        duration: nil,
-        process_uid: "3a205a5b-07a3-4ecc-926e-0f405eddd0ac"
-      }
-    },
-    completed_tasks: [],
-    data: %{},
-    complete: false
-  },
-  %Mozart.Data.ProcessState{
-    uid: "cf66c2a2-75e9-4649-b4bd-070ca9e3746a",
-    process_key: "272c2c9c-adcb-444d-a010-479aa68e6025",
-    parent_pid: #PID<0.285.0>,
-    model_name: :subprocess_with_one_user_task,
-    start_time: ~U[2024-06-12 20:59:17.308880Z],
-    end_time: nil,
-    execute_duration: nil,
-    open_tasks: %{
-      "106e85b5-082a-47b9-ab66-4606617efc7e" => %{
-        complete: false,
-        function: nil,
-        name: :user_task,
-        type: :user,
-        next: nil,
-        __struct__: Mozart.Task.User,
-        uid: "106e85b5-082a-47b9-ab66-4606617efc7e",
-        assigned_groups: ["admin"],
-        start_time: ~U[2024-06-12 20:59:17.309097Z],
-        finish_time: nil,
-        duration: nil,
-        inputs: nil,
-        process_uid: "cf66c2a2-75e9-4649-b4bd-070ca9e3746a"
-      }
-    },
-    completed_tasks: [],
-    data: %{},
-    complete: false
-  }
-]
-
+```elixir
+PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_subprocess_task})
+    
 ```
 
-As we expected, we see that there are two processes, each having one open task. The high level process has an open subprocess task. The subprocess has a user task open.
+You should see:
 
-Now, we want to generate a task exit event on the open task in the high level process. In practice, this might be done using a send task in another process engine instance. For the purpose of our example, we will just broadcast a PubSub event as follows:
-
-```
- PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
-
-```
-
-This should result in the following output:
-
-```
-iex [19:12 :: 17] > PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
+```elixir
+iex [10:21 :: 7] > PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_subprocess_task})
 :ok
-19:14:04.732 [info] Process complete due to task exit event [sub_process_with_one_user_task][97f945f1-b508-44ec-87ad-812d7dbb1a3d]
-19:14:04.732 [info] New task instance [service_after_task_exit][20e12b5f-dbe9-4d17-b008-57342963ac45]
-19:14:04.732 [info] Complete service task [service_after_task_exit[20e12b5f-dbe9-4d17-b008-57342963ac45]
-19:14:04.732 [info] Process complete [simple_call_process_model][059eccc4-a0f6-4f1a-8009-6fcf7b622e87]
+10:28:18.310 [info] New prototype task instance [prototype task 1][985d41a3-3e5c-469a-847b-7295a6d405c0]
+10:28:18.310 [info] Complete prototype task [prototype task 1]
+10:28:18.310 [info] New prototype task instance [prototype task 2][a6394485-3a7f-464f-9a47-3463b6bf87be]
+10:28:18.310 [info] Complete prototype task [prototype task 2]
+10:28:18.310 [info] Process complete [exit a subprocess task][847016f9-4818-4a30-9f65-3c9a5dcc1db5]
 ```
 
-* The first log statement tells us that the subprocess exited due to a task exit event.
-* The second log statement shows that a new service task was opened and it is the task specified in the **next** field of the **TaskExit** event.
-* The third log statement shows that the service task completed.
-* And, finally, the last log statement shows that out top level process completed.
+Which indicates the expected behavior.

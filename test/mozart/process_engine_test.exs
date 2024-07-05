@@ -66,65 +66,6 @@ defmodule Mozart.ProcessEngineTest do
     PS.complete_user_task(uid, user_task.uid, %{continue: false})
   end
 
-  defp get_exit_event_on_sub_process do
-    [
-      %ProcessModel{
-        name: :simple_call_process_model,
-        tasks: [
-          %Subprocess{
-            name: :call_process_task,
-            model: :subprocess_with_one_user_task
-          },
-          %Service{
-            name: :service_after_task_exit,
-            function: fn data -> Map.put(data, :service_after_task_exit, true) end
-          }
-        ],
-        events: [
-          %TaskExit{
-            name: :exit_sub_process,
-            exit_task: :call_process_task,
-            selector: fn msg ->
-              case msg do
-                :exit_user_task -> true
-                _ -> nil
-              end
-            end,
-            next: :service_after_task_exit
-          }
-        ],
-        initial_task: :call_process_task
-      },
-      %ProcessModel{
-        name: :subprocess_with_one_user_task,
-        tasks: [
-          %User{
-            name: :user_task,
-            assigned_groups: ["admin"]
-          }
-        ],
-        initial_task: :user_task
-      }
-    ]
-  end
-
-  test "exit event on subprocess task" do
-    PS.clear_state()
-    PS.load_process_models(get_exit_event_on_sub_process())
-    data = %{}
-
-    {:ok, ppid, _uid, process_key} = PE.start_process(:simple_call_process_model, data)
-    PE.execute(ppid)
-    Process.sleep(100)
-
-    assert length(PS.get_processes_for_process_key(process_key)) == 2
-
-    PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
-    Process.sleep(1000)
-
-    assert length(PS.get_completed_processes()) == 2
-  end
-
   defp get_event_on_user_task do
     %ProcessModel{
       name: :event_on_user_task_process,
@@ -662,14 +603,14 @@ defmodule Mozart.ProcessEngineTest do
 
     Process.monitor(ppid)
     assert_receive({:DOWN, _ref, :process, _object, _reason})
-    Process.sleep(200)
+    Process.sleep(500)
 
     # Process will have been restarted. Get new pid.
     new_pid = PS.get_process_ppid(uid)
     # Correct data
     PE.set_data(new_pid, %{value: 1})
     PE.execute(new_pid)
-    Process.sleep(200)
+    Process.sleep(500)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.complete == true

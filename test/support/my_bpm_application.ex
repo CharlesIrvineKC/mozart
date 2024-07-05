@@ -179,4 +179,29 @@ defmodule MyBpmApplication do
     rule_task("loan decision", inputs: "income", rule_table: rule_table)
   end
 
+  ## Task Exit Event Example
+
+  def exit_subprocess_task_event_selector(message) do
+    case message do
+      :exit_subprocess_task -> true
+      _ -> nil
+    end
+  end
+
+  defprocess "exit a subprocess task" do
+    subprocess_task("subprocess task", model: "subprocess process")
+  end
+
+  defprocess "subprocess process" do
+    user_task("user task", groups: "admin")
+  end
+
+  defevent "exit subprocess task",
+    process: "exit a subprocess task",
+    exit_task: "subprocess task",
+    selector: &MyBpmApplication.exit_subprocess_task_event_selector/1 do
+      prototype_task("prototype task 1")
+      prototype_task("prototype task 2")
+  end
+
 end

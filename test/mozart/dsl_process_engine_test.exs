@@ -7,6 +7,47 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
+  def exit_subprocess_task_event_selector(message) do
+    case message do
+      :exit_subprocess_task -> true
+      _ -> nil
+    end
+  end
+
+  defprocess "exit a subprocess task" do
+    subprocess_task("subprocess task", model: "subprocess process")
+  end
+
+  defprocess "subprocess process" do
+    user_task("user task", groups: "admin")
+  end
+
+  defevent "exit subprocess task",
+    process: "exit a subprocess task",
+    exit_task: "subprocess task",
+    selector: &ME.exit_subprocess_task_event_selector/1 do
+      prototype_task("prototype task 1")
+      prototype_task("prototype task 2")
+  end
+
+  test  "exit a subprocess task" do
+    PS.clear_state()
+    PS.load_process_models(get_processes())
+    data = %{}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process( "exit a subprocess task", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_subprocess_task})
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
+  end
+
   def exit_user_task_event_selector(message) do
     case message do
       :exit_user_task -> true

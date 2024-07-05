@@ -71,6 +71,23 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to implement a business process event. Arguments are:
+  * the name of the event
+  * **process**: the name of the process that the event will act upon
+  * **exit_task**: the name of the task to be exited
+  * **selector**: a function that matches on the target event
+  * **do**: one or more tasks to be executed when the target task is exited.
+  ```
+  defevent "exit loan decision 1",
+    process: "exit a user task 1",
+    exit_task: "user task 1",
+    selector: &BpmAppWithEvent.event_selector/1 do
+      prototype_task("event 1 prototype task 1")
+      prototype_task("event 1 prototype task 2")
+  end
+  ```
+  """
   defmacro defevent(name, opts, do: tasks) do
     quote do
       [process: process, exit_task: exit_task, selector: selector] = unquote(opts)

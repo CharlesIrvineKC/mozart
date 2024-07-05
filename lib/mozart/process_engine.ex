@@ -288,7 +288,7 @@ defmodule Mozart.ProcessEngine do
     task = Map.put(task, :complete, :exit_on_task_event)
 
     if task.type == :subprocess do
-      complete_on_task_exit_event(task.sub_process_pid)
+      complete_on_task_exit_event(task.subprocess_pid)
     end
 
     # Todo: Code exit repeat task
