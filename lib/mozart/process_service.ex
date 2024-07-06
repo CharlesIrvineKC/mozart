@@ -101,10 +101,17 @@ defmodule Mozart.ProcessService do
   end
 
   @doc """
-  Completes a user task.
+  Completes a user task. Deprecated. Use complete_user_task/2 instead
   """
   def complete_user_task(process_uid, user_task_uid, data) do
     GenServer.cast(__MODULE__, {:complete_user_task, process_uid, user_task_uid, data})
+  end
+
+  @doc """
+  Completes a user task.
+  """
+  def complete_user_task(user_task_uid, data) do
+    GenServer.cast(__MODULE__, {:complete_user_task, user_task_uid, data})
   end
 
   @doc false
@@ -344,6 +351,14 @@ defmodule Mozart.ProcessService do
     active_processes = Map.put(state.active_processes, uid, pid)
     state = Map.put(state, :active_processes, active_processes)
     state = get_active_process_groups(uid, pid, process_key, state)
+    {:noreply, state}
+  end
+
+  def handle_cast({:complete_user_task, user_task_uid, data}, state) do
+    user_task = get_user_task_by_id(state, user_task_uid)
+    ppid = Map.get(state.active_processes, user_task.process_uid)
+    CubDB.delete(state.user_task_db, user_task_uid)
+    PE.complete_user_task_and_go(ppid, user_task_uid, data)
     {:noreply, state}
   end
 

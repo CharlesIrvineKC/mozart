@@ -8,6 +8,7 @@ defmodule Mozart.Task.Case do
     :start_time,
     :finish_time,
     :duration,
+    :process_uid,
     cases: [],
     type: :case
   ]

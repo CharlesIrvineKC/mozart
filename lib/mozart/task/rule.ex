@@ -10,6 +10,7 @@ defmodule Mozart.Task.Rule do
     :start_time,
     :finish_time,
     :duration,
+    :process_uid,
     type: :rule
   ]
 end

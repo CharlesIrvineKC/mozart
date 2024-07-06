@@ -9,6 +9,7 @@ defmodule Mozart.Task.User do
     :start_time,
     :finish_time,
     :duration,
+    :process_uid,
     assigned_groups: [],
     complete: false,
     type: :user

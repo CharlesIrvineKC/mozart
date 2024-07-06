@@ -9,6 +9,7 @@ defmodule Mozart.Task.Receive do
     :start_time,
     :finish_time,
     :duration,
+    :process_uid,
     complete: false,
     data: %{},
     type: :receive

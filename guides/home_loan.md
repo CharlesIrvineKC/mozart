@@ -34,19 +34,17 @@ defmodule HomeLoanApp do
   defprocess "home loan process" do
     user_task("perform pre approval", groups: "credit")
 
-    case_task("route on pre approval completion", [
+    case_task "route on pre approval completion" do
       case_i &ME.pre_approved/1 do
-
         user_task("receive mortgage application", groups: "credit")
         user_task("process loan", groups: "credit")
         subprocess_task("perform loan evaluation", model: "perform loan evaluation process")
+      end
 
-      end,
-    case_i &ME.pre_approval_declined/1 do
-
-        user_task("communicate loan denied", groups: "credit")
+      case_i &ME.pre_approval_declined/1 do
+          user_task("communicate loan denied", groups: "credit")
+      end
     end
-    ])
   end
 
 
@@ -61,13 +59,11 @@ end
 defprocess "perform loan evaluation process" do
   case_task "process loan outcome" do
     case_i &ME.loan_verified/1 do
-
       user_task("perform underwriting", groups: "underwriting")
       subprocess_task("route from underwriting", model: "route from underwriting process")
-
     end
-    case_i &ME.loan_failed_verification/1 do
 
+    case_i &ME.loan_failed_verification/1 do
       user_task("communicate loan denied", groups: "credit")
     end
   end
@@ -82,18 +78,16 @@ def loan_declined(data) do
 end
 
 defprocess "route from underwriting process" do
-  case_task("route from underwriting", [
+  case_task "route from underwriting" do
     case_i &ME.loan_approved/1 do
-
       user_task("communicate approval", groups: "credit")
     end
-    case_i &ME.loan_declined/1 do
 
+    case_i &ME.loan_declined/1 do
       user_task("communicate loan declined", groups: "customer_service")
     end
-  ])
+  end
 end
-
 end
 
 ```
@@ -121,7 +115,7 @@ and you should see that a user task was opened:
 This task is asking us to specify whether the loan should be pre approved. Let's complete the task in the affirmative.
 
 ```elixir
-PS.complete_user_task(uid, "240a7811-b552-40c9-bbce-a75768e56d12", %{pre_approval: true})
+PS.complete_user_task("240a7811-b552-40c9-bbce-a75768e56d12", %{pre_approval: true})
 
 ```
 
@@ -134,7 +128,7 @@ Now we see that a new task has been opened:
 Now we need to complete this task when receive a mortgage contract from the customer. Let's do that:
 
 ```elixir
-PS.complete_user_task(uid, "ed0adc9a-0b55-466b-a7e1-4c7fb6712d99", %{})
+PS.complete_user_task("ed0adc9a-0b55-466b-a7e1-4c7fb6712d99", %{})
 
 ```
 
@@ -147,7 +141,7 @@ A new task was created:
 And we will complete that task like this:
 
 ```elixir
-PS.complete_user_task(uid, "75350759-1613-4c0e-8fbc-8dedda264121", %{loan_verified: true})
+PS.complete_user_task("75350759-1613-4c0e-8fbc-8dedda264121", %{loan_verified: true})
 
 ```
 
@@ -161,7 +155,7 @@ And now the following task was created, and, importantly it was created in a new
 Now we need to complete "prform underwriting task" using the new process uid:
 
 ```elixir
-PS.complete_user_task("f0c978e9-f5f0-403f-97c1-c0a9fe459f63", "a163d0bb-a5c2-43b9-93bf-25beb4961238", %{loan_approved: true})
+PS.complete_user_task("a163d0bb-a5c2-43b9-93bf-25beb4961238", %{loan_approved: true})
 
 ```
 
@@ -175,7 +169,7 @@ Again, a new process was started and a new task was opened in it:
 Let's complete that task:
 
 ```elixir
-PS.complete_user_task("a7be20fe-4d3b-473e-bf58-3b85fcba474f", "7617f9a7-660c-48f1-bf29-698f6eaa9d6e", %{})
+PS.complete_user_task("7617f9a7-660c-48f1-bf29-698f6eaa9d6e", %{})
 
 ```
 
@@ -185,4 +179,4 @@ Finally, our top level process is complete, as indicated in the log message:
 19:17:42.130 [info] Process complete [home loan process][baa48cc2-f315-48f4-a4f1-97da78a16fe7]
 ```
 
-This might have been a bit much to fully comprehend in one pass. Try stepping through it again, perhaps completing user tasks with different parameter values. Once you fully understand this example, you have pretty figured Mozart out!
+This might have been a bit much to fully comprehend in one pass. Try stepping through it again, perhaps completing user tasks with different parameter values. Once you fully understand this example, you have pretty much figured Mozart out!

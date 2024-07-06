@@ -227,14 +227,14 @@ Notice that the task map has a **data** key, with the values of the **x and y in
 Let's do that now by calling ProcessService.complete_user_task/3. 
 
 ```elixir
-PS.complete_user_task(uid, "3fc1cdf8-4049-40db-9172-9a7f58a85cb8", %{sum: 3})
+PS.complete_user_task("3fc1cdf8-4049-40db-9172-9a7f58a85cb8", %{sum: 3})
 
 ```
 
 and we should see:
 
 ```elixir
-iex [13:05 :: 8] > PS.complete_user_task(uid, "7f3d7009-ab44-4955-a501-677e0a8a353b", %{sum: 3})
+iex [13:05 :: 8] > PS.complete_user_task("7f3d7009-ab44-4955-a501-677e0a8a353b", %{sum: 3})
 :ok
 13:16:21.326 [info] Complete user task [user gives sum of x and y][7f3d7009-ab44-4955-a501-677e0a8a353b]
 13:16:21.327 [info] Process complete [one user task process][fca5f283-0992-4921-ba16-f9d902f9e403]
@@ -683,14 +683,14 @@ iex [09:10 :: 8] > PE.execute(ppid)
 Now, let's complete the user task specifying **continue to be true***, i.e. %{continue: true}. This should cause the repeat tasks to be executed one more time:
 
 ```elixir
-PS.complete_user_task(uid, "2557b2e6-d6fa-4172-b25b-a809633e5217", %{continue: true})
+PS.complete_user_task("2557b2e6-d6fa-4172-b25b-a809633e5217", %{continue: true})
 
 ```
 
 The output verifies this is the case:
 
 ```elixir
-iex [09:10 :: 9] > PS.complete_user_task(uid, "2557b2e6-d6fa-4172-b25b-a809633e5217", %{continue: true})
+iex [09:10 :: 9] > PS.complete_user_task("2557b2e6-d6fa-4172-b25b-a809633e5217", %{continue: true})
 :ok
 09:17:20.481 [info] New prototype task instance [prototype task 1][4af087bb-865b-41b5-8d6b-55e6c9511d2b]
 09:17:20.481 [info] Complete user task [user task][2557b2e6-d6fa-4172-b25b-a809633e5217]
@@ -703,14 +703,14 @@ iex [09:10 :: 9] > PS.complete_user_task(uid, "2557b2e6-d6fa-4172-b25b-a809633e5
 Now, let's complete the new user task with **%{continue: false}**. This should cause the repeat to complete, the final **prototype_task** to complete and then the process to complete:
 
 ```elixir
-PS.complete_user_task(uid, "2e855696-e11d-42e7-89a9-330c2a87b11f", %{continue: false})
+PS.complete_user_task("2e855696-e11d-42e7-89a9-330c2a87b11f", %{continue: false})
 
 ```
 
 And we see the following, which verifies the expected behavior:
 
 ```elixir
-iex [09:10 :: 10] > PS.complete_user_task(uid, "2e855696-e11d-42e7-89a9-330c2a87b11f", %{continue: false})
+iex [09:10 :: 10] > PS.complete_user_task("2e855696-e11d-42e7-89a9-330c2a87b11f", %{continue: false})
 :ok
 09:23:09.731 [info] Complete user task [user task][2e855696-e11d-42e7-89a9-330c2a87b11f]
 09:23:09.732 [info] Complete repeat task [repeat task]

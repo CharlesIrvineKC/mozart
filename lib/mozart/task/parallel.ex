@@ -6,6 +6,7 @@ defmodule Mozart.Task.Parallel do
     :start_time,
     :finish_time,
     :duration,
+    :process_uid,
     multi_next: [],
     type: :parallel
   ]

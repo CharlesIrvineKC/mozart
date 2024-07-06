@@ -9,6 +9,7 @@ defmodule Mozart.Task.Service do
     :start_time,
     :finish_time,
     :duration,
+    :process_uid,
     type: :service
   ]
 end

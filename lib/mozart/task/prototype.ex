@@ -7,6 +7,7 @@ defmodule Mozart.Task.Prototype do
     :start_time,
     :finish_time,
     :duration,
+    :process_uid,
     type: :prototype
   ]
 end

@@ -11,6 +11,7 @@ defmodule Mozart.Task.Repeat do
     :start_time,
     :finish_time,
     :duration,
+    :process_uid,
     inputs: [],
     type: :repeat
   ]

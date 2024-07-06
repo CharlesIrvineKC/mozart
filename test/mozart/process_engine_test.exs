@@ -55,15 +55,15 @@ defmodule Mozart.ProcessEngineTest do
     Process.sleep(100)
 
     user_task = hd(PS.get_user_tasks())
-    PS.complete_user_task(uid, user_task.uid, %{continue: true})
+    PS.complete_user_task(user_task.uid, %{continue: true})
     Process.sleep(100)
 
     user_task = hd(PS.get_user_tasks())
-    PS.complete_user_task(uid, user_task.uid, %{continue: true})
+    PS.complete_user_task(user_task.uid, %{continue: true})
     Process.sleep(100)
 
     user_task = hd(PS.get_user_tasks())
-    PS.complete_user_task(uid, user_task.uid, %{continue: false})
+    PS.complete_user_task(user_task.uid, %{continue: false})
   end
 
   defp get_event_on_user_task do
