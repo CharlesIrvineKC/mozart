@@ -1,6 +1,6 @@
 # Home Loan Example
 
-In this guide we will construct and execute a somewhat more complex process model than we have dealt with thus far. We will mainly use **user tasks** because they allow us to easily control of the process execution path during process execution.
+In this guide we will construct and execute a more complex process model than we have dealt with thus far. We will mainly use **user tasks** because they allow us to easily control the process execution path during process execution.
 
 We will create a process model applying for a home loan from a bank. It will be highly simplified compared to the actual process, but complicated enough for our purposes here.
 
@@ -125,7 +125,7 @@ Now we see that a new task has been opened:
  New user task instance [receive mortgage application][ed0adc9a-0b55-466b-a7e1-4c7fb6712d99]
 ```
 
-Now we need to complete this task when receive a mortgage contract from the customer. Let's do that:
+Now we need to complete this task when we receive a mortgage contract from the customer. Let's do that:
 
 ```elixir
 PS.complete_user_task("ed0adc9a-0b55-466b-a7e1-4c7fb6712d99", %{})
@@ -145,7 +145,7 @@ PS.complete_user_task("75350759-1613-4c0e-8fbc-8dedda264121", %{loan_verified: t
 
 ```
 
-And now the following task was created, and, importantly it was created in a new subprocess. Here are the two relevant log entries:
+A new user task was created in a newly spawned process:
 
 ```elixir
 19:08:41.990 [info] Start process instance [perform loan evaluation process][f0c978e9-f5f0-403f-97c1-c0a9fe459f63]
@@ -177,6 +177,13 @@ Finally, our top level process is complete, as indicated in the log message:
 
 ```elixir
 19:17:42.130 [info] Process complete [home loan process][baa48cc2-f315-48f4-a4f1-97da78a16fe7]
+```
+
+At this point, take a look at the data collected throughout process execution:
+
+```elixir
+PS.get_completed_process_data(uid)
+
 ```
 
 This might have been a bit much to fully comprehend in one pass. Try stepping through it again, perhaps completing user tasks with different parameter values. Once you fully understand this example, you have pretty much figured Mozart out!

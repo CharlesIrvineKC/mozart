@@ -1,6 +1,6 @@
 # Mozart Event Types
 
-Currently, there is just one event type as described below. This document will be updated as addtional event types are implemented.
+Currently, there is just one event type has been implemented (see below). This document will be updated as addtional event types are implemented.
 
 ## Task Exit Event
 
@@ -98,7 +98,7 @@ iex [10:21 :: 5] > PE.execute(ppid)
 10:21:26.450 [info] New user task instance [user task][827cb198-b40b-4e78-8c80-39a5cbe56a6e]
 ```
 
-From the logs, we see that the subprocess started an a user task was opened.
+From the logs, we see that the subprocess started and a user task was opened.
 
 Now we will send an event that will cause the subprocess to exit. Additionally, the top level subprocess task will be completed and the tasks on the event will be executed:
 

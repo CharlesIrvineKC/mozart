@@ -72,23 +72,33 @@ alias Mozart.ProcessService, as: PS
 
 ```
 
-Now, you need to load your process model into the system.
+Now, you need to load your process model into the system. Paste in the following:
 
 ```elixir
+MyBpmApplication.load()
 
-iex [08:21 :: 3] > MyBpmApplication.load()
-{:ok, ["add x and y process"]}
 ```
 
-**ProcessService.load_process_models/1** loads your BPM process application models into the model repository.
+which gives the result:
 
-**MyBpmApplication.get_processes/0** retrieves your process models from your BPM application. You didn't define this function in your module, but it was defined for you when you added **use Mozart.BpmProcess** to your module.
+```elixir
+iex [16:41 :: 1] > MyBpmApplication.load()
+{:ok,
+ ["add x and y process"]}
+```
+
+**MyBpmApplication.load/0** loads your BPM process application models into the model repository. You didn't define this function in your module. It was defined for you when you added **use Mozart.BpmProcess** to your module.
 
 Now you are ready to start a **ProcessEngine** that will run your process model:
 
 ```elixir
-iex [08:21 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("add x and y process", %{x: 1, y: 1})
+{:ok, ppid, uid, process_key} = PE.start_process("add x and y process", %{x: 1, y: 1})
 
+```
+
+You should then see:
+
+```elixir
 08:33:47.895 [info] Start process instance [add x and y process][299f3213-94ab-418d-bee3-18da04f2c38d]
 {:ok, #PID<0.302.0>, "299f3213-94ab-418d-bee3-18da04f2c38d",
  "4d6e7fba-b303-4c9b-8cf5-a291168bd73d"}
@@ -121,11 +131,11 @@ iex [08:21 :: 6] > PS.get_completed_process_data(uid)
 
 A **User Task** works by having a user complete some required task. This often takes the form of a user using a GUI to examine a subset of process data and then supplying additional data. 
 
-**Important Note**: Users interact with a BPM platfrom such as Mozart by way of user application of some kind. The user application will allow the user to find tasks appropriate to his role. Once the user accepts responsibility for a task, the application will then provide a user interface input form appropriate for accomplishing the given task. For now, we will use Mozart functions for finding and completing tasks.
+**Important Note**: Users interact with a BPM platfrom such as Mozart by way of end user GUI application. The user application will allow the user to find tasks appropriate to his role. Once the user accepts responsibility for a task, the application will then provide an input form appropriate for accomplishing the given task. For now, we will use Mozart functions for finding and completing tasks.
 
 A user task has two unique arguments: **groups** and **:inputs**.
 
-* The **groups** field specifies the user groups that are elibigle to complete the task. 
+* The **groups** field specifies the user groups in the form of a comma separated list that are elibigle to complete the task. 
 * The **inputs** field is used to select which process data fields are passed to the user that will compleete the task. If no value is supplied for this field, the entire process data is passed.
 
 ### User Task example
@@ -186,11 +196,9 @@ iex [10:39 :: 5] > PE.execute(ppid)
 10:39:49.824 [info] New user task instance [user gives sum of x and y][3fc1cdf8-4049-40db-9172-9a7f58a85cb8]
 ```
 
-The last log message tells us that a new user task was opened, but we don't see logs indicating that the task completed or that the process completed. That is because a user must be manually completed by a user.
+The last log message tells us that a new user task was opened, but we don't see logs indicating that the task completed or that the process completed. That is because a user task waits to be completed by a user.
 
-To complete the user task, we need the process uid and the task uid. We have the process uid, since it was returned to us when we started the process engine. It should be in the variable **uid**.
-
-We also have the task uid. It was printed in the last log statement:
+To complete the user task we need the task uid, which was printed in the last log statement:
 
 ```elixir
 10:39:49.824 [info] New user task instance [user gives sum of x and y][3fc1cdf8-4049-40db-9172-9a7f58a85cb8]
@@ -198,33 +206,9 @@ We also have the task uid. It was printed in the last log statement:
 
 It is the value in last pair of square brackets: "3fc1cdf8-4049-40db-9172-9a7f58a85cb8". 
 
-The final thing we need to complete the task, is the data that we want to merge into the process data. We want to merge in the sum of the inputs **x** and **y**.
+The final thing we need to complete the task is the data that we want to merge into the process data. We want to merge in the sum of the inputs **x** and **y**. A GUI application for completing user tasks would have access to this data and would make it available to the user completing the task. So, let's assume that we know the value of our inputs and we use them to complete our task.
 
-These inputs are avaiable on the task itself, and we can get the task by calling **ProcessService.get_user_task/1**, passing it the task uid. Let's do that now:
-
-```elixir
-iex [13:05 :: 7] > user_task = PS.get_user_task("3fc1cdf8-4049-40db-9172-9a7f58a85cb8")
-%{
-  complete: false,
-  data: %{y: 1, x: 1},
-  function: nil,
-  name: "user gives sum of x and y",
-  type: :user,
-  next: nil,
-  __struct__: Mozart.Task.User,
-  uid: "3fc1cdf8-4049-40db-9172-9a7f58a85cb8",
-  assigned_groups: ["admin"],
-  duration: nil,
-  finish_time: nil,
-  inputs: [:x, :y],
-  start_time: ~U[2024-06-30 18:05:45.563258Z],
-  process_uid: "fca5f283-0992-4921-ba16-f9d902f9e403"
-}
-```
-
-Notice that the task map has a **data** key, with the values of the **x and y inputs**. A GUI application for completing user tasks would have access to this data and would make it available to the user completing the task. So, let's assume that we know the value of our inputs and we use them to complete our task.
-
-Let's do that now by calling ProcessService.complete_user_task/3. 
+Let's do that now by calling ProcessService.complete_user_task/2. 
 
 ```elixir
 PS.complete_user_task("3fc1cdf8-4049-40db-9172-9a7f58a85cb8", %{sum: 3})
@@ -330,8 +314,6 @@ iex [13:50 :: 6] > PS.get_completed_process_data(uid)
 %{value: 3}
 ```
 
-Check.
-
 ## Case Task Example
 
 The **Case Task** provides a way to specify alternate execution paths depending on the current state of process execution.
@@ -378,7 +360,7 @@ defmodule MyBpmApplication do
 end
 ```
 
-The process named "two case process" does this:
+The process named "two case process" performs this logic:
 
 * If **x is less than y**, subtract 2 from the value parameter twice.
 * if **x is greater or equal to y**, add 2 to the value parameter twice.
@@ -423,13 +405,13 @@ iex [14:33 :: 5] > PE.execute(ppid)
 Based on our input data, since x was less than y, 2 should have been subtracted from 10 twice, leaving the **value** parameter with a value of 6. Let's see if that matches our result:
 
 ```elixir
-14:33:41.089 [info] Process complete [two case process][4fb6889e-250c-407e-a332-f904f491b39d]
+iex [13:50 :: 6] > PS.get_completed_process_data(uid)
 %{value: 6, y: 2, x: 1}
 ```
 
 ## Send and Receive Task Example
 
-For this example, we will use both the Send and Receive tasks since they are typically used together. The Receive Task receive a message from the Send Task.
+For this example, we will use both the Send and Receive tasks since they are typically used together, that is, a receive task receives a messge from a send task.
 
 Update the MyBpmApplication module with the following content:
 
@@ -460,7 +442,7 @@ end
 
 ```
 
-In this example we will start the "receive barrower income process" first. The "receive barrower income" task will wait until it receives a message of the form **{:barrower_income, income}**. When it receive this message it will merge **%{barrower_income: income}** into the processes data.
+In this example we will start the "receive barrower income process" first. The "receive barrower income" task will wait until it receives a message of the form **{:barrower_income, income}**. When it receives this message it will merge **%{barrower_income: income}** into the processes data.
 
 The purpose of the "send barrower income process" task is to send the message that the receive task is waiting for.
 
@@ -500,13 +482,13 @@ iex [17:23 :: 5] > PE.execute(ppid)
 
 At this point, we've started the process with the receive task and we see that the expected receive task has been opened. Now we need to run the process with the send task so the waiting receive task can complete. To do that, copy the following into your iex session. 
 
-Notice that when we call **PE.start_process/2**, we choose different varaible names so that our previous variable values won't be overwirtten.
-
 ```elixir
 {:ok, s_ppid, s_uid, s_process_key} = PE.start_process("send barrower income process", %{})
 PE.execute(s_ppid)
 
 ```
+
+Notice that when we call **PE.start_process/2**, we choose different varaible names so that our previous variable values won't be overwirtten.
 
 
 You should see this result:
@@ -613,7 +595,7 @@ Examime the log messages. You should be able to see that two execution paths wer
 
 ## Repeat Task Example
 
-The **Repeat Task** provides the ability to repeats a set of tasks as long a specified holds true.
+The **Repeat Task** provides the ability to repeat a set of tasks as long a specified condition holds true.
 
 Copy the following new code into the MyBpmApplication module:
 

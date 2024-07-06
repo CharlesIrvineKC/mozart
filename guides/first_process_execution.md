@@ -9,7 +9,7 @@ To follow along create a new Elxir **mix** project and then add Mozart as a depe
 ```elixir
   defp deps do
     [
-      {:mozart, "~> 0.3"}
+      {:mozart, "~> 0.4"}
     ]
   end
 ```
@@ -48,7 +48,7 @@ end
 
 ## Load the Process Model into repository
 
-Now let's load this process model into the process model repository, which is implemented by (`Mozart.ProcessService`). First, start an iex session with **iex -S mix** and paste a couple of aliases into your iex session:
+Now let's load this process model into the process model repository, which is implemented by `Mozart.ProcessService`. First, start an iex session with **iex -S mix** and paste a couple of aliases into your iex session:
 
 ```elixir
 alias Mozart.ProcessEngine, as: PE
@@ -70,7 +70,7 @@ iex [15:06 :: 3] > MyBpmApplication.load()
 {:ok, ["add x and y process"]}
 ````
 
-The function **MyBpmApplication.get_processes/1** was created for you automatically when you inserted **use Mozart.BpmProcess** into your module definition.
+The function **MyBpmApplication.load/0** was created for you automatically when you inserted **use Mozart.BpmProcess** into your module definition.
 
 ## Start a Process Engine and Execute the Process Model
 
