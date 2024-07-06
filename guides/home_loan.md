@@ -98,7 +98,7 @@ Now open an iex session on your project and paste in the following:
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
 
-  PS.load_process_models(HomeLoanApp.get_processes())
+  HomeLoanApp.load()
 
   {:ok, ppid, uid, process_key} = PE.start_process("home loan process", %{})
 

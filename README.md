@@ -38,7 +38,7 @@ end
 This module can be used as-is to start and execute a BPM process engine as shown below. (A small quanity of system output was removed to improve clarity.)
 
 ```
-iex > ProcessService.load_process_models(MyBpmApplication.get_processes())
+iex > MyBpmApplication.load()
 iex > {:ok, ppid, uid, _key} = ProcessEntine.start_process("add x and y process", %{x: 1, y: 1})
 [info] Start process instance [add x and y process][b82f5da1-6e5d-44df-b4ed-9064b877e484]
 

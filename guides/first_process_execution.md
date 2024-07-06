@@ -59,14 +59,14 @@ alias Mozart.ProcessService, as: PS
 Now we are ready to load our process model into the repository. Copy the following into your iex session:
 
 ```elixir
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 
 ```
 
 You should see:
 
 ````
-iex [15:06 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [15:06 :: 3] > MyBpmApplication.load()
 {:ok, ["add x and y process"]}
 ````
 

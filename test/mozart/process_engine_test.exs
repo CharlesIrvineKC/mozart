@@ -376,7 +376,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_parallel_process_models())
     data = %{value: 1}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:parallel_process_model, data)
+    {:ok, ppid, _uid, _process_key} = PE.start_process(:parallel_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)

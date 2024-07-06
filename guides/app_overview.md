@@ -61,15 +61,10 @@ defmodule MyProcessApplication do
 end
 ```
 
-Declaring **use Mozart.BpmProcess** injects two functions into modules:
-
-* get_processes/0
-* get_process/1
-
-You will use the functions to load process definitions into the ProcessService model repository. For example:
+Declaring **use Mozart.BpmProcess** injects the **MyBpmApplication.load/0** function into your application. Calling this function will load all of your process models into the `Mozart.ProcessService` model repository. Use it now to load your process models:
 
 ```elixir
-ProcessService.load_process_models(MyProcessApplication.get_processes())
+MyProcessApplication.load()
 ```
 
 ## Process Engine

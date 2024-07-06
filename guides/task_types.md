@@ -76,7 +76,7 @@ Now, you need to load your process model into the system.
 
 ```elixir
 
-iex [08:21 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [08:21 :: 3] > MyBpmApplication.load()
 {:ok, ["add x and y process"]}
 ```
 
@@ -159,7 +159,7 @@ Now we paste in code to define alias's, load our process models, start a process
 ```elixir
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 {:ok, ppid, uid, process_key} = PE.start_process("one user task process", %{x: 1, y: 1})
 PE.execute(ppid)
 
@@ -173,7 +173,7 @@ iex [10:39 :: 1] > alias Mozart.ProcessEngine, as: PE
 Mozart.ProcessEngine
 iex [10:39 :: 2] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
-iex [10:39 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [10:39 :: 3] > MyBpmApplication.load()
 {:ok, ["add x and y process", "one user task process"]}
 iex [10:39 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("one user task process", %{x: 1, y: 1})
 
@@ -284,7 +284,7 @@ Open your iex session and paste in:
 ```elixir
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 {:ok, ppid, uid, process_key} = PE.start_process("subprocess task process", %{value: 0})
 PE.execute(ppid)
 
@@ -297,7 +297,7 @@ iex [13:50 :: 1] > alias Mozart.ProcessEngine, as: PE
 Mozart.ProcessEngine
 iex [13:50 :: 2] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
-iex [13:50 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [13:50 :: 3] > MyBpmApplication.load()
 {:ok,
  ["add x and y process", "one user task process", "two service tasks",
   "subprocess task process"]}
@@ -388,7 +388,7 @@ Let's try it out. Open an iex session, and paste in the following:
 ```elixir
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 {:ok, ppid, uid, process_key} = PE.start_process("two case process", %{x: 1, y: 2, value: 10})
 PE.execute(ppid)
 
@@ -400,7 +400,7 @@ iex [14:33 :: 1] > alias Mozart.ProcessEngine, as: PE
 Mozart.ProcessEngine
 iex [14:33 :: 2] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
-iex [14:33 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [14:33 :: 3] > MyBpmApplication.load()
 {:ok,
  ["add x and y process", "one user task process", "two service tasks",
   "subprocess task process", "two case process"]}
@@ -469,7 +469,7 @@ Open an iex session, and paste in the following:
 ```elixir
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 {:ok, ppid, uid, process_key} = PE.start_process("receive barrower income process", %{})
 PE.execute(ppid)
 
@@ -482,7 +482,7 @@ iex [17:23 :: 1] > alias Mozart.ProcessEngine, as: PE
 Mozart.ProcessEngine
 iex [17:23 :: 2] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
-iex [17:23 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [17:23 :: 3] > MyBpmApplication.load()
 {:ok,
  ["add x and y process", "one user task process", "two service tasks",
   "subprocess task process", "two case process",
@@ -570,7 +570,7 @@ Now open an iex session and copy is the following:
 ```elixir
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 {:ok, ppid, uid, process_key} = PE.start_process("two parallel routes process", %{})
 PE.execute(ppid)
 
@@ -583,7 +583,7 @@ iex [18:29 :: 1] > alias Mozart.ProcessEngine, as: PE
 Mozart.ProcessEngine
 iex [18:29 :: 2] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
-iex [18:29 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [18:29 :: 3] > MyBpmApplication.load()
 {:ok,
  ["add x and y process", "one user task process", "two service tasks",
   "subprocess task process", "two case process",
@@ -646,7 +646,7 @@ Open an iex session and paste in the following:
 ```elixir
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 {:ok, ppid, uid, process_key} = PE.start_process("repeat task process", %{continue: true})
 PE.execute(ppid)
 
@@ -659,7 +659,7 @@ iex [09:10 :: 4] > alias Mozart.ProcessEngine, as: PE
 Mozart.ProcessEngine
 iex [09:10 :: 5] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
-iex [09:10 :: 6] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [09:10 :: 6] > MyBpmApplication.load()
 {:ok,
  ["add x and y process", "one user task process", "two service tasks",
   "subprocess task process", "two case process",
@@ -753,7 +753,7 @@ Open an iex session on your project and paste in:
 ```elixir
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 {:ok, ppid, uid, process_key} = PE.start_process("single rule task process", %{income: 60_000})
 PE.execute(ppid)
 
@@ -762,7 +762,7 @@ PE.execute(ppid)
 and you should see:
 
 ```elixir
-iex [16:31 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [16:31 :: 3] > MyBpmApplication.load()
 {:ok, .... deleted list of process names}
 iex [16:31 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("single rule task process", %{income: 60_000})
 16:31:29.857 [info] Start process instance [single rule task process][371b788e-33e6-4d55-9e0c-9e238f552b84]

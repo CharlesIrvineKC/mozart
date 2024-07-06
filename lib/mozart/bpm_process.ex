@@ -25,6 +25,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Repeat
   alias Mozart.Event.TaskExit
   alias Mozart.Data.ProcessModel
+  alias Mozart.ProcessService
 
   defmacro __using__(_opts) do
     quote do
@@ -502,14 +503,15 @@ defmodule Mozart.BpmProcess do
         @processes merge_event_tasks_to_process(@event_task_process_map, @processes)
         @processes assign_events_to_processes(Map.to_list(@events), @processes)
       end
+
       def get_processes, do: Enum.reverse(@processes)
       def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)
 
-      def get_events, do: Map.to_list(@events)
-
-      def load_processes do
-        process_names = Enum.map(@processes, fn p -> p.name end)
+      def load() do
+        ProcessService.load_process_models(get_processes())
       end
+
+      def get_events, do: Map.to_list(@events)
     end
   end
 end

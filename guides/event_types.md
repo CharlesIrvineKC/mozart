@@ -72,7 +72,7 @@ Now start an iex session on your project and paste in the following:
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 alias Phoenix.PubSub
-PS.load_process_models(MyBpmApplication.get_processes())
+MyBpmApplication.load()
 {:ok, ppid, uid, process_key} = PE.start_process("exit a subprocess task", %{})
 PE.execute(ppid)
 
@@ -85,7 +85,7 @@ iex [10:21 :: 1] > alias Mozart.ProcessEngine, as: PE
 Mozart.ProcessEngine
 iex [10:21 :: 2] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
-iex [10:21 :: 3] > PS.load_process_models(MyBpmApplication.get_processes())
+iex [10:21 :: 3] > MyBpmApplication.load()
 {:ok, <content deleted for clarity>}
 iex [10:21 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("exit a subprocess task", %{})
 10:21:26.446 [info] Start process instance [exit a subprocess task][847016f9-4818-4a30-9f65-3c9a5dcc1db5]

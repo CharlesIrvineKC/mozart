@@ -32,7 +32,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test  "exit a subprocess task" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{}
 
     {:ok, ppid, uid, _process_key} = PE.start_process( "exit a subprocess task", data)
@@ -69,7 +69,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test  "exit a user task 1" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{}
 
     {:ok, ppid, uid, _process_key} = PE.start_process( "exit a user task", data)
@@ -102,7 +102,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "repeat with service task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{count: 0, limit: 2}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("repeat with service task process", data)
@@ -129,7 +129,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "repeat with subprocess task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{count: 0, limit: 2}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("repeat with subprocess task process", data)
@@ -154,7 +154,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "repeat with subprocess service task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{count: 0, limit: 2}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("repeat with subprocess service task process", data)
@@ -178,7 +178,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "repeat task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
 
     {:ok, ppid, uid, _process_key} = PE.start_process("repeat task process", %{count: 0, limit: 5})
     PE.execute(ppid)
@@ -197,7 +197,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "two timer task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("two timer task process", data)
@@ -223,7 +223,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "receive barrower income process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{barrower_id: "511-58-1422"}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("receive barrower income process", data)
@@ -247,7 +247,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "send and receive barrower income process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{barrower_id: "511-58-1422"}
 
     {:ok, r_ppid, r_uid, _process_key} = PE.start_process("receive barrower income process", data)
@@ -274,7 +274,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "one service task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{x: 3}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("one service task process", data)
@@ -294,7 +294,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "two user task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{}
 
     {:ok, ppid, _uid, _process_key} = PE.start_process("two user task process", data)
@@ -312,7 +312,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "three user task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{}
 
     {:ok, ppid, _uid, _process_key} = PE.start_process("three user task process", data)
@@ -334,7 +334,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "single rule task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{income: 3000}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("single rule task process", data)
@@ -362,7 +362,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "two parallel routes process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{}
 
     {:ok, ppid, _uid, _process_key} = PE.start_process("two parallel routes process", data)
@@ -394,7 +394,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "two case process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{x: 1, y: 2}
 
     {:ok, ppid, _uid, _process_key} = PE.start_process("two case process", data)
@@ -440,7 +440,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "two service task case process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{income: 100_000}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("two service task case process", data)
@@ -468,7 +468,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "subprocess task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{value: 1}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("subprocess task process", data)
@@ -488,7 +488,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   test "two prototype task process" do
     PS.clear_state()
-    PS.load_process_models(get_processes())
+    load()
     data = %{}
 
     {:ok, ppid, uid, _process_key} = PE.start_process("two prototype task process", data)
