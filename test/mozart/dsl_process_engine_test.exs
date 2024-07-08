@@ -287,6 +287,25 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 1
   end
 
+  defprocess "one service tuple task process" do
+    service_task("a service task", function: :square, inputs: "x")
+  end
+
+  test "one service tuple task process" do
+    PS.clear_state()
+    load()
+    data = %{x: 3}
+
+    {:ok, ppid, uid, _process_key} = PE.start_process("one service tuple task process", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{x: 3, square: 9}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
   defprocess "two user task process" do
     user_task("add one to x 1", groups: "admin")
     user_task("add one to x 2", groups: "admin", inputs: "x")
@@ -381,11 +400,11 @@ defmodule Mozart.DslProcessEngineTest do
 
   defprocess "two case process" do
     case_task "yes or no" do
-      case_i &ME.x_less_than_y/1 do
+      case_i :x_less_than_y do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
       end
-      case_i &ME.x_greater_or_equal_y/1 do
+      case_i :x_greater_or_equal_y do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
@@ -427,13 +446,13 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "two service task case process" do
-    service_task("decide loan approval", function: &ME.decide_loan/1, inputs: "income")
+    service_task("decide loan approval", function: :decide_loan, inputs: "income")
     case_task "yes or no" do
-      case_i &ME.loan_approved/1 do
-        service_task("send approval notice", function: &ME.send_approval/1, inputs: "income")
+      case_i :loan_approved do
+        service_task("send approval notice", function: :send_approval, inputs: "income")
       end
-      case_i &ME.loan_declined/1 do
-        service_task("send decline notice", function: &ME.send_decline/1, inputs: "income")
+      case_i :loan_declined do
+        service_task("send decline notice", function: :send_decline, inputs: "income")
       end
     end
   end

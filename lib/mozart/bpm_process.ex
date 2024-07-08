@@ -251,8 +251,9 @@ defmodule Mozart.BpmProcess do
   end
 
   @doc """
-  Used to specify one of many alternate execution paths. Arguments are a task name
-  and a block of tasks.
+  Used to specify one of many alternate execution paths. The first argument is either
+  a captured function or an atom corresponding to local function of arity 1. The second
+  argument is a block of tasks.
 
   ```
   defprocess "two case process" do
@@ -261,7 +262,7 @@ defmodule Mozart.BpmProcess do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
       end
-      case_i &ME.x_greater_or_equal_y/1 do
+      case_i :x_greater_or_equal_y do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
@@ -273,10 +274,12 @@ defmodule Mozart.BpmProcess do
     quote do
       @capture_subtasks true
       unquote(tasks)
+      expr = unquote(expr)
+      expr = if is_atom(expr), do: Function.capture(__MODULE__, expr, 1), else: expr
       first = hd(@subtasks)
       @subtasks set_next_tasks(@subtasks)
       @subtask_sets [@subtasks | @subtask_sets]
-      case = %{expression: unquote(expr), next: first.name}
+      case = %{expression: expr, next: first.name}
       @cases @cases ++ [case]
       @subtasks []
       @capture_subtasks false
@@ -398,6 +401,10 @@ defmodule Mozart.BpmProcess do
   defmacro service_task(name, function: func, inputs: inputs) do
     quote do
       function = unquote(func)
+
+      function =
+        if is_atom(function), do: Function.capture(__MODULE__, function, 1), else: function
+
       inputs = parse_inputs(unquote(inputs))
 
       service =

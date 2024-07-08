@@ -30,7 +30,8 @@ A **Service Task** performs its work by calling an Elixir function. This functio
 
 A service task has two unique arguments: **function** and **inputs**.
 
-* The **function** field specifies the function that the service task should apply for the purpose of returning output data into the process state.
+* The **function** field specifies the function that the service task should apply for the purpose of returning output data into the process state. The function can be either a captured function or an atom corresponding to a locally
+defined function of arity 1.
 * The **inputs** field is used to select which process data fields are passed to the task's function. If no value is supplied for this field, the entire process data is passed.
 
 ### Service Task example
@@ -49,6 +50,8 @@ defmodule MyBpmApplication do
 
   defprocess "add x and y process" do
     service_task("add x and y task", function: &MyBpmApplication.sum/1, inputs: "x,y")
+    # You could also specify:
+    # service_task("add x and y task", function: :sum, inputs: "x,y")
   end
 
 end
@@ -350,7 +353,7 @@ defmodule MyBpmApplication do
         service_task("1", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
         service_task("2", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
       end
-      case_i &MyBpmApplication.x_greater_or_equal_y/1 do
+      case_i :x_greater_or_equal_y do
         service_task("3", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
         service_task("4", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
       end
@@ -359,6 +362,10 @@ defmodule MyBpmApplication do
 
 end
 ```
+
+The first argument to **case_task** is a task name and the second argument is a block of cases.
+
+The first argument to **case_i** is either a captured function of arity 1 or an atom corresponding to a locally defined function of arity 1. The second argument is a block of tasks.
 
 The process named "two case process" performs this logic:
 

@@ -9,7 +9,7 @@ defmodule MyBpmApplication do
   end
 
   defprocess "add x and y process" do
-    service_task("add x and y task", function: &MyBpmApplication.sum/1, inputs: "x,y")
+    service_task("add x and y task", function: {:sum, 1}, inputs: "x,y")
   end
 
   ## User Task Example
