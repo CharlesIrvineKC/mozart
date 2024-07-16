@@ -381,6 +381,7 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_cast({:insert_user_task, task}, state) do
+    IO.inspect({task, state}, label: "task state")
     insert_user_task(state, task)
     {:noreply, state}
   end
@@ -395,7 +396,7 @@ defmodule Mozart.ProcessService do
 
   defp insert_user_task(state, task) do
     IO.inspect(task, label: "insert task")
-    CubDB.put(state.user_task_db, task.uid, task)
+    IO.inspect(CubDB.put(state.user_task_db, task.uid, task), label: "cubdb put")
   end
 
   defp get_user_tasks_for_groups_local(groups, state) do
