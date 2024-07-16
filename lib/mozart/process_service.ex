@@ -394,6 +394,7 @@ defmodule Mozart.ProcessService do
   end
 
   defp insert_user_task(state, task) do
+    IO.inspect(task, label: "insert task")
     CubDB.put(state.user_task_db, task.uid, task)
   end
 
@@ -418,6 +419,7 @@ defmodule Mozart.ProcessService do
   end
 
   defp get_user_tasks(state) do
-    CubDB.select(state.user_task_db) |> Stream.map(fn {_k, v} -> v end) |> Enum.to_list()
+    tasks = CubDB.select(state.user_task_db) |> Stream.map(fn {_k, v} -> v end) |> Enum.to_list()
+    IO.inspect(tasks, label: "user tasks")
   end
 end

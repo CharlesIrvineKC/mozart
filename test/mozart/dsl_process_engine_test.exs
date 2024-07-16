@@ -7,6 +7,26 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
+  defprocess "one user task process" do
+    user_task("add one to x 1", groups: "admin")
+  end
+
+  test "multiple processes of on user task" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid_1, _uid, _process_key} = PE.start_process("one user task process", data)
+    PE.execute(ppid_1)
+    {:ok, ppid_2, _uid, _process_key} = PE.start_process("one user task process", data)
+    PE.execute(ppid_2)
+    {:ok, ppid_3, _uid, _process_key} = PE.start_process("one user task process", data)
+    PE.execute(ppid_3)
+    Process.sleep(100)
+
+    assert length(IO.inspect(PS.get_user_tasks())) == 3
+  end
+
   def exit_subprocess_task_event_selector(message) do
     case message do
       :exit_subprocess_task -> true
