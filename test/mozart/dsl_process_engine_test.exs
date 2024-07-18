@@ -24,7 +24,7 @@ defmodule Mozart.DslProcessEngineTest do
     PE.execute(ppid_3)
     Process.sleep(100)
 
-    assert length(IO.inspect(PS.get_user_tasks())) == 3
+    assert length(PS.get_user_tasks()) == 3
   end
 
   def exit_subprocess_task_event_selector(message) do

@@ -380,7 +380,7 @@ defmodule Mozart.ProcessEngine do
         state.data
       end
 
-    new_task = Map.put(new_task, :data, input_data)
+    new_task = Map.put(new_task, :data, input_data) |> Map.put(:process_key, state.process_key)
     PS.insert_user_task(new_task)
     state
   end
