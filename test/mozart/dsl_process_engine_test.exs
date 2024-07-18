@@ -8,7 +8,7 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.DslProcessEngineTest, as: ME
 
   defprocess "one user task process" do
-    user_task("add one to x 1", groups: "admin")
+    user_task("add one to x 1", groups: "admin", outputs: "x")
   end
 
   test "multiple processes of on user task" do
@@ -39,7 +39,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "subprocess process" do
-    user_task("user task", groups: "admin")
+    user_task("user task", groups: "admin", outputs: "na")
   end
 
   defevent "exit subprocess task",
@@ -76,7 +76,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "exit a user task" do
-    user_task("user task", groups: "admin")
+    user_task("user task", groups: "admin", outputs: "na")
   end
 
   defevent "exit loan decision",
@@ -327,8 +327,8 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "two user task process" do
-    user_task("add one to x 1", groups: "admin")
-    user_task("add one to x 2", groups: "admin", inputs: "x")
+    user_task("add one to x 1", groups: "admin", outputs: "na")
+    user_task("add one to x 2", groups: "admin", inputs: "x", outputs: "na")
   end
 
   test "two user task process" do
@@ -344,9 +344,9 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "three user task process" do
-    user_task("1", groups: "admin")
-    user_task("2", groups: "admin", inputs: "x,y")
-    user_task("3", groups: "admin")
+    user_task("1", groups: "admin", outputs: "na")
+    user_task("2", groups: "admin", inputs: "x,y", outputs: "na")
+    user_task("3", groups: "admin", outputs: "na")
   end
 
   test "three user task process" do
@@ -389,12 +389,12 @@ defmodule Mozart.DslProcessEngineTest do
   defprocess "two parallel routes process" do
     parallel_task "a parallel task" do
       route do
-        user_task("1", groups: "admin")
-        user_task("2", groups: "admin")
+        user_task("1", groups: "admin", outputs: "na")
+        user_task("2", groups: "admin", outputs: "na")
       end
       route do
-        user_task("3", groups: "admin")
-        user_task("4", groups: "admin")
+        user_task("3", groups: "admin", outputs: "na")
+        user_task("4", groups: "admin", outputs: "na")
       end
     end
   end
@@ -421,12 +421,12 @@ defmodule Mozart.DslProcessEngineTest do
   defprocess "two case process" do
     case_task "yes or no" do
       case_i :x_less_than_y do
-        user_task("1", groups: "admin")
-        user_task("2", groups: "admin")
+        user_task("1", groups: "admin", outputs: "na")
+        user_task("2", groups: "admin", outputs: "na")
       end
       case_i :x_greater_or_equal_y do
-        user_task("3", groups: "admin")
-        user_task("4", groups: "admin")
+        user_task("3", groups: "admin", outputs: "na")
+        user_task("4", groups: "admin", outputs: "na")
       end
     end
   end

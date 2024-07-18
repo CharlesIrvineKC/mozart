@@ -213,7 +213,7 @@ defmodule Mozart.BpmProcess do
   end
 
   @doc false
-  def parse_inputs(inputs_string) do
+  def parse_params(inputs_string) do
     Enum.map(String.split(inputs_string, ","), fn input -> String.to_atom(input) end)
   end
 
@@ -341,7 +341,7 @@ defmodule Mozart.BpmProcess do
   """
   defmacro rule_task(name, inputs: inputs, rule_table: rule_table) do
     quote do
-      inputs = parse_inputs(unquote(inputs))
+      inputs = parse_params(unquote(inputs))
       rule_table = Tablex.new(unquote(rule_table))
       rule_task = %Rule{name: unquote(name), inputs: inputs, rule_table: rule_table}
       insert_new_task(rule_task)
@@ -405,7 +405,7 @@ defmodule Mozart.BpmProcess do
       function =
         if is_atom(function), do: Function.capture(__MODULE__, function, 1), else: function
 
-      inputs = parse_inputs(unquote(inputs))
+      inputs = parse_params(unquote(inputs))
 
       service =
         %Service{name: unquote(name), function: function, inputs: inputs}
@@ -451,19 +451,21 @@ defmodule Mozart.BpmProcess do
   """
   defmacro user_task(name, args) do
     quote do
-      {groups, inputs} =
+      {groups, inputs, outputs} =
         case unquote(args) do
-          [groups: groups, inputs: inputs] ->
+          [groups: groups, inputs: inputs, outputs: outputs] ->
             groups = parse_user_groups(groups)
-            inputs = parse_inputs(inputs)
-            {groups, inputs}
+            inputs = parse_params(inputs)
+            outputs = parse_params(outputs)
+            {groups, inputs, outputs}
 
-          [groups: groups] ->
+          [groups: groups, outputs: outputs] ->
             groups = parse_user_groups(groups)
-            {groups, nil}
+            outputs = parse_params(outputs)
+            {groups, nil, outputs}
         end
 
-      user_task = %User{name: unquote(name), assigned_groups: groups, inputs: inputs}
+      user_task = %User{name: unquote(name), assigned_groups: groups, inputs: inputs, outputs: outputs}
       insert_new_task(user_task)
     end
   end

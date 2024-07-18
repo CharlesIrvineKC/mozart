@@ -50,7 +50,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_model(get_repeat_process())
     data = %{continue: false}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:repeat_process_model, data)
+    {:ok, ppid, _uid, _process_key} = PE.start_process(:repeat_process_model, data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -376,7 +376,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_parallel_process_models())
     data = %{value: 1}
-    {:ok, ppid, _uid, _process_key} = PE.start_process(:parallel_process_model, data)
+    {:ok, ppid, uid, _process_key} = PE.start_process(:parallel_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -603,14 +603,14 @@ defmodule Mozart.ProcessEngineTest do
 
     Process.monitor(ppid)
     assert_receive({:DOWN, _ref, :process, _object, _reason})
-    Process.sleep(500)
+    Process.sleep(1000)
 
     # Process will have been restarted. Get new pid.
     new_pid = PS.get_process_ppid(uid)
     # Correct data
     PE.set_data(new_pid, %{value: 1})
     PE.execute(new_pid)
-    Process.sleep(500)
+    Process.sleep(1000)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.complete == true
