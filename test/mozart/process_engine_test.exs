@@ -603,14 +603,14 @@ defmodule Mozart.ProcessEngineTest do
 
     Process.monitor(ppid)
     assert_receive({:DOWN, _ref, :process, _object, _reason})
-    Process.sleep(1000)
+    Process.sleep(100)
 
     # Process will have been restarted. Get new pid.
     new_pid = PS.get_process_ppid(uid)
     # Correct data
     PE.set_data(new_pid, %{value: 1})
     PE.execute(new_pid)
-    Process.sleep(1000)
+    Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.complete == true
