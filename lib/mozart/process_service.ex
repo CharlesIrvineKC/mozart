@@ -12,9 +12,17 @@ defmodule Mozart.ProcessService do
   require Logger
 
   ## Client API
+
   @doc false
   def start_link(_init_arg) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
+  @doc """
+  Get active process instances
+  """
+  def get_active_processes() do
+    GenServer.call(__MODULE__, :get_active_processes)
   end
 
   @doc false
@@ -236,6 +244,10 @@ defmodule Mozart.ProcessService do
     }
 
     {:reply, new_state, new_state}
+  end
+
+  def handle_call(:get_active_processes, _from, state) do
+    {:reply, state.active_processes, state}
   end
 
   def handle_call(:get_state, _from, state) do
