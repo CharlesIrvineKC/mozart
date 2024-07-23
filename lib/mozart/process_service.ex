@@ -163,6 +163,13 @@ defmodule Mozart.ProcessService do
   end
 
   @doc """
+  Gets the names of all BPM applications
+  """
+  def get_bpm_applications do
+    GenServer.call(__MODULE__, :get_bpm_applications)
+  end
+
+  @doc """
   Retrieves a process model by name.
   """
   def get_process_model(model_name) do
@@ -333,6 +340,11 @@ defmodule Mozart.ProcessService do
   def handle_call({:get_bpm_application, app_name}, _from, state) do
     app = CubDB.get(state.bpm_application_db, app_name)
     {:reply, app, state}
+  end
+
+  def handle_call(:get_bpm_applications, _from, state) do
+    apps = CubDB.select(state.bpm_application_db) |> Enum.to_list()
+    {:reply, apps, state}
   end
 
   def handle_call({:load_process_models, models}, _from, state) do
