@@ -149,6 +149,20 @@ defmodule Mozart.ProcessService do
   end
 
   @doc """
+  Loads a BPM Application
+  """
+  def load_bpm_application(bpm_application) do
+    GenServer.call(__MODULE__, {:load_bpm_application, bpm_application})
+  end
+
+  @doc """
+  Gets a BPM Application
+  """
+  def get_bpm_application(app_name) do
+    GenServer.call(__MODULE__, {:get_bpm_application, app_name})
+  end
+
+  @doc """
   Retrieves a process model by name.
   """
   def get_process_model(model_name) do
@@ -194,6 +208,7 @@ defmodule Mozart.ProcessService do
     {:ok, user_task_db} = CubDB.start_link(data_dir: "database/user_task_db")
     {:ok, completed_process_db} = CubDB.start_link(data_dir: "database/completed_process_db")
     {:ok, process_model_db} = CubDB.start_link(data_dir: "database/process_model_db")
+    {:ok, bpm_application_db} = CubDB.start_link(data_dir: "database/bpm_application_db")
 
     initial_state = %{
       active_process_groups: %{},
@@ -201,7 +216,8 @@ defmodule Mozart.ProcessService do
       restart_state_cache: %{},
       user_task_db: user_task_db,
       completed_process_db: completed_process_db,
-      process_model_db: process_model_db
+      process_model_db: process_model_db,
+      bpm_application_db: bpm_application_db
     }
 
     Logger.info("Process service initialized")
@@ -233,6 +249,7 @@ defmodule Mozart.ProcessService do
     CubDB.clear(state.user_task_db)
     CubDB.clear(state.completed_process_db)
     CubDB.clear(state.process_model_db)
+    CubDB.clear(state.bpm_application_db)
 
     new_state = %{
       active_processes: %{},
@@ -240,7 +257,8 @@ defmodule Mozart.ProcessService do
       restart_state_cache: %{},
       user_task_db: state.user_task_db,
       completed_process_db: state.completed_process_db,
-      process_model_db: state.process_model_db
+      process_model_db: state.process_model_db,
+      bpm_application_db: state.bpm_application_db
     }
 
     {:reply, new_state, new_state}
@@ -307,7 +325,16 @@ defmodule Mozart.ProcessService do
     {:reply, pe_state, state}
   end
 
-  @doc false
+  def handle_call({:load_bpm_application, bpm_application}, _from, state) do
+    CubDB.put(state.bpm_application_db, bpm_application.name, bpm_application)
+    {:reply, bpm_application.name, state}
+  end
+
+  def handle_call({:get_bpm_application, app_name}, _from, state) do
+    app = CubDB.get(state.bpm_application_db, app_name)
+    {:reply, app, state}
+  end
+
   def handle_call({:load_process_models, models}, _from, state) do
     Enum.each(models, fn m -> CubDB.put(state.process_model_db, m.name, m) end)
     {:reply, {:ok, Enum.map(models, fn m -> m.name end)}, state}

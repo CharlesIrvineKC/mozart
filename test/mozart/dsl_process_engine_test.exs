@@ -7,6 +7,32 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
+  def_bpm_application("bpm application test", main: "one prototype task process", data: "x,y")
+
+  defprocess "one prototype task process" do
+    prototype_task("a prototype task")
+  end
+
+  test "test bpm application test" do
+    data = %{x: "x", y: "y"}
+    PS.clear_state()
+    load()
+
+    bpm_application = PS.get_bpm_application("bpm application test")
+    assert bpm_application.name == "bpm application test"
+    assert bpm_application.main == "one prototype task process"
+    assert bpm_application.data == [:x, :y]
+
+    {:ok, ppid, uid, _process_key} = PE.start_process(bpm_application.main, data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{x: "x", y: "y"}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
   defprocess "one user task process" do
     user_task("add one to x 1", groups: "admin", outputs: "x")
   end

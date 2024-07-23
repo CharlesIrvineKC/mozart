@@ -25,6 +25,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Repeat
   alias Mozart.Event.TaskExit
   alias Mozart.Data.ProcessModel
+  alias Mozart.Data.BpmApplication
   alias Mozart.ProcessService
 
   defmacro __using__(_opts) do
@@ -41,7 +42,15 @@ defmodule Mozart.BpmProcess do
       @route_task_names []
       @cases []
       @event_task_process_map %{}
+      @bpm_application nil
       @before_compile Mozart.BpmProcess
+    end
+  end
+
+  defmacro def_bpm_application(name, main: main, data: data) do
+    quote do
+      data = parse_params(unquote(data))
+      @bpm_application %BpmApplication{name: unquote(name),main: unquote(main),data: data}
     end
   end
 
@@ -113,7 +122,7 @@ defmodule Mozart.BpmProcess do
   def check_for_duplicates(type, tasks) do
     task_names = Enum.map(tasks, fn t -> t.name end)
     dup_task_names = Enum.uniq(task_names -- Enum.uniq(task_names))
-    if dup_task_names != [], do: raise "Duplicate #{type} names: #{inspect(dup_task_names)}"
+    if dup_task_names != [], do: raise("Duplicate #{type} names: #{inspect(dup_task_names)}")
   end
 
   @doc false
@@ -283,7 +292,6 @@ defmodule Mozart.BpmProcess do
       @cases @cases ++ [case]
       @subtasks []
       @capture_subtasks false
-
     end
   end
 
@@ -465,7 +473,13 @@ defmodule Mozart.BpmProcess do
             {groups, nil, outputs}
         end
 
-      user_task = %User{name: unquote(name), assigned_groups: groups, inputs: inputs, outputs: outputs}
+      user_task = %User{
+        name: unquote(name),
+        assigned_groups: groups,
+        inputs: inputs,
+        outputs: outputs
+      }
+
       insert_new_task(user_task)
     end
   end
@@ -478,9 +492,12 @@ defmodule Mozart.BpmProcess do
 
   @doc false
   def merge_recursive([], processes), do: processes
+
   def merge_recursive([{process_name, tasks} | rest], processes) do
-    merge_recursive(rest,
-      Enum.map(processes,
+    merge_recursive(
+      rest,
+      Enum.map(
+        processes,
         fn p ->
           if process_name == p.name do
             tasks = p.tasks ++ tasks
@@ -495,15 +512,19 @@ defmodule Mozart.BpmProcess do
 
   @doc false
   def assign_events_to_processes([], processes), do: processes
+
   def assign_events_to_processes([{pname, event} | rest], processes) do
-    assign_events_to_processes(rest, Enum.map(processes, fn p ->
-      if pname == p.name do
-        events = [event | p.events]
-        Map.put(p, :events, events)
-      else
-        p
-      end
-    end))
+    assign_events_to_processes(
+      rest,
+      Enum.map(processes, fn p ->
+        if pname == p.name do
+          events = [event | p.events]
+          Map.put(p, :events, events)
+        else
+          p
+        end
+      end)
+    )
   end
 
   defmacro __before_compile__(_env) do
@@ -513,11 +534,13 @@ defmodule Mozart.BpmProcess do
         @processes assign_events_to_processes(Map.to_list(@events), @processes)
       end
 
+      def get_bpm_application, do: @bpm_application
       def get_processes, do: Enum.reverse(@processes)
       def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)
 
       def load() do
         ProcessService.load_process_models(get_processes())
+        ProcessService.load_bpm_application(@bpm_application)
       end
 
       def get_events, do: Map.to_list(@events)
