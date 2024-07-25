@@ -9,7 +9,7 @@ test "run loan approval" do
   PS.clear_state()
   HomeLoanApp.load()
   data = %{credit_score: 700, income: 100_000, debt_amount: 20_000}
-  {:ok, ppid, uid, _process_key} = PE.start_process("home loan process", data)
+  {:ok, ppid, uid, _business_key} = PE.start_process("home loan process", data)
   PE.execute(ppid)
   Process.sleep(100)
 

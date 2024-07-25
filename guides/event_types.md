@@ -73,7 +73,7 @@ alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 alias Phoenix.PubSub
 MyBpmApplication.load()
-{:ok, ppid, uid, process_key} = PE.start_process("exit a subprocess task", %{})
+{:ok, ppid, uid, business_key} = PE.start_process("exit a subprocess task", %{})
 PE.execute(ppid)
 
 ```
@@ -87,7 +87,7 @@ iex [10:21 :: 2] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
 iex [10:21 :: 3] > MyBpmApplication.load()
 {:ok, <content deleted for clarity>}
-iex [10:21 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("exit a subprocess task", %{})
+iex [10:21 :: 4] > {:ok, ppid, uid, business_key} = PE.start_process("exit a subprocess task", %{})
 10:21:26.446 [info] Start process instance [exit a subprocess task][847016f9-4818-4a30-9f65-3c9a5dcc1db5]
 {:ok, #PID<0.296.0>, "847016f9-4818-4a30-9f65-3c9a5dcc1db5",
  "b085931c-89e5-48ca-ae81-e62ea486aef6"}

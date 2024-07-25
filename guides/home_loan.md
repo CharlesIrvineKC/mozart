@@ -100,7 +100,7 @@ Now open an iex session on your project and paste in the following:
 
   HomeLoanApp.load()
 
-  {:ok, ppid, uid, process_key} = PE.start_process("home loan process", %{})
+  {:ok, ppid, uid, business_key} = PE.start_process("home loan process", %{})
 
   PE.execute(ppid)
 

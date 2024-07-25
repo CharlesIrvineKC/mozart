@@ -5,7 +5,7 @@ Defines a struct with fields specifying the state of a BPM process execution. Th
 provide the following information:
 
 * **uid**: A unique identifier of a single process model execution.
-* **process_key**: A unique identifier for a hierarchy of process model executions
+* **business_key**: A unique identifier for a hierarchy of process model executions
 corresponding to a hierarchial process model.
 * **parent_pid**: If the process is a child process, this is the pid of the parent process
 execution.
@@ -24,7 +24,7 @@ are the property values.
 ```
 defstruct [
     :uid,
-    :process_key,
+    :business_key,
     :parent_pid,
     :model_name,
     :start_time,
@@ -41,7 +41,7 @@ end
 """
   defstruct [
     :uid,
-    :process_key,
+    :business_key,
     :parent_pid,
     :model_name,
     :start_time,

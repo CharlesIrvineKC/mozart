@@ -31,8 +31,8 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
-  def get_processes_for_process_key(process_key) do
-    GenServer.call(__MODULE__, {:get_processes_for_process_key, process_key})
+  def get_processes_for_business_key(business_key) do
+    GenServer.call(__MODULE__, {:get_processes_for_business_key, business_key})
   end
 
   @doc """
@@ -94,8 +94,8 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
-  def register_process_instance(uid, pid, process_key) do
-    GenServer.cast(__MODULE__, {:register_process_instance, uid, pid, process_key})
+  def register_process_instance(uid, pid, business_key) do
+    GenServer.cast(__MODULE__, {:register_process_instance, uid, pid, business_key})
   end
 
   @doc false
@@ -232,8 +232,8 @@ defmodule Mozart.ProcessService do
     {:ok, initial_state}
   end
 
-  def handle_call({:get_processes_for_process_key, process_key}, _from, state) do
-    process_group = Map.get(state.active_process_groups, process_key)
+  def handle_call({:get_processes_for_business_key, business_key}, _from, state) do
+    process_group = Map.get(state.active_process_groups, business_key)
     process_pids = Map.values(process_group)
     process_states = Enum.map(process_pids, fn pid -> PE.get_state(pid) end)
     {:reply, process_states, state}
@@ -384,17 +384,17 @@ defmodule Mozart.ProcessService do
       Map.put(
         state,
         :active_process_groups,
-        Map.delete(state.active_process_groups, pe_process.process_key)
+        Map.delete(state.active_process_groups, pe_process.business_key)
       )
 
     CubDB.put(state.completed_process_db, pe_process.uid, pe_process)
     {:reply, pe_process, state}
   end
 
-  def handle_cast({:register_process_instance, uid, pid, process_key}, state) do
+  def handle_cast({:register_process_instance, uid, pid, business_key}, state) do
     active_processes = Map.put(state.active_processes, uid, pid)
     state = Map.put(state, :active_processes, active_processes)
-    state = get_active_process_groups(uid, pid, process_key, state)
+    state = get_active_process_groups(uid, pid, business_key, state)
     {:noreply, state}
   end
 
@@ -423,10 +423,10 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
-  def get_active_process_groups(uid, pid, process_key, state) do
-    processes = Map.get(state.active_process_groups, process_key) || %{}
+  def get_active_process_groups(uid, pid, business_key, state) do
+    processes = Map.get(state.active_process_groups, business_key) || %{}
     processes = Map.put(processes, uid, pid)
-    active_process_groups = Map.put(state.active_process_groups, process_key, processes)
+    active_process_groups = Map.put(state.active_process_groups, business_key, processes)
     Map.put(state, :active_process_groups, active_process_groups)
   end
 

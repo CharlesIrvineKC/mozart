@@ -50,7 +50,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_model(get_repeat_process())
     data = %{continue: false}
 
-    {:ok, ppid, _uid, _process_key} = PE.start_process(:repeat_process_model, data)
+    {:ok, ppid, _uid, _business_key} = PE.start_process(:repeat_process_model, data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -96,7 +96,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_model(get_event_on_user_task())
     data = %{}
 
-    {:ok, ppid, _uid, _process_key} = PE.start_process(:event_on_user_task_process, data)
+    {:ok, ppid, _uid, _business_key} = PE.start_process(:event_on_user_task_process, data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -108,7 +108,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(TestModels.call_exteral_services())
     data = %{}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:call_external_service, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:call_external_service, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -133,7 +133,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(TestModels.get_loan_models())
     data = %{income: 3000}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:load_approval, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:load_approval, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -147,7 +147,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(TestModels.single_send_event_task())
     data = %{value: 0}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:process_with_single_send_evet_task, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:process_with_single_send_evet_task, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -160,10 +160,10 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(TestModels.send_task_to_receive_task())
     data = %{}
 
-    {:ok, r_ppid, r_uid, _process_key} = PE.start_process(:process_with_receive_task, data)
+    {:ok, r_ppid, r_uid, _business_key} = PE.start_process(:process_with_receive_task, data)
     PE.execute_and_wait(r_ppid)
 
-    {:ok, s_ppid, s_uid, _process_key} = PE.start_process(:process_with_single_send_task, data)
+    {:ok, s_ppid, s_uid, _business_key} = PE.start_process(:process_with_single_send_task, data)
     catch_exit(PE.execute_and_wait(s_ppid))
 
     Process.sleep(1000)
@@ -203,7 +203,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_model(single_service_task())
     data = %{x: 0, y: 0}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:process_with_single_service_task, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:process_with_single_service_task, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -236,7 +236,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_model(call_process_receive_event_task())
     data = %{}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:process_with_receive_event_task, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:process_with_receive_event_task, data)
     PE.execute_and_wait(ppid)
 
     PubSub.broadcast(:pubsub, "pe_topic", {:message, {:get_product, 2, 2}})
@@ -250,7 +250,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_model(call_process_receive_event_task())
     data = %{}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:process_with_receive_event_task, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:process_with_receive_event_task, data)
     PE.execute_and_wait(ppid)
 
     PubSub.broadcast(:pubsub, "pe_topic", {:message, {:get_sum, 2, 2}})
@@ -266,7 +266,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(TestModels.call_timer_tasks())
     data = %{}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:call_timer_task, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:call_timer_task, data)
     PE.execute_and_wait(ppid)
 
     Process.monitor(ppid)
@@ -283,7 +283,7 @@ defmodule Mozart.ProcessEngineTest do
   #   PS.load_process_models(TestModels.call_exteral_services())
   #   data = %{}
 
-  #   {:ok, ppid, uid, _process_key} = PE.start_process(:call_external_services, data)
+  #   {:ok, ppid, uid, _business_key} = PE.start_process(:call_external_services, data)
   #   PE.execute(ppid)
   #   Process.sleep(2000)
   #   assert PS.get_completed_process(uid) != nil
@@ -294,7 +294,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(TestModels.get_complex_process_models())
     data = %{value: 1}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:call_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:call_process_model, data)
     PE.execute(ppid)
 
     Process.sleep(100)
@@ -310,7 +310,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{foo: "foo"}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:simple_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:simple_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -322,7 +322,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
-    {:ok, ppid, _uid, _process_key} = PE.start_process(:simple_call_process_model, data)
+    {:ok, ppid, _uid, _business_key} = PE.start_process(:simple_call_process_model, data)
     PE.execute(ppid)
   end
 
@@ -360,7 +360,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(get_subprocess_models())
     data = %{value: 1}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:call_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:call_process_model, data)
     PE.execute(ppid)
 
     Process.sleep(500)
@@ -376,7 +376,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_parallel_process_models())
     data = %{value: 1}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:parallel_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:parallel_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -397,7 +397,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:case_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:case_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -410,7 +410,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 11}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:case_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:case_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -422,7 +422,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
-    {:ok, ppid, _uid, _process_key} = PE.start_process(:user_task_process_model, data)
+    {:ok, ppid, _uid, _business_key} = PE.start_process(:user_task_process_model, data)
     PE.execute_and_wait(ppid)
 
     assert PE.get_data(ppid) == %{value: 0}
@@ -449,7 +449,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(@user_process_models)
     data = %{x: 1, y: 1, z: 1}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:user_task_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:user_task_process_model, data)
     PE.execute_and_wait(ppid)
 
     assert PE.get_data(ppid) == %{x: 1, y: 1, z: 1}
@@ -471,7 +471,7 @@ defmodule Mozart.ProcessEngineTest do
     # Start process with two user tasks and then a service task
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: "foobar"}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:two_user_tasks_then_service, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:two_user_tasks_then_service, data)
     PE.execute_and_wait(ppid)
 
     # Get the first user task and complete it.
@@ -512,7 +512,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:user_task_then_service, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:user_task_then_service, data)
     PE.execute_and_wait(ppid)
 
     # Process.sleep(10)
@@ -532,7 +532,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:service_then_user_task, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:service_then_user_task, data)
     PE.execute_and_wait(ppid)
     assert PE.get_data(ppid) == %{value: 1}
 
@@ -549,7 +549,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{foo: :foo}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:simple_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:simple_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -561,7 +561,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:simple_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:simple_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -573,7 +573,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 1}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:simple_process_model, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:simple_process_model, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -585,7 +585,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.clear_state()
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:increment_by_one_process, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:increment_by_one_process, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)
@@ -598,7 +598,7 @@ defmodule Mozart.ProcessEngineTest do
     # Will cause a process restart due to adding 1 to "foobar"
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: "foobar"}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:increment_by_one_process, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:increment_by_one_process, data)
     PE.execute(ppid)
 
     Process.monitor(ppid)
@@ -622,7 +622,7 @@ defmodule Mozart.ProcessEngineTest do
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
 
-    {:ok, ppid, uid, _process_key} = PE.start_process(:increment_by_one_twice_process, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:increment_by_one_twice_process, data)
 
     catch_exit(PE.execute_and_wait(ppid))
 
@@ -634,7 +634,7 @@ defmodule Mozart.ProcessEngineTest do
   test "Three increment tasks in a row" do
     PS.load_process_models(TestModels.get_testing_process_models())
     data = %{value: 0}
-    {:ok, ppid, uid, _process_key} = PE.start_process(:three_increment_by_one_process, data)
+    {:ok, ppid, uid, _business_key} = PE.start_process(:three_increment_by_one_process, data)
     catch_exit(PE.execute_and_wait(ppid))
 
     completed_process = PS.get_completed_process(uid)

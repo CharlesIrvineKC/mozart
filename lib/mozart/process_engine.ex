@@ -16,11 +16,11 @@ defmodule Mozart.ProcessEngine do
   ## Client API
 
   @doc false
-  def start_link(uid, model_name, data, process_key, parent_pid) do
+  def start_link(uid, model_name, data, business_key, parent_pid) do
     {:ok, pid} =
-      GenServer.start_link(__MODULE__, {uid, model_name, data, process_key, parent_pid})
+      GenServer.start_link(__MODULE__, {uid, model_name, data, business_key, parent_pid})
 
-    {:ok, pid, {uid, process_key}}
+    {:ok, pid, {uid, business_key}}
   end
 
   @doc """
@@ -41,38 +41,38 @@ defmodule Mozart.ProcessEngine do
   name of the process model to be executed and any initialization data. The
   engine will start executing tasks when the execute/1 function is called.
 
-  Arguments are a process model name, initial process data, an optional process_key, and a parent
+  Arguments are a process model name, initial process data, an optional business_key, and a parent
   process pid if there is a parent. If a process key is not specified, one will be assigned.
 
   Returns a tuple of the form:
   ```
-  {:ok, ppid, uid, process_key}
+  {:ok, ppid, uid, business_key}
   ```
   where:
   * **ppid** is the Elixir pid for the spawned GenServer.
   * **uid** is a uniquie identifier for a process execution.
-  * **process_key** is a unique identifier for a hierarchial process execution.
+  * **business_key** is a unique identifier for a hierarchial process execution.
 
   Sample invocation:
   ```
-  {:ok, ppid, uid, process_key} = ProcessEngine.start_process("a process model name", )
+  {:ok, ppid, uid, business_key} = ProcessEngine.start_process("a process model name", )
   ```
   """
-  def start_process(model_name, data, process_key \\ nil, parent_pid \\ nil) do
+  def start_process(model_name, data, business_key \\ nil, parent_pid \\ nil) do
     uid = UUID.generate()
-    process_key = process_key || UUID.generate()
+    business_key = business_key || UUID.generate()
 
     child_spec = %{
       id: MyProcessEngine,
       start:
-        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, process_key, parent_pid]},
+        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, business_key, parent_pid]},
       restart: :transient
     }
 
-    {:ok, pid, {uid, process_key}} =
+    {:ok, pid, {uid, business_key}} =
       DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
 
-    {:ok, pid, uid, process_key}
+    {:ok, pid, uid, business_key}
   end
 
   @doc false
@@ -137,7 +137,7 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   @doc false
-  def init({uid, model_name, data, process_key, parent_pid}) do
+  def init({uid, model_name, data, business_key, parent_pid}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
     state =
@@ -147,7 +147,7 @@ defmodule Mozart.ProcessEngine do
           data: data,
           uid: uid,
           parent_pid: parent_pid,
-          process_key: process_key,
+          business_key: business_key,
           start_time: DateTime.utc_now()
         }
 
@@ -162,7 +162,7 @@ defmodule Mozart.ProcessEngine do
 
   @doc false
   def handle_continue({:register_and_subscribe, uid}, state) do
-    PS.register_process_instance(uid, self(), state.process_key)
+    PS.register_process_instance(uid, self(), state.business_key)
     Phoenix.PubSub.subscribe(:pubsub, "pe_topic")
     {:noreply, state}
   end
@@ -380,7 +380,7 @@ defmodule Mozart.ProcessEngine do
         state.data
       end
 
-    new_task = Map.put(new_task, :data, input_data) |> Map.put(:process_key, state.process_key)
+    new_task = Map.put(new_task, :data, input_data) |> Map.put(:business_key, state.business_key)
     PS.insert_user_task(new_task)
     state
   end
@@ -393,8 +393,8 @@ defmodule Mozart.ProcessEngine do
   defp do_new_task_side_effects(:subprocess, new_task, state) do
     data = state.data
 
-    {:ok, process_pid, _uid, _process_key} =
-      start_process(new_task.model, data, state.process_key, self())
+    {:ok, process_pid, _uid, _business_key} =
+      start_process(new_task.model, data, state.business_key, self())
 
     execute(process_pid)
     state

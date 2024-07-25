@@ -92,7 +92,7 @@ We started a process instance using `Mozart.ProcessEngin.start_process/2`. We pa
 
 * The **pid** of the resulting process engine.
 * The **uid** of the process instance. Every process execution will be given a unique identifier. You will see how this is used going forward.
-* Finally, a **process_key** is returned. Process models are hierarchial, meaning they can be composed of multiple, nested subprocesses. The top level business process and all of its subprocesses will share the same *process_key*. Here, were aren't going to be using the *process key*, but we will in subsequent examples.
+* Finally, a **business_key** is returned. Process models are hierarchial, meaning they can be composed of multiple, nested subprocesses. The top level business process and all of its subprocesses will share the same *business_key*. Here, were aren't going to be using the *process key*, but we will in subsequent examples.
 
 After creating the process engine instance, we then call `Mozart.ProcessEngine.execute/1` which causes the process engine to start completing any tasks that are ready to be completed. Let's do that now:
 

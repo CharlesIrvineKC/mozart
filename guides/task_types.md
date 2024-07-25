@@ -95,7 +95,7 @@ iex [16:41 :: 1] > MyBpmApplication.load()
 Now you are ready to start a **ProcessEngine** that will run your process model:
 
 ```elixir
-{:ok, ppid, uid, process_key} = PE.start_process("add x and y process", %{x: 1, y: 1})
+{:ok, ppid, uid, business_key} = PE.start_process("add x and y process", %{x: 1, y: 1})
 
 ```
 
@@ -173,7 +173,7 @@ Now we paste in code to define alias's, load our process models, start a process
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 MyBpmApplication.load()
-{:ok, ppid, uid, process_key} = PE.start_process("one user task process", %{x: 1, y: 1})
+{:ok, ppid, uid, business_key} = PE.start_process("one user task process", %{x: 1, y: 1})
 PE.execute(ppid)
 
 ```
@@ -188,7 +188,7 @@ iex [10:39 :: 2] > alias Mozart.ProcessService, as: PS
 Mozart.ProcessService
 iex [10:39 :: 3] > MyBpmApplication.load()
 {:ok, ["add x and y process", "one user task process"]}
-iex [10:39 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("one user task process", %{x: 1, y: 1})
+iex [10:39 :: 4] > {:ok, ppid, uid, business_key} = PE.start_process("one user task process", %{x: 1, y: 1})
 
 10:39:49.816 [info] Start process instance [one user task process][714ff531-762f-4677-a357-dda88d7fb1c1]
 {:ok, #PID<0.285.0>, "714ff531-762f-4677-a357-dda88d7fb1c1",
@@ -272,7 +272,7 @@ Open your iex session and paste in:
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 MyBpmApplication.load()
-{:ok, ppid, uid, process_key} = PE.start_process("subprocess task process", %{value: 0})
+{:ok, ppid, uid, business_key} = PE.start_process("subprocess task process", %{value: 0})
 PE.execute(ppid)
 
 ```
@@ -288,7 +288,7 @@ iex [13:50 :: 3] > MyBpmApplication.load()
 {:ok,
  ["add x and y process", "one user task process", "two service tasks",
   "subprocess task process"]}
-iex [13:50 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("subprocess task process", %{value: 0})
+iex [13:50 :: 4] > {:ok, ppid, uid, business_key} = PE.start_process("subprocess task process", %{value: 0})
 
 13:50:13.910 [info] Start process instance [subprocess task process][903561d2-2f27-4014-9bf9-4334a0d93466]
 {:ok, #PID<0.288.0>, "903561d2-2f27-4014-9bf9-4334a0d93466",
@@ -378,7 +378,7 @@ Let's try it out. Open an iex session, and paste in the following:
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 MyBpmApplication.load()
-{:ok, ppid, uid, process_key} = PE.start_process("two case process", %{x: 1, y: 2, value: 10})
+{:ok, ppid, uid, business_key} = PE.start_process("two case process", %{x: 1, y: 2, value: 10})
 PE.execute(ppid)
 
 ```
@@ -393,7 +393,7 @@ iex [14:33 :: 3] > MyBpmApplication.load()
 {:ok,
  ["add x and y process", "one user task process", "two service tasks",
   "subprocess task process", "two case process"]}
-iex [14:33 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("two case process", %{x: 1, y: 2, value: 10})
+iex [14:33 :: 4] > {:ok, ppid, uid, business_key} = PE.start_process("two case process", %{x: 1, y: 2, value: 10})
 
 14:33:41.084 [info] Start process instance [two case process][4fb6889e-250c-407e-a332-f904f491b39d]
 {:ok, #PID<0.285.0>, "4fb6889e-250c-407e-a332-f904f491b39d",
@@ -459,7 +459,7 @@ Open an iex session, and paste in the following:
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 MyBpmApplication.load()
-{:ok, ppid, uid, process_key} = PE.start_process("receive barrower income process", %{})
+{:ok, ppid, uid, business_key} = PE.start_process("receive barrower income process", %{})
 PE.execute(ppid)
 
 ```
@@ -476,7 +476,7 @@ iex [17:23 :: 3] > MyBpmApplication.load()
  ["add x and y process", "one user task process", "two service tasks",
   "subprocess task process", "two case process",
   "receive barrower income process", "send barrower income process"]}
-iex [17:23 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("receive barrower income process", %{})
+iex [17:23 :: 4] > {:ok, ppid, uid, business_key} = PE.start_process("receive barrower income process", %{})
 
 17:23:16.604 [info] Start process instance [receive barrower income process][d9534434-acc0-43a3-83ac-2f6db76cfb3d]
 {:ok, #PID<0.296.0>, "d9534434-acc0-43a3-83ac-2f6db76cfb3d",
@@ -490,7 +490,7 @@ iex [17:23 :: 5] > PE.execute(ppid)
 At this point, we've started the process with the receive task and we see that the expected receive task has been opened. Now we need to run the process with the send task so the waiting receive task can complete. To do that, copy the following into your iex session. 
 
 ```elixir
-{:ok, s_ppid, s_uid, s_process_key} = PE.start_process("send barrower income process", %{})
+{:ok, s_ppid, s_uid, s_business_key} = PE.start_process("send barrower income process", %{})
 PE.execute(s_ppid)
 
 ```
@@ -501,7 +501,7 @@ Notice that when we call **PE.start_process/2**, we choose different varaible na
 You should see this result:
 
 ```elixir
-iex [17:23 :: 6] > {:ok, ppid, uid, process_key} = PE.start_process("send barrower income process", %{})
+iex [17:23 :: 6] > {:ok, ppid, uid, business_key} = PE.start_process("send barrower income process", %{})
 
 17:28:56.665 [info] Start process instance [send barrower income process][d58a5b10-1a12-48f5-9426-9ab90701e933]
 {:ok, #PID<0.299.0>, "d58a5b10-1a12-48f5-9426-9ab90701e933",
@@ -560,7 +560,7 @@ Now open an iex session and copy is the following:
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 MyBpmApplication.load()
-{:ok, ppid, uid, process_key} = PE.start_process("two parallel routes process", %{})
+{:ok, ppid, uid, business_key} = PE.start_process("two parallel routes process", %{})
 PE.execute(ppid)
 
 ```
@@ -578,7 +578,7 @@ iex [18:29 :: 3] > MyBpmApplication.load()
   "subprocess task process", "two case process",
   "receive barrower income process", "send barrower income process",
   "two parallel routes process"]}
-iex [18:29 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("two parallel routes process", %{})
+iex [18:29 :: 4] > {:ok, ppid, uid, business_key} = PE.start_process("two parallel routes process", %{})
 
 18:29:26.105 [info] Start process instance [two parallel routes process][08dba7e3-820e-4ea4-985e-5184b8041c80]
 {:ok, #PID<0.323.0>, "08dba7e3-820e-4ea4-985e-5184b8041c80",
@@ -636,7 +636,7 @@ Open an iex session and paste in the following:
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 MyBpmApplication.load()
-{:ok, ppid, uid, process_key} = PE.start_process("repeat task process", %{continue: true})
+{:ok, ppid, uid, business_key} = PE.start_process("repeat task process", %{continue: true})
 PE.execute(ppid)
 
 ```
@@ -654,7 +654,7 @@ iex [09:10 :: 6] > MyBpmApplication.load()
   "subprocess task process", "two case process",
   "receive barrower income process", "send barrower income process",
   "two parallel routes process", "repeat task process"]}
-iex [09:10 :: 7] > {:ok, ppid, uid, process_key} = PE.start_process("repeat task process", %{continue: true})
+iex [09:10 :: 7] > {:ok, ppid, uid, business_key} = PE.start_process("repeat task process", %{continue: true})
 
 09:11:31.919 [info] Start process instance [repeat task process][e3963cb8-410d-4039-ad81-eb6730808783]
 {:ok, #PID<0.300.0>, "e3963cb8-410d-4039-ad81-eb6730808783",
@@ -743,7 +743,7 @@ Open an iex session on your project and paste in:
 alias Mozart.ProcessEngine, as: PE
 alias Mozart.ProcessService, as: PS
 MyBpmApplication.load()
-{:ok, ppid, uid, process_key} = PE.start_process("single rule task process", %{income: 60_000})
+{:ok, ppid, uid, business_key} = PE.start_process("single rule task process", %{income: 60_000})
 PE.execute(ppid)
 
 ```
@@ -753,7 +753,7 @@ and you should see:
 ```elixir
 iex [16:31 :: 3] > MyBpmApplication.load()
 {:ok, .... deleted list of process names}
-iex [16:31 :: 4] > {:ok, ppid, uid, process_key} = PE.start_process("single rule task process", %{income: 60_000})
+iex [16:31 :: 4] > {:ok, ppid, uid, business_key} = PE.start_process("single rule task process", %{income: 60_000})
 16:31:29.857 [info] Start process instance [single rule task process][371b788e-33e6-4d55-9e0c-9e238f552b84]
 {:ok, #PID<0.299.0>, "371b788e-33e6-4d55-9e0c-9e238f552b84",
  "83e7bb9a-a732-44b2-bdc3-ae4bbf6c1790"}
