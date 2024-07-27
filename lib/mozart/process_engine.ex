@@ -16,9 +16,9 @@ defmodule Mozart.ProcessEngine do
   ## Client API
 
   @doc false
-  def start_link(uid, model_name, data, business_key, parent_pid) do
+  def start_link(uid, model_name, data, business_key, parent_uid) do
     {:ok, pid} =
-      GenServer.start_link(__MODULE__, {uid, model_name, data, business_key, parent_pid})
+      GenServer.start_link(__MODULE__, {uid, model_name, data, business_key, parent_uid})
 
     {:ok, pid, {uid, business_key}}
   end
@@ -58,14 +58,14 @@ defmodule Mozart.ProcessEngine do
   {:ok, ppid, uid, business_key} = ProcessEngine.start_process("a process model name", )
   ```
   """
-  def start_process(model_name, data, business_key \\ nil, parent_pid \\ nil) do
+  def start_process(model_name, data, business_key \\ nil, parent_uid \\ nil) do
     uid = UUID.generate()
     business_key = business_key || UUID.generate()
 
     child_spec = %{
       id: MyProcessEngine,
       start:
-        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, business_key, parent_pid]},
+        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, business_key, parent_uid]},
       restart: :transient
     }
 
@@ -137,7 +137,7 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   @doc false
-  def init({uid, model_name, data, business_key, parent_pid}) do
+  def init({uid, model_name, data, business_key, parent_uid}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
     state =
@@ -146,7 +146,7 @@ defmodule Mozart.ProcessEngine do
           model_name: model_name,
           data: data,
           uid: uid,
-          parent_pid: parent_pid,
+          parent_uid: parent_uid,
           business_key: business_key,
           start_time: DateTime.utc_now()
         }
@@ -394,7 +394,7 @@ defmodule Mozart.ProcessEngine do
     data = state.data
 
     {:ok, process_pid, _uid, _business_key} =
-      start_process(new_task.model, data, state.business_key, self())
+      start_process(new_task.model, data, state.business_key, state.uid)
 
     execute(process_pid)
     state
@@ -673,8 +673,10 @@ defmodule Mozart.ProcessEngine do
       end
     else
       ## no work remaining so process is complete
-      if state.parent_pid do
-        notify_child_complete(state.parent_pid, state.model_name, state.data)
+      if state.parent_uid do
+        parent_pid = PS.get_process_pid_from_uid(state.parent_uid)
+        IO.inspect(parent_pid, label: "** parent pid ***")
+        notify_child_complete(parent_pid, state.model_name, state.data)
       end
 
       now = DateTime.utc_now()

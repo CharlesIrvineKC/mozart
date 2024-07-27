@@ -209,7 +209,7 @@ defmodule Mozart.ProcessServiceTest do
 
     [task_instance] = Map.values(PE.get_open_tasks(ppid))
 
-    PS.complete_user_task(task_instance.process_uid, task_instance.uid, %{user_task_complete: true})
+    PS.complete_user_task(task_instance.uid, %{user_task_complete: true})
     Process.sleep(50)
 
     assert PS.get_completed_process(uid) != nil

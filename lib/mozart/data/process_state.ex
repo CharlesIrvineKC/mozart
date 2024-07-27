@@ -7,7 +7,7 @@ provide the following information:
 * **uid**: A unique identifier of a single process model execution.
 * **business_key**: A unique identifier for a hierarchy of process model executions
 corresponding to a hierarchial process model.
-* **parent_pid**: If the process is a child process, this is the pid of the parent process
+* **parent_uid**: If the process is a child process, this is the pid of the parent process
 execution.
 * **model_name**: The name of the process model being executed.
 * **start_time**: The time when the process started executing.
@@ -25,7 +25,7 @@ are the property values.
 defstruct [
     :uid,
     :business_key,
-    :parent_pid,
+    :parent_uid,
     :model_name,
     :start_time,
     :end_time,
@@ -42,7 +42,7 @@ end
   defstruct [
     :uid,
     :business_key,
-    :parent_pid,
+    :parent_uid,
     :model_name,
     :start_time,
     :end_time,
