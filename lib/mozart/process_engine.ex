@@ -74,6 +74,25 @@ defmodule Mozart.ProcessEngine do
 
     {:ok, pid, uid, business_key}
   end
+  def restart_process(state) do
+    uid = state.uid
+    model_name = state.model_name
+    data = state.data
+    business_key = state.business_key
+    parent_pid = state.parent_pid
+
+    child_spec = %{
+      id: MyProcessEngine,
+      start:
+        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, business_key, parent_pid]},
+      restart: :transient
+    }
+
+    {:ok, pid, {uid, business_key}} =
+      DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
+
+    {:ok, pid, uid, business_key}
+  end
 
   @doc false
   def complete_on_task_exit_event(ppid) do
@@ -137,8 +156,11 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   @doc false
+  # def init({uid, model_name, data, business_key, parent_uid}) do
+  #   pe_recovered_state = PS.get_cached_state(uid)
   def init({uid, model_name, data, business_key, parent_uid}) do
-    pe_recovered_state = PS.get_cached_state(uid)
+    # pe_recovered_state = PS.get_cached_state(uid)
+    pe_recovered_state = PS.get_persisted_process_state(uid)
 
     state =
       pe_recovered_state ||
@@ -151,11 +173,13 @@ defmodule Mozart.ProcessEngine do
           start_time: DateTime.utc_now()
         }
 
-    if pe_recovered_state do
-      Logger.warning("Restart process instance [#{model_name}][#{uid}]")
-    else
-      Logger.info("Start process instance [#{model_name}][#{uid}]")
-    end
+    # if pe_recovered_state do
+    #   Logger.warning("Restart process instance [#{model_name}][#{uid}]")
+    # else
+    #   Logger.info("Start process instance [#{model_name}][#{uid}]")
+    # end
+
+    Logger.info("Start process instance [#{model_name}][#{uid}]")
 
     {:ok, state, {:continue, {:register_and_subscribe, uid}}}
   end
@@ -193,6 +217,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_call(:execute, _from, state) do
+    PS
     model = PS.get_process_model(state.model_name)
     state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
@@ -669,6 +694,7 @@ defmodule Mozart.ProcessEngine do
             complete_repeat_task(state, complete_able_task)
         end
       else
+        PS.persist_process_state(state)
         state
       end
     else

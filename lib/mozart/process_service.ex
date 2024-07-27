@@ -18,6 +18,16 @@ defmodule Mozart.ProcessService do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  @doc false
+  def persist_process_state(pe_state) do
+    GenServer.cast(__MODULE__, {:persist_process_state, pe_state})
+  end
+
+  @doc false
+  def get_persisted_process_state(pe_uid) do
+    GenServer.call(__MODULE__, {:get_persisted_process_state, pe_uid})
+  end
+
   @doc """
   Get active process instances
   """
@@ -216,6 +226,7 @@ defmodule Mozart.ProcessService do
     {:ok, completed_process_db} = CubDB.start_link(data_dir: "database/completed_process_db")
     {:ok, process_model_db} = CubDB.start_link(data_dir: "database/process_model_db")
     {:ok, bpm_application_db} = CubDB.start_link(data_dir: "database/bpm_application_db")
+    {:ok, process_state_db} = CubDB.start_link(data_dir: "database/process_state_db")
 
     initial_state = %{
       active_process_groups: %{},
@@ -224,12 +235,18 @@ defmodule Mozart.ProcessService do
       user_task_db: user_task_db,
       completed_process_db: completed_process_db,
       process_model_db: process_model_db,
-      bpm_application_db: bpm_application_db
+      bpm_application_db: bpm_application_db,
+      process_state_db: process_state_db
     }
 
     Logger.info("Process service initialized")
 
-    {:ok, initial_state}
+    {:ok, initial_state, {:continue, :restart_persisted_processes}}
+  end
+
+  def handle_continue(:restart_persisted_processes, state) do
+    restart_persisted_processes(state)
+    {:noreply, state}
   end
 
   def handle_call({:get_processes_for_business_key, business_key}, _from, state) do
@@ -265,7 +282,8 @@ defmodule Mozart.ProcessService do
       user_task_db: state.user_task_db,
       completed_process_db: state.completed_process_db,
       process_model_db: state.process_model_db,
-      bpm_application_db: state.bpm_application_db
+      bpm_application_db: state.bpm_application_db,
+      process_state_db: state.process_state_db
     }
 
     {:reply, new_state, new_state}
@@ -391,6 +409,15 @@ defmodule Mozart.ProcessService do
     {:reply, pe_process, state}
   end
 
+  def handle_call({:get_persisted_process_state, pe_uid}, _from, state) do
+    {:reply, CubDB.get(state.process_state_db, pe_uid), state}
+  end
+
+  def handle_cast({:persist_process_state, pe_state}, state) do
+    CubDB.put(state.process_state_db, pe_state.uid, pe_state)
+    {:noreply, state}
+  end
+
   def handle_cast({:register_process_instance, uid, pid, business_key}, state) do
     active_processes = Map.put(state.active_processes, uid, pid)
     state = Map.put(state, :active_processes, active_processes)
@@ -452,6 +479,11 @@ defmodule Mozart.ProcessService do
 
   defp get_user_task_by_id(state, uid) do
     CubDB.get(state.user_task_db, uid)
+  end
+
+  defp restart_persisted_processes(state) do
+    persisted_processes = CubDB.select(state.process_state_db)
+    Enum.each(persisted_processes, fn {_uid, pe_state} -> PE.restart_process(pe_state) end)
   end
 
   defp get_user_tasks(state) do
