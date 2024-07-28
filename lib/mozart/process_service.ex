@@ -24,8 +24,18 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
+  def delete_process_state(pe_state) do
+    GenServer.cast(__MODULE__, {:delete_process_state, pe_state})
+  end
+
+  @doc false
   def get_persisted_process_state(pe_uid) do
     GenServer.call(__MODULE__, {:get_persisted_process_state, pe_uid})
+  end
+
+  @doc false
+  def get_persisted_processes() do
+    GenServer.call(__MODULE__, :get_persisted_processes)
   end
 
   @doc """
@@ -241,12 +251,7 @@ defmodule Mozart.ProcessService do
 
     Logger.info("Process service initialized")
 
-    {:ok, initial_state, {:continue, :restart_persisted_processes}}
-  end
-
-  def handle_continue(:restart_persisted_processes, state) do
-    restart_persisted_processes(state)
-    {:noreply, state}
+    {:ok, initial_state}
   end
 
   def handle_call({:get_processes_for_business_key, business_key}, _from, state) do
@@ -274,6 +279,7 @@ defmodule Mozart.ProcessService do
     CubDB.clear(state.completed_process_db)
     CubDB.clear(state.process_model_db)
     CubDB.clear(state.bpm_application_db)
+    CubDB.clear(state.process_state_db)
 
     new_state = %{
       active_processes: %{},
@@ -413,8 +419,18 @@ defmodule Mozart.ProcessService do
     {:reply, CubDB.get(state.process_state_db, pe_uid), state}
   end
 
+  def handle_call(:get_persisted_processes, _from, state) do
+    persisted_processes = CubDB.select(state.process_state_db) |> Enum.to_list()
+    {:reply, persisted_processes, state}
+  end
+
   def handle_cast({:persist_process_state, pe_state}, state) do
     CubDB.put(state.process_state_db, pe_state.uid, pe_state)
+    {:noreply, state}
+  end
+
+  def handle_cast({:delete_process_state, pe_state}, state) do
+    CubDB.delete(state.process_state_db, pe_state.uid)
     {:noreply, state}
   end
 
@@ -479,11 +495,6 @@ defmodule Mozart.ProcessService do
 
   defp get_user_task_by_id(state, uid) do
     CubDB.get(state.user_task_db, uid)
-  end
-
-  defp restart_persisted_processes(state) do
-    persisted_processes = CubDB.select(state.process_state_db)
-    Enum.each(persisted_processes, fn {_uid, pe_state} -> PE.restart_process(pe_state) end)
   end
 
   defp get_user_tasks(state) do

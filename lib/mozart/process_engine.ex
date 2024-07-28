@@ -74,17 +74,18 @@ defmodule Mozart.ProcessEngine do
 
     {:ok, pid, uid, business_key}
   end
+
   def restart_process(state) do
     uid = state.uid
     model_name = state.model_name
     data = state.data
     business_key = state.business_key
-    parent_pid = state.parent_pid
+    parent_uid = state.parent_uid
 
     child_spec = %{
       id: MyProcessEngine,
       start:
-        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, business_key, parent_pid]},
+        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, business_key, parent_uid]},
       restart: :transient
     }
 
@@ -104,6 +105,10 @@ defmodule Mozart.ProcessEngine do
   """
   def get_state(ppid) do
     GenServer.call(ppid, :get_state)
+  end
+
+  def restore_previous_state(ppid, previous_state) do
+    GenServer.call(ppid, {:restore_previous_state, previous_state})
   end
 
   @doc false
@@ -156,11 +161,8 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   @doc false
-  # def init({uid, model_name, data, business_key, parent_uid}) do
-  #   pe_recovered_state = PS.get_cached_state(uid)
   def init({uid, model_name, data, business_key, parent_uid}) do
-    # pe_recovered_state = PS.get_cached_state(uid)
-    pe_recovered_state = PS.get_persisted_process_state(uid)
+    pe_recovered_state = PS.get_cached_state(uid)
 
     state =
       pe_recovered_state ||
@@ -189,6 +191,14 @@ defmodule Mozart.ProcessEngine do
     PS.register_process_instance(uid, self(), state.business_key)
     Phoenix.PubSub.subscribe(:pubsub, "pe_topic")
     {:noreply, state}
+  end
+
+  def handle_call({:restore_previous_state, previous_state}, _from, state) do
+    state =
+      state
+      |> Map.put(:open_tasks, previous_state.open_tasks)
+      |> Map.put(:completed_tasks, previous_state.completed_tasks)
+    {:reply, state, state}
   end
 
   def handle_call(:is_complete, _from, state) do
@@ -701,7 +711,7 @@ defmodule Mozart.ProcessEngine do
       ## no work remaining so process is complete
       if state.parent_uid do
         parent_pid = PS.get_process_pid_from_uid(state.parent_uid)
-        IO.inspect(parent_pid, label: "** parent pid ***")
+        #IO.inspect(parent_pid, label: "** parent pid ***")
         notify_child_complete(parent_pid, state.model_name, state.data)
       end
 
@@ -715,6 +725,7 @@ defmodule Mozart.ProcessEngine do
       Logger.info("Process complete [#{state.model_name}][#{state.uid}]")
 
       PS.update_for_completed_process(state)
+      PS.delete_process_state(state)
       Process.exit(self(), :shutdown)
       state
     end
