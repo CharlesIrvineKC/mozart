@@ -5,6 +5,7 @@ defmodule Mozart.ProcessRestorer do
   defp restore_process(pe_state) do
     {:ok, pid, _uid, _business_key} = PE.restart_process(pe_state)
     PE.restore_previous_state(pid, pe_state)
+    IO.inspect(pe_state, label: "*** restored pe state ***")
   end
 
   def restore_process_state() do
