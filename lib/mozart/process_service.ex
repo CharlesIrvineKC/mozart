@@ -232,11 +232,11 @@ defmodule Mozart.ProcessService do
 
   @doc false
   def init(_init_arg) do
-    {:ok, user_task_db} = CubDB.start_link(data_dir: "database/user_task_db")
-    {:ok, completed_process_db} = CubDB.start_link(data_dir: "database/completed_process_db")
-    {:ok, process_model_db} = CubDB.start_link(data_dir: "database/process_model_db")
-    {:ok, bpm_application_db} = CubDB.start_link(data_dir: "database/bpm_application_db")
-    {:ok, process_state_db} = CubDB.start_link(data_dir: "database/process_state_db")
+    {:ok, user_task_db} = CubDB.start_link(data_dir: "/database/user_task_db")
+    {:ok, completed_process_db} = CubDB.start_link(data_dir: "/database/completed_process_db")
+    {:ok, process_model_db} = CubDB.start_link(data_dir: "/database/process_model_db")
+    {:ok, bpm_application_db} = CubDB.start_link(data_dir: "/database/bpm_application_db")
+    {:ok, process_state_db} = CubDB.start_link(data_dir: "/database/process_state_db")
 
     initial_state = %{
       active_process_groups: %{},
