@@ -198,6 +198,7 @@ defmodule Mozart.ProcessEngine do
       state
       |> Map.put(:open_tasks, previous_state.open_tasks)
       |> Map.put(:completed_tasks, previous_state.completed_tasks)
+
     {:reply, state, state}
   end
 
@@ -549,7 +550,7 @@ defmodule Mozart.ProcessEngine do
 
     input_data =
       if task.inputs do
-        Map.take(state.data, task.inputs)
+        Map.filter(state.data, fn {k, _v} -> Enum.member?(task.inputs, k) end)
       else
         state.data
       end
@@ -563,9 +564,18 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp complete_rule_task(state, task) do
-    Logger.info("Complete run task [#{task.name}[#{task.uid}]")
-    arguments = Map.take(state.data, task.inputs) |> Map.to_list()
-    data = Map.merge(state.data, Tablex.decide(task.rule_table, arguments))
+    Logger.info("Complete rule task [#{task.name}[#{task.uid}]")
+
+    filtered_data = Map.filter(state.data, fn {k, _v} -> Enum.member?(task.inputs, k) end)
+
+    decide_args =
+      Enum.map(filtered_data, fn {key, value} -> {String.to_existing_atom(key), value} end)
+
+    decide_result = Tablex.decide(task.rule_table, decide_args)
+
+    decide_result = Enum.map(decide_result, fn {k, v} -> {Atom.to_string(k), v} end)
+    data = Map.new(decide_result)
+    data = Map.merge(state.data, data)
 
     Map.put(state, :data, data)
     |> update_completed_task_state(task, task.next)
@@ -623,6 +633,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_new_task_instance(task_name, state) do
+
     get_task_def(task_name, state)
     |> Map.put(:uid, Ecto.UUID.generate())
     |> Map.put(:start_time, DateTime.utc_now())
@@ -639,7 +650,6 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp complete_user_task_impl(state, task_uid, return_data) do
-
     task_instance = get_task_instance(task_uid, state)
 
     if task_instance do

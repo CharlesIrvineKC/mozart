@@ -14,21 +14,21 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   test "test bpm application test" do
-    data = %{x: "x", y: "y"}
+    data = %{"x" => "x","y" => "y"}
     PS.clear_state()
     load()
 
     bpm_application = PS.get_bpm_application("bpm application test")
     assert bpm_application.name == "bpm application test"
     assert bpm_application.main == "one prototype task process"
-    assert bpm_application.data == [:x, :y]
+    assert bpm_application.data == ["x", "y"]
 
     {:ok, ppid, uid, _business_key} = PE.start_process(bpm_application.main, data)
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{x: "x", y: "y"}
+    assert completed_process.data == %{"x" => "x","y" => "y"}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end
@@ -132,11 +132,11 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   def count_is_less_than_limit(data) do
-    data.count < data.limit
+    data["count"] < data["limit"]
   end
 
   def add_1_to_count(data) do
-    %{count: data.count + 1}
+    %{"count" => data["count"] + 1}
   end
 
   defprocess "repeat with service task process" do
@@ -149,14 +149,14 @@ defmodule Mozart.DslProcessEngineTest do
   test "repeat with service task process" do
     PS.clear_state()
     load()
-    data = %{count: 0, limit: 2}
+    data = %{"count" => 0, "limit" => 2}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("repeat with service task process", data)
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{count: 2, limit: 2}
+    assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 4
   end
@@ -176,14 +176,14 @@ defmodule Mozart.DslProcessEngineTest do
   test "repeat with subprocess task process" do
     PS.clear_state()
     load()
-    data = %{count: 0, limit: 2}
+    data = %{"count" => 0, "limit" => 2}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("repeat with subprocess task process", data)
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{count: 2, limit: 2}
+    assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 4
   end
@@ -201,14 +201,14 @@ defmodule Mozart.DslProcessEngineTest do
   test "repeat with subprocess service task process" do
     PS.clear_state()
     load()
-    data = %{count: 0, limit: 2}
+    data = %{"count" => 0, "limit" => 2}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("repeat with subprocess service task process", data)
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{count: 2, limit: 2}
+    assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 2
   end
@@ -226,12 +226,12 @@ defmodule Mozart.DslProcessEngineTest do
     PS.clear_state()
     load()
 
-    {:ok, ppid, uid, _business_key} = PE.start_process("repeat task process", %{count: 0, limit: 5})
+    {:ok, ppid, uid, _business_key} = PE.start_process("repeat task process", %{"count" => 0, "limit" => 5})
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{count: 5, limit: 5}
+    assert completed_process.data == %{"count" => 5, "limit" => 5}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 17
   end
@@ -258,7 +258,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   def receive_loan_income(msg) do
     case msg do
-      {:barrower_income, income} -> %{barrower_income: income}
+      {:barrower_income, income} -> %{"barrower_income" => income}
       _ -> nil
     end
   end
@@ -270,7 +270,7 @@ defmodule Mozart.DslProcessEngineTest do
   test "receive barrower income process" do
     PS.clear_state()
     load()
-    data = %{barrower_id: "511-58-1422"}
+    data = %{"barrower_id" => "511-58-1422"}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("receive barrower income process", data)
     PE.execute(ppid)
@@ -282,7 +282,7 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{barrower_income: 100000, barrower_id: "511-58-1422"}
+    assert completed_process.data == %{"barrower_income" => 100000, "barrower_id" => "511-58-1422"}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end
@@ -294,7 +294,7 @@ defmodule Mozart.DslProcessEngineTest do
   test "send and receive barrower income process" do
     PS.clear_state()
     load()
-    data = %{barrower_id: "511-58-1422"}
+    data = %{"barrower_id" => "511-58-1422"}
 
     {:ok, r_ppid, r_uid, _business_key} = PE.start_process("receive barrower income process", data)
     PE.execute(r_ppid)
@@ -305,13 +305,14 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(500)
 
     completed_process = PS.get_completed_process(r_uid)
-    assert completed_process.data == %{barrower_income: 100000, barrower_id: "511-58-1422"}
+    assert completed_process.data == %{"barrower_income" => 100000, "barrower_id" => "511-58-1422"}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end
 
   def square(data) do
-    Map.put(data, :square, data.x * data.x)
+    Map.put(data, "square", data["x"] * data["x"])
+
   end
 
   defprocess "one service task process" do
@@ -321,14 +322,14 @@ defmodule Mozart.DslProcessEngineTest do
   test "one service task process" do
     PS.clear_state()
     load()
-    data = %{x: 3}
+    data = %{"x" => 3}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("one service task process", data)
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{x: 3, square: 9}
+    assert completed_process.data == %{"x" => 3, "square" => 9}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end
@@ -340,14 +341,14 @@ defmodule Mozart.DslProcessEngineTest do
   test "one service tuple task process" do
     PS.clear_state()
     load()
-    data = %{x: 3}
+    data = %{"x" => 3}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("one service tuple task process", data)
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{x: 3, square: 9}
+    assert completed_process.data == %{"x" => 3, "square" => 9}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end
@@ -400,14 +401,14 @@ defmodule Mozart.DslProcessEngineTest do
   test "single rule task process" do
     PS.clear_state()
     load()
-    data = %{income: 3000}
+    data = %{"income" => 3000}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("single rule task process", data)
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{income: 3000, status: "declined"}
+    assert completed_process.data == %{"income" => 3000, "status" => "declined"}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end
@@ -437,11 +438,11 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   def x_less_than_y(data) do
-    data.x < data.y
+    data["x"] < data["y"]
   end
 
   def x_greater_or_equal_y(data) do
-    data.x >= data.y
+    data["x"] >= data["y"]
   end
 
   defprocess "two case process" do
@@ -460,7 +461,7 @@ defmodule Mozart.DslProcessEngineTest do
   test "two case process" do
     PS.clear_state()
     load()
-    data = %{x: 1, y: 2}
+    data = %{"x" => 1,"y" => 2}
 
     {:ok, ppid, _uid, _business_key} = PE.start_process("two case process", data)
     PE.execute(ppid)
@@ -469,16 +470,16 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   def decide_loan(data) do
-    decision = if data.income > 50_000, do: "Approved", else: "Declined"
-    Map.put(data, :decision, decision)
+    decision = if data["income"] > 50_000, do: "Approved", else: "Declined"
+    Map.put(data, "decision", decision)
   end
 
   def loan_approved(data) do
-    data.decision == "Approved"
+    data["decision"] == "Approved"
   end
 
   def loan_declined(data) do
-    data.decision == "Declined"
+    data["decision"] == "Declined"
   end
 
   def send_approval(_data) do
@@ -506,20 +507,20 @@ defmodule Mozart.DslProcessEngineTest do
   test "two service task case process" do
     PS.clear_state()
     load()
-    data = %{income: 100_000}
+    data = %{"income" => 100_000}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("two service task case process", data)
     PE.execute(ppid)
     Process.sleep(1000)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{income: 100000, decision: "Approved"}
+    assert completed_process.data == %{"income" => 100000, "decision" => "Approved"}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 3
   end
 
   def add_one_to_value(data) do
-    Map.put(data, :value, data.value + 1)
+    Map.put(data, "value", data["value"] + 1)
   end
 
   defprocess "two service tasks" do
@@ -534,14 +535,14 @@ defmodule Mozart.DslProcessEngineTest do
   test "subprocess task process" do
     PS.clear_state()
     load()
-    data = %{value: 1}
+    data = %{"value" => 1}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("subprocess task process", data)
     PE.execute(ppid)
     Process.sleep(1000)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{value: 3}
+    assert completed_process.data == %{"value" => 3}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end

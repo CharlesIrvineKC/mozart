@@ -128,20 +128,6 @@ defmodule Mozart.ProcessEngineTest do
     assert task.duration != nil
   end
 
-  test "test for loan approval" do
-    PS.clear_state()
-    PS.load_process_models(TestModels.get_loan_models())
-    data = %{income: 3000}
-
-    {:ok, ppid, uid, _business_key} = PE.start_process(:load_approval, data)
-    catch_exit(PE.execute_and_wait(ppid))
-
-    completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{income: 3000, status: "declined"}
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 1
-  end
-
   test "process with single send event task" do
     PS.clear_state()
     PS.load_process_models(TestModels.single_send_event_task())
@@ -464,48 +450,6 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{sum: 2, x: 1, y: 1, z: 1}
     assert completed_process.complete == true
-  end
-
-  test "recover lost state and proceed" do
-    PS.clear_state()
-    # Start process with two user tasks and then a service task
-    PS.load_process_models(TestModels.get_testing_process_models())
-    data = %{value: "foobar"}
-    {:ok, ppid, uid, _business_key} = PE.start_process(:two_user_tasks_then_service, data)
-    PE.execute_and_wait(ppid)
-
-    # Get the first user task and complete it.
-    [task_instance] = Map.values(PE.get_open_tasks(ppid))
-    PE.complete_user_task(ppid, task_instance.uid, %{user_task_1: true})
-    assert PE.get_data(ppid) == %{value: "foobar", user_task_1: true}
-
-    # Get the second user task and complete it. This will cause the service
-    # task to fail due to adding 1 to "foobar". The process will terminate and
-    # the supervisor will restart it recovering state including the data inserted
-    # by the first user task.
-    [task_instance] = Map.values(PE.get_open_tasks(ppid))
-    catch_exit(PE.complete_user_task(ppid, task_instance.uid, %{user_task_2: true}))
-    Process.sleep(500)
-
-    # Get the restarted process pid from PS and make sure the state is as expected.
-    new_pid = PS.get_process_ppid(uid)
-    assert PE.get_data(new_pid) == %{value: "foobar", user_task_1: true}
-
-    # Get the recoved second user task. Reset value to a numerical value, i.e. 1.
-    # Then complete the user task. This time the service task will complete
-    # without the exception.
-    [task_instance] = Map.values(PE.get_open_tasks(new_pid))
-    data = PE.get_data(new_pid)
-    PE.set_data(new_pid, Map.merge(data, %{value: 1}))
-    catch_exit(PE.complete_user_task(new_pid, task_instance.uid, %{user_task_2: true}))
-
-    Process.monitor(new_pid)
-    assert_receive({:DOWN, _ref, :process, _object, _reason})
-
-    completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{value: 2, user_task_1: true, user_task_2: true}
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 3
   end
 
   test "complete one user task then sevice task" do

@@ -223,12 +223,12 @@ defmodule Mozart.BpmProcess do
 
   @doc false
   def parse_params(inputs_string) do
-    Enum.map(String.split(inputs_string, ","), fn input -> String.to_atom(input) end)
+    String.split(inputs_string, ",") |> Enum.map(&String.trim(&1))
   end
 
   @doc false
   def parse_user_groups(groups_string) do
-    String.split(groups_string, ",")
+    String.split(groups_string, ",") |> Enum.map(&String.trim(&1))
   end
 
   @doc """
