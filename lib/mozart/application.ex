@@ -14,7 +14,7 @@ defmodule Mozart.Application do
     ]
 
     opts = [strategy: :one_for_one, name: Mozart.Supervisor]
-    result = Supervisor.start_link(children, opts)
+    Supervisor.start_link(children, opts)
 
     ProcessRestorer.restore_process_state()
   end
