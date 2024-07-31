@@ -2,7 +2,7 @@ defmodule Mozart.Application do
   @moduledoc false
   use Application
 
-  alias Mozart.ProcessRestorer
+  #alias Mozart.ProcessRestorer
 
   @impl true
   def start(_type, _args) do
@@ -14,8 +14,9 @@ defmodule Mozart.Application do
     ]
 
     opts = [strategy: :one_for_one, name: Mozart.Supervisor]
-    Supervisor.start_link(children, opts)
+    result = IO.inspect(Supervisor.start_link(children, opts), label: "** start link")
 
-    ProcessRestorer.restore_process_state()
+    # ProcessRestorer.restore_process_state()
+    result
   end
 end
