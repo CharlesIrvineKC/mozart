@@ -240,17 +240,36 @@ defmodule Mozart.ProcessService do
 
   @doc false
   def init(_init_arg) do
-    {:ok, user_task_db} = CubDB.start_link(data_dir: "/database/user_task_db")
-    {:ok, completed_process_db} = CubDB.start_link(data_dir: "/database/completed_process_db")
-    {:ok, process_model_db} = CubDB.start_link(data_dir: "/database/process_model_db")
-    {:ok, bpm_application_db} = CubDB.start_link(data_dir: "/database/bpm_application_db")
-    {:ok, process_state_db} = CubDB.start_link(data_dir: "/database/process_state_db")
-    {:ok, type_db} = CubDB.start_link(data_dir: "/database/type_db")
 
     initial_state = %{
       active_process_groups: %{},
       active_processes: %{},
-      restart_state_cache: %{},
+      restart_state_cache: %{}
+    }
+
+    Logger.info("Process service initialized")
+
+    {:ok, initial_state, {:continue, :initialize_databases}}
+  end
+
+  def handle_continue(:initialize_databases, state) do
+    env = Application.fetch_env(:mozart, :database_path)
+    path =
+      case env do
+        :error -> "database"
+        {:ok, value} -> value
+      end
+
+    IO.inspect(path, label: "** path **")
+
+    {:ok, user_task_db} = CubDB.start_link(data_dir: path <> "/user_task_db")
+    {:ok, completed_process_db} = CubDB.start_link(data_dir: path <> "/completed_process_db")
+    {:ok, process_model_db} = CubDB.start_link(data_dir: path <> "/process_model_db")
+    {:ok, bpm_application_db} = CubDB.start_link(data_dir: path <> "/bpm_application_db")
+    {:ok, process_state_db} = CubDB.start_link(data_dir: path <> "/process_state_db")
+    {:ok, type_db} = CubDB.start_link(data_dir: path <> "/type_db")
+
+    database_config = %{
       user_task_db: user_task_db,
       completed_process_db: completed_process_db,
       process_model_db: process_model_db,
@@ -259,9 +278,9 @@ defmodule Mozart.ProcessService do
       type_db: type_db
     }
 
-    Logger.info("Process service initialized")
+    state = Map.merge(state, database_config)
 
-    {:ok, initial_state}
+    {:noreply, state}
   end
 
   def handle_call({:get_processes_for_business_key, business_key}, _from, state) do
