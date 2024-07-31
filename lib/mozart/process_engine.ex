@@ -228,7 +228,6 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_call(:execute, _from, state) do
-    PS
     model = PS.get_process_model(state.model_name)
     state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
@@ -607,7 +606,7 @@ defmodule Mozart.ProcessEngine do
         task.cases,
         fn case -> if case.expression.(state.data), do: case.next end
       )
-
+    
     state
     |> create_next_tasks(next_task_name, task.name)
     |> update_completed_task_state(task, task.next)

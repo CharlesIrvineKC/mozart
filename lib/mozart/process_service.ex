@@ -168,6 +168,14 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:load_process_models, models})
   end
 
+  def load_types(types) do
+    GenServer.call(__MODULE__, {:load_types, types})
+  end
+
+  def get_type(type_name) do
+    GenServer.call(__MODULE__, {:get_type, type_name})
+  end
+
   @doc """
   Loads a BPM Application
   """
@@ -237,6 +245,7 @@ defmodule Mozart.ProcessService do
     {:ok, process_model_db} = CubDB.start_link(data_dir: "/database/process_model_db")
     {:ok, bpm_application_db} = CubDB.start_link(data_dir: "/database/bpm_application_db")
     {:ok, process_state_db} = CubDB.start_link(data_dir: "/database/process_state_db")
+    {:ok, type_db} = CubDB.start_link(data_dir: "/database/type_db")
 
     initial_state = %{
       active_process_groups: %{},
@@ -246,7 +255,8 @@ defmodule Mozart.ProcessService do
       completed_process_db: completed_process_db,
       process_model_db: process_model_db,
       bpm_application_db: bpm_application_db,
-      process_state_db: process_state_db
+      process_state_db: process_state_db,
+      type_db: type_db
     }
 
     Logger.info("Process service initialized")
@@ -280,6 +290,7 @@ defmodule Mozart.ProcessService do
     CubDB.clear(state.process_model_db)
     CubDB.clear(state.bpm_application_db)
     CubDB.clear(state.process_state_db)
+    CubDB.clear(state.type_db)
 
     new_state = %{
       active_processes: %{},
@@ -289,7 +300,8 @@ defmodule Mozart.ProcessService do
       completed_process_db: state.completed_process_db,
       process_model_db: state.process_model_db,
       bpm_application_db: state.bpm_application_db,
-      process_state_db: state.process_state_db
+      process_state_db: state.process_state_db,
+      type_db: state.type_db
     }
 
     {:reply, new_state, new_state}
@@ -373,10 +385,18 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:load_process_models, models}, _from, state) do
     Enum.each(models, fn m -> CubDB.put(state.process_model_db, m.name, m) end)
-    {:reply, {:ok, Enum.map(models, fn m -> m.name end)}, state}
+    {:reply, state, state}
   end
 
-  @doc false
+  def handle_call({:load_types, types}, _from, state) do
+    Enum.each(types, fn t -> CubDB.put(state.type_db, t.param_name, t) end)
+    {:reply, state, state}
+  end
+
+  def handle_call({:get_type, type_name}, _from, state) do
+    {:reply, CubDB.get(state.type_db, type_name), state}
+  end
+
   def handle_call({:get_process_model, name}, _from, state) do
     {:reply, CubDB.get(state.process_model_db, name), state}
   end

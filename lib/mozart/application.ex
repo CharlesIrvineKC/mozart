@@ -17,7 +17,5 @@ defmodule Mozart.Application do
     result = Supervisor.start_link(children, opts)
 
     ProcessRestorer.restore_process_state()
-
-    IO.inspect result, label:  "***************** APPLICATION STARTED **********************"
   end
 end

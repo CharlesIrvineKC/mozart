@@ -23,9 +23,14 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Timer
   alias Mozart.Task.Prototype
   alias Mozart.Task.Repeat
+
+  alias Mozart.Type.Choice
+
   alias Mozart.Event.TaskExit
+
   alias Mozart.Data.ProcessModel
   alias Mozart.Data.BpmApplication
+
   alias Mozart.ProcessService
 
   defmacro __using__(_opts) do
@@ -43,6 +48,7 @@ defmodule Mozart.BpmProcess do
       @cases []
       @event_task_process_map %{}
       @bpm_application nil
+      @types []
       @before_compile Mozart.BpmProcess
     end
   end
@@ -80,6 +86,14 @@ defmodule Mozart.BpmProcess do
       @tasks []
       @subtasks []
       @subtask_sets []
+    end
+  end
+
+  defmacro def_choice_type(param_name, choices: choices) do
+    quote do
+      choices = parse_params(unquote(choices))
+      choice = %Choice{param_name: unquote(param_name), choices: choices}
+      @types [choice | @types]
     end
   end
 
@@ -541,6 +555,7 @@ defmodule Mozart.BpmProcess do
       def load() do
         ProcessService.load_process_models(get_processes())
         ProcessService.load_bpm_application(@bpm_application)
+        ProcessService.load_types(@types)
       end
 
       def get_events, do: Map.to_list(@events)

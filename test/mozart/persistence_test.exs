@@ -5,6 +5,25 @@ defmodule Mozart.PersistenceTest do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
 
+  def_choice_type("Decision", choices: "Yes, No")
+
+  defprocess "choice process" do
+    user_task("a user task", groups: "Admin", outputs: "Decision")
+  end
+
+  test "choice process" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, _uid, _business_key} = PE.start_process("choice process", %{})
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    type = PS.get_type("Decision")
+    IO.inspect(type, label: "** type **")
+
+  end
+
   def_bpm_application("one prototype task process", main: "one prototype task process", data: "")
 
   defprocess "one prototype task process" do
