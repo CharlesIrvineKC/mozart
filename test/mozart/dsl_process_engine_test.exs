@@ -34,7 +34,7 @@ defmodule Mozart.DslProcessEngineTest do
         choices: ["foo", "bar", "foobar"],
         type: :multi_choice}
 
-      assert PS.get_type("confirm param") == %Confirm{param_name: "confirm param", type: :confirmation}
+      assert PS.get_type("confirm param") == %Confirm{param_name: "confirm param", type: :confirm}
   end
 
   def_bpm_application("bpm application test", main: "one prototype task process", data: "x,y")
