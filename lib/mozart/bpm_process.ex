@@ -111,8 +111,8 @@ defmodule Mozart.BpmProcess do
   defmacro def_number_type(param_name, options) do
     quote do
       options = unquote(options)
-      min = Enum.find(options, fn {k,v} -> if k == :min, do: v end)
-      max = Enbum.find(options, fn {k,v} -> if k == :max, do: v end)
+      min = Enum.find_value(options, fn {k,v} -> if k == :min, do: v end)
+      max = Enum.find_value(options, fn {k,v} -> if k == :max, do: v end)
       num_type = %Number{param_name: unquote(param_name), min: min, max: max}
       @types [num_type | @types]
     end

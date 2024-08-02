@@ -7,6 +7,36 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.ProcessService, as: PS
   alias Mozart.DslProcessEngineTest, as: ME
 
+  alias Mozart.Type.Number
+  alias Mozart.Type.Choice
+  alias Mozart.Type.MultiChoice
+  alias Mozart.Type.Confirm
+
+  def_number_type("number param", min: 0, max: 5)
+  def_choice_type("choice param", choices: "foo, bar")
+  def_multi_choice_type("multi choice param", choices: "foo,bar,foobar")
+  def_confirm_type("confirm param")
+
+  test "params type generation" do
+    PS.clear_state()
+    load()
+    Process.sleep(100)
+
+    assert PS.get_type("number param") ==
+      %Number{param_name: "number param", max: 5, min: 0, type: :number}
+
+    assert PS.get_type("choice param") ==
+      %Choice{param_name: "choice param", choices: ["foo", " bar"], type: :choice}
+
+    assert PS.get_type("multi choice param") ==
+      %MultiChoice{
+        param_name: "multi choice param",
+        choices: ["foo", "bar", "foobar"],
+        type: :multi_choice}
+
+      assert PS.get_type("confirm param") == %Confirm{param_name: "confirm param", type: :confirmation}
+  end
+
   def_bpm_application("bpm application test", main: "one prototype task process", data: "x,y")
 
   defprocess "one prototype task process" do
