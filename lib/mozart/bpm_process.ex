@@ -25,6 +25,9 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Repeat
 
   alias Mozart.Type.Choice
+  alias Mozart.Type.MultiChoice
+  alias Mozart.Type.Number
+  alias Mozart.Type.Confirm
 
   alias Mozart.Event.TaskExit
 
@@ -56,7 +59,7 @@ defmodule Mozart.BpmProcess do
   defmacro def_bpm_application(name, main: main, data: data) do
     quote do
       data = parse_params(unquote(data))
-      @bpm_application %BpmApplication{name: unquote(name),main: unquote(main),data: data}
+      @bpm_application %BpmApplication{name: unquote(name), main: unquote(main), data: data}
     end
   end
 
@@ -94,6 +97,31 @@ defmodule Mozart.BpmProcess do
       choices = parse_params(unquote(choices))
       choice = %Choice{param_name: unquote(param_name), choices: choices}
       @types [choice | @types]
+    end
+  end
+
+  defmacro def_multi_choice_type(param_name, choices: choices) do
+    quote do
+      choices = parse_params(unquote(choices))
+      choice = %MultiChoice{param_name: unquote(param_name), choices: choices}
+      @types [choice | @types]
+    end
+  end
+
+  defmacro def_number_type(param_name, options) do
+    quote do
+      options = unquote(options)
+      min = Enum.find(options, fn {k,v} -> if k == :min, do: v end)
+      max = Enbum.find(options, fn {k,v} -> if k == :max, do: v end)
+      num_type = %Number{param_name: unquote(param_name), min: min, max: max}
+      @types [num_type | @types]
+    end
+  end
+
+  defmacro def_confirm_type(param_name) do
+    quote do
+      confirm_type = %Confirm{param_name: unquote(param_name)}
+      @types [confirm_type | @types]
     end
   end
 
@@ -237,12 +265,12 @@ defmodule Mozart.BpmProcess do
 
   @doc false
   def parse_params(inputs_string) do
-    String.split(inputs_string, ",") |> Enum.map(&String.trim(&1))
+    String.split(inputs_string, ",", trim: true)
   end
 
   @doc false
   def parse_user_groups(groups_string) do
-    String.split(groups_string, ",") |> Enum.map(&String.trim(&1))
+    String.split(groups_string, ",", trim: true)
   end
 
   @doc """

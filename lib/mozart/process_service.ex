@@ -260,8 +260,6 @@ defmodule Mozart.ProcessService do
         {:ok, value} -> value
       end
 
-    IO.inspect(path, label: "** path **")
-
     {:ok, user_task_db} = CubDB.start_link(data_dir: path <> "/user_task_db")
     {:ok, completed_process_db} = CubDB.start_link(data_dir: path <> "/completed_process_db")
     {:ok, process_model_db} = CubDB.start_link(data_dir: path <> "/process_model_db")
