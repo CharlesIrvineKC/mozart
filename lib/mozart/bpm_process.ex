@@ -56,6 +56,19 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to define a BPM application. An BPM application is used to identity a single
+  business process implemented in a Elixir module. It's purpose is to facilitate external tool
+  integration. A single Elixir module might have zero or more such definitions. It's parameters
+  are as follows:
+  * **name**: A user level name for the business process.
+  * **name**: The name of the top level process defintion.
+  * **data**: A comma separated list of input parameters that the busines process should be
+  initialized with.
+
+  Example:
+  def_bpm_application("Home Loan Process", main: "Home Loan", data: "Customer Name,Income,Debt")
+  """
   defmacro def_bpm_application(name, main: main, data: data) do
     quote do
       data = parse_params(unquote(data))
@@ -92,6 +105,14 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to associate a single choice, enumerated type for a process data parameter. It's
+  purpose is to facilitate interation with external tools, e.g. GUIs.
+
+  Example:
+
+  def_choice_type("Pre Approval", choices: "Approved, Declined")
+  """
   defmacro def_choice_type(param_name, choices: choices) do
     quote do
       choices = parse_params(unquote(choices))
@@ -100,6 +121,14 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to associate a multiple choice, enumerated type for a process data parameter. It's
+  purpose is to facilitate interation with external tools, e.g. GUIs.
+
+  Example:
+
+  def_multi_choice_type("multi choice param", choices: "foo,bar,foobar")
+  """
   defmacro def_multi_choice_type(param_name, choices: choices) do
     quote do
       choices = parse_params(unquote(choices))
@@ -108,6 +137,14 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to associate a numerical type for a process data parameter. It's
+  purpose is to facilitate interation with external tools, e.g. GUIs.
+
+  Example:
+
+  def_number_type("number param", min: 0, max: 5)
+  """
   defmacro def_number_type(param_name, options) do
     quote do
       options = unquote(options)
@@ -118,6 +155,15 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc """
+  Used to associate a confirmational type for a process data parameter. It's
+  purpose is to facilitate interation with external tools, e.g. GUIs. Intended
+  to be associated with a check box that the user must check to complete a task.
+
+  Example:
+
+  def_confirm_type("confirm param")
+  """
   defmacro def_confirm_type(param_name) do
     quote do
       confirm_type = %Confirm{param_name: unquote(param_name)}

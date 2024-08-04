@@ -1,4 +1,5 @@
 defmodule Mozart.ProcessRestorer do
+  @moduledoc false
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
 

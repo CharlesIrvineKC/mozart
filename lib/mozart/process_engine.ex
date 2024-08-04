@@ -75,6 +75,7 @@ defmodule Mozart.ProcessEngine do
     {:ok, pid, uid, business_key}
   end
 
+  @doc nil
   def restart_process(state) do
     uid = state.uid
     model_name = state.model_name
@@ -107,6 +108,7 @@ defmodule Mozart.ProcessEngine do
     GenServer.call(ppid, :get_state)
   end
 
+  @doc false
   def restore_previous_state(ppid, previous_state) do
     GenServer.call(ppid, {:restore_previous_state, previous_state})
   end
@@ -606,7 +608,7 @@ defmodule Mozart.ProcessEngine do
         task.cases,
         fn case -> if case.expression.(state.data), do: case.next end
       )
-    
+
     state
     |> create_next_tasks(next_task_name, task.name)
     |> update_completed_task_state(task, task.next)
