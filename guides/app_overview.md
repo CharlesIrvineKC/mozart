@@ -36,9 +36,9 @@ The task types currently supported are:
 | prototype_task          | Has no behavior. Used for prototyping and subbing. |
 | repeat_task             | Repeats a set of tasks while condition is true. |
 
-## Process Application
+## BPM Process Module
 
-A **process application** is a set of related **process models and functions** grouped together in an Elixir module. There is an [example process application](https://github.com/CharlesIrvineKC/mozart/blob/main/test/support/home_loan_app.ex) in the Mozart GitHub repository.
+A **BPM Process Module** is an Elixir module containing a set of related **process models, BPM applications, BPM related type definitions** as well as any other normal function definitions. There is an [example process application](https://github.com/CharlesIrvineKC/mozart/blob/main/test/support/home_loan_app.ex) in the Mozart GitHub repository.
 
 *Process applications* must **use Mozart.BpmProcess** to gain access to the Mozart DSL:
 
