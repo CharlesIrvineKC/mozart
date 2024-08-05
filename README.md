@@ -65,11 +65,22 @@ The goal is extremely fast and relable business process model execution. We will
 
 ## Project Status
 
-Mozart is still in an early stage but it is ready for serious experimental use. 
+Mozart is ready for serious experimental use. A 1.0.0 release is targeted for late 2024.
 
 It requires Elixir programming, so if you already use Elixir you can be immediately productive. If you aren't using Elixir, hopefully you will have time to take a look at this amazing programming language.
 
 We will be very receptive to quickly resolve any issues you encounter and answer your questions. For either of these, please create an issues in GitHub.
+
+A proof-of-concept GUI is under active developement. It provides the ability to:
+
+* Load BPM process Elixir modules.
+* Start business process instances.
+* Complete user tasks.
+* Examine the state of active and completed process instances.
+
+The application is called **Opera** and is available in GitHub at https://github.com/CharlesIrvineKC/opera.
+
+It's also deployed to Fly.io at https://opera-holy-bush-2296.fly.dev/tasks.
 
 ## Installation
 
@@ -83,14 +94,6 @@ def deps do
   ]
 end
 ```
-
-## Some of the Major Todo Items
-
-Develop rudimentary GUIs for:
-
-* Runtime trouble shooting and monitoring.
-* User and group administration.
-* User task assignment and execution.
 
 ## Providing Feedback
 

@@ -67,6 +67,28 @@ Declaring **use Mozart.BpmProcess** injects the **MyBpmApplication.load/0** func
 MyProcessApplication.load()
 ```
 
+## BPM Applications
+
+Each Elixir BPM module can define zero or more **BPM Applications**. Here is an example
+
+```elixir
+def_bpm_application("Home Loan Process", main: "Home Loan", data: "Customer Name,Income,Debt")
+```
+Each application specifies a user level name, the name of the top level process definition and a set of required 
+input parameters.
+
+The purpose of a BPM application is to aid in intergration with external applications, e.g. GUI applications.
+
+## Parameter type specifications
+
+Each Elixir BPM process module can define any number of parameter type definitions. Here's an example:
+
+```elixir
+def_choice_type("Pre Approval", choices: "Approved, Declined")
+```
+
+Type definitions aid in integration with external applications, e.g. GUIs.
+
 ## Process Engine
 
 We have said that a Mozart process model is **executable**. What does that mean? After loading the process model as shown above, commands are invoked to start and begin executing the process model. Here is a corresponding code snippet:
