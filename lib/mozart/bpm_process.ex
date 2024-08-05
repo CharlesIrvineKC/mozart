@@ -311,12 +311,12 @@ defmodule Mozart.BpmProcess do
 
   @doc false
   def parse_params(inputs_string) do
-    String.split(inputs_string, ",", trim: true)
+    String.split(inputs_string, ",") |> Enum.map(fn s -> String.trim(s) end)
   end
 
   @doc false
   def parse_user_groups(groups_string) do
-    String.split(groups_string, ",", trim: true)
+    String.split(groups_string, ",") |> Enum.map(fn s -> String.trim(s) end)
   end
 
   @doc """

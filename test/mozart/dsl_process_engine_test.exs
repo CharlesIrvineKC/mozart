@@ -26,7 +26,7 @@ defmodule Mozart.DslProcessEngineTest do
       %Number{param_name: "number param", max: 5, min: 0, type: :number}
 
     assert PS.get_type("choice param") ==
-      %Choice{param_name: "choice param", choices: ["foo", " bar"], type: :choice}
+      %Choice{param_name: "choice param", choices: ["foo", "bar"], type: :choice}
 
     assert PS.get_type("multi choice param") ==
       %MultiChoice{
