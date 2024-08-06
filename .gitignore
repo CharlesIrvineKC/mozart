@@ -28,6 +28,7 @@ mozart-*.tar
 /tmp/
 
 /database/
+/.elixir_ls/
 
 # Apple system files
 .DS_Store
