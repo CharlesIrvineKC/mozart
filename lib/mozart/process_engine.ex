@@ -538,6 +538,7 @@ defmodule Mozart.ProcessEngine do
 
   defp complete_prototype_task(state, task) do
     Logger.info("Complete prototype task [#{task.name}]")
+    state = if task.data, do: Map.put(state, :data, Map.merge(state.data, task.data)), else: state
     update_completed_task_state(state, task, task.next) |> execute_process()
   end
 
@@ -598,6 +599,23 @@ defmodule Mozart.ProcessEngine do
     Map.put(state, :data, Map.merge(state.data, task.data))
     |> update_completed_task_state(task, task.next)
     |> execute_process()
+  end
+
+  defp complete_exception_task(state, task) do
+    Logger.info("Complete exception task [#{task.name}][#{task.uid}]")
+
+    next_task_name =
+    if task.condition.(state.data) do
+      task.exception_first
+    else
+      task.next
+    end
+
+    state
+    |> create_next_tasks(next_task_name, task.name)
+    |> update_completed_task_state(task, nil)
+    |> execute_process()
+
   end
 
   defp complete_case_task(state, task) do
@@ -713,6 +731,9 @@ defmodule Mozart.ProcessEngine do
 
           complete_able_task.type == :repeat ->
             complete_repeat_task(state, complete_able_task)
+
+            complete_able_task.type == :exception ->
+              complete_exception_task(state, complete_able_task)
         end
       else
         PS.persist_process_state(state)
@@ -742,7 +763,6 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp complete_able(t) when t.type == :rule, do: true
-  defp complete_able(t) when t.type == :run, do: true
   defp complete_able(t) when t.type == :service, do: true
   defp complete_able(t) when t.type == :send, do: true
   defp complete_able(t) when t.type == :receive, do: t.complete
@@ -750,6 +770,7 @@ defmodule Mozart.ProcessEngine do
   defp complete_able(t) when t.type == :timer, do: t.expired
   defp complete_able(t) when t.type == :parallel, do: true
   defp complete_able(t) when t.type == :case, do: true
+  defp complete_able(t) when t.type == :exception, do: true
   defp complete_able(t) when t.type == :subprocess, do: t.complete
   defp complete_able(t) when t.type == :join, do: t.inputs == []
   defp complete_able(t) when t.type == :user, do: t.complete

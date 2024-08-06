@@ -23,6 +23,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Timer
   alias Mozart.Task.Prototype
   alias Mozart.Task.Repeat
+  alias Mozart.Task.Exception
 
   alias Mozart.Type.Choice
   alias Mozart.Type.MultiChoice
@@ -319,6 +320,25 @@ defmodule Mozart.BpmProcess do
     String.split(groups_string, ",") |> Enum.map(fn s -> String.trim(s) end)
   end
 
+  defmacro exception_task(name, condition, do: tasks) do
+    quote do
+      condition = unquote(condition)
+      condition = if is_atom(condition), do: Function.capture(__MODULE__, condition, 1), else: condition
+      name = unquote(name)
+      exception = %Exception{name: name, condition: condition}
+      insert_new_task(exception)
+      @capture_subtasks true
+      tasks = unquote(tasks)
+      first = hd(@subtasks)
+      @tasks Enum.map(@tasks,
+        fn t -> if t.name == name, do: Map.put(t, :exception_first, first.name), else: t end)
+      @subtasks set_next_tasks(@subtasks)
+      @subtask_sets [@subtasks | @subtask_sets]
+      @subtasks []
+      @capture_subtasks false
+    end
+  end
+
   @doc """
   Used to select one of many execution paths. Arguments are a task name and a list of cases.
 
@@ -412,9 +432,11 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
-  defmacro prototype_task(name) do
+  defmacro prototype_task(name, data \\ nil) do
     quote do
-      task = %Prototype{name: unquote(name)}
+      data = unquote(data)
+      name = unquote(name)
+      task =if data, do: %Prototype{name: name, data: data}, else: %Prototype{name: name}
       insert_new_task(task)
     end
   end

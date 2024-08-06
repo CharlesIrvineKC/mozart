@@ -12,6 +12,79 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  defprocess "prototype task with data" do
+    prototype_task("a prototype task", %{foo: :foo})
+  end
+
+  test "prototype task with data" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, uid, _business_key} = PE.start_process("prototype task with data", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{foo: :foo}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
+  defprocess "parallel prototype tasks" do
+    parallel_task "a parallel task" do
+      route do
+        prototype_task("prototype task route one")
+      end
+      route do
+        prototype_task("prototype task route two")
+      end
+    end
+  end
+
+  test "parallel prototype tasks" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, uid, _business_key} = PE.start_process( "parallel prototype tasks", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
+  end
+
+  def test(_data) do
+    false
+  end
+
+  defprocess "exception task and prototype task" do
+    exception_task "exception task", :test do
+      prototype_task("exception prototype task 1")
+      prototype_task("exception prototype task 2")
+    end
+    prototype_task("Finish Up Task 1")
+    prototype_task("Finish Up Task 2")
+  end
+
+  test "exception task and prototype task" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, uid, _business_key} = PE.start_process("exception task and prototype task", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
+  end
+
   def_number_type("number param", min: 0, max: 5)
   def_choice_type("choice param", choices: "foo, bar")
   def_multi_choice_type("multi choice param", choices: "foo,bar,foobar")
@@ -44,23 +117,6 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   test "test bpm application test" do
-    data = %{"x" => "x","y" => "y"}
-    PS.clear_state()
-    load()
-
-    bpm_application = PS.get_bpm_application("bpm application test")
-    assert bpm_application.name == "bpm application test"
-    assert bpm_application.main == "one prototype task process"
-    assert bpm_application.data == ["x", "y"]
-
-    {:ok, ppid, uid, _business_key} = PE.start_process(bpm_application.main, data)
-    PE.execute(ppid)
-    Process.sleep(100)
-
-    completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{"x" => "x","y" => "y"}
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 1
   end
 
   defprocess "one user task process" do
