@@ -523,7 +523,6 @@ defmodule Mozart.BpmProcess do
       function = Keyword.get(options, :function)
       module = Keyword.get(options, :module) || __MODULE__
       inputs = Keyword.get(options, :inputs)
-
       inputs = parse_params(inputs)
 
       service =
@@ -546,13 +545,16 @@ defmodule Mozart.BpmProcess do
   end
 
   defprocess "receive barrower income process" do
-    receive_task("receive barrower income", selector: &MyBpmApplication.receive_loan_income/1)
+    receive_task("receive barrower income", selector: :receive_loan_income)
   end
   ```
   """
-  defmacro receive_task(name, selector: function) do
+  defmacro receive_task(name, options) do
     quote do
-      task = %Receive{name: unquote(name), selector: unquote(function)}
+      options = unquote(options)
+      selector = Keyword.get(options, :selector)
+      module = Keyword.get(options, :module) || __MODULE__
+      task = %Receive{name: unquote(name), selector: selector, module: module}
 
       insert_new_task(task)
     end

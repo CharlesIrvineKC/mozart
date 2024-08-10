@@ -348,7 +348,7 @@ defmodule Mozart.ProcessEngine do
   ## callback utilities
 
   defp update_receive_event_task(s_task, payload) do
-    select_result = s_task.selector.(payload)
+    select_result = apply(s_task.module, s_task.selector, [payload])
 
     if select_result do
       Map.put(s_task, :data, select_result)

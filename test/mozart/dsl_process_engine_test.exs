@@ -350,7 +350,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "receive barrower income process" do
-    receive_task("receive barrower income", selector: &ME.receive_loan_income/1)
+    receive_task("receive barrower income", selector: :receive_loan_income)
   end
 
   test "receive barrower income process" do

@@ -2,10 +2,10 @@ defmodule Mozart.Task.Receive do
   @moduledoc false
   defstruct [
     :name,
-    :function,
     :next,
     :uid,
     :selector,
+    :module,
     :start_time,
     :finish_time,
     :duration,
