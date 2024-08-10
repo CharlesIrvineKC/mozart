@@ -227,7 +227,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   defprocess "repeat with service task process" do
     repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
-      service_task("add one to count 1", function: &ME.add_1_to_count/1, inputs: "count")
+      service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
     end
     prototype_task("last prototype task")
   end
@@ -249,7 +249,7 @@ defmodule Mozart.DslProcessEngineTest do
 
   defprocess "repeat with subprocess task process" do
     repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
-      service_task("add one to count 1", function: &ME.add_1_to_count/1, inputs: "count")
+      service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
       subprocess_task("subprocess task", model: "subprocess with one prototype test")
     end
     prototype_task("last prototype task")
@@ -281,7 +281,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "subprocess with one service test" do
-    service_task("add one to count 1", function: &ME.add_1_to_count/1, inputs: "count")
+    service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
   end
 
   test "repeat with subprocess service task process" do
@@ -303,7 +303,7 @@ defmodule Mozart.DslProcessEngineTest do
     repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
       prototype_task("prototype task 1")
       prototype_task("prototype task 2")
-      service_task("add one to count 1", function: &ME.add_1_to_count/1, inputs: "count")
+      service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
     end
     prototype_task("last prototype task")
   end
@@ -402,7 +402,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "one service task process" do
-    service_task("a service task", function: &ME.square/1, inputs: "x")
+    service_task("a service task", function: :square, inputs: "x")
   end
 
   test "one service task process" do
@@ -610,8 +610,8 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "two service tasks" do
-    service_task("service task 1", function: &ME.add_one_to_value/1, inputs: "value")
-    service_task("service task 2", function: &ME.add_one_to_value/1, inputs: "value")
+    service_task("service task 1", function: :add_one_to_value, inputs: "value")
+    service_task("service task 2", function: :add_one_to_value, inputs: "value")
   end
 
   defprocess "subprocess task process" do

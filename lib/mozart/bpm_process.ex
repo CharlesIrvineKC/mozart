@@ -512,21 +512,21 @@ defmodule Mozart.BpmProcess do
   end
 
   defprocess "one service task process" do
-    service_task("a service task", function: &MyBpmApplication.square/1, inputs: "x")
+    service_task("a service task", function: :square, inputs: "x")
   end
   ```
   """
-  defmacro service_task(name, function: func, inputs: inputs) do
+  defmacro service_task(name, options) do
     quote do
-      function = unquote(func)
+      options = unquote(options)
+      function = Keyword.get(options, :function)
+      module = Keyword.get(options, :module) || __MODULE__
+      inputs = Keyword.get(options, :inputs)
 
-      function =
-        if is_atom(function), do: Function.capture(__MODULE__, function, 1), else: function
-
-      inputs = parse_params(unquote(inputs))
+      inputs = parse_params(inputs)
 
       service =
-        %Service{name: unquote(name), function: function, inputs: inputs}
+        %Service{name: unquote(name), function: function, module: module, inputs: inputs}
 
       insert_new_task(service)
     end

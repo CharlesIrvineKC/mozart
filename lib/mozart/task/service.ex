@@ -3,6 +3,7 @@ defmodule Mozart.Task.Service do
   defstruct [
     :name,
     :function,
+    :module,
     :inputs,
     :next,
     :uid,

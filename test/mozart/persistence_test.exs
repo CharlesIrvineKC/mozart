@@ -20,7 +20,6 @@ defmodule Mozart.PersistenceTest do
     Process.sleep(100)
 
     type = PS.get_type("Decision")
-    IO.inspect(type, label: "** type **")
 
   end
 
@@ -37,8 +36,6 @@ defmodule Mozart.PersistenceTest do
     {:ok, ppid, _uid, _business_key} = PE.start_process("one prototype task process", %{})
     PE.execute(ppid)
     Process.sleep(100)
-
-    IO.inspect(PS.get_persisted_processes(), label: "*** process state ***")
   end
 
   defprocess "one user task process" do
@@ -56,8 +53,6 @@ defmodule Mozart.PersistenceTest do
     {:ok, ppid, _uid, _business_key} = PE.start_process("one user task process", %{})
     PE.execute(ppid)
     Process.sleep(100)
-
-    IO.inspect(PS.get_persisted_processes(), label: "*** process state ***")
   end
 
 end
