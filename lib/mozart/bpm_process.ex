@@ -320,12 +320,13 @@ defmodule Mozart.BpmProcess do
     String.split(groups_string, ",") |> Enum.map(fn s -> String.trim(s) end)
   end
 
-  defmacro exception_task(name, condition, do: tasks) do
+  defmacro exception_task(name, options, do: tasks) do
     quote do
-      condition = unquote(condition)
-      condition = if is_atom(condition), do: Function.capture(__MODULE__, condition, 1), else: condition
+      options = unquote(options)
+      condition = Keyword.get(options, :condition)
+      module = Keyword.get(options, :module) || __MODULE__
       name = unquote(name)
-      exception = %Exception{name: name, condition: condition}
+      exception = %Exception{name: name, condition: condition, module: module}
       insert_new_task(exception)
       @capture_subtasks true
       tasks = unquote(tasks)

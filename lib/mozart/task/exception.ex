@@ -3,6 +3,7 @@ defmodule Mozart.Task.Exception do
   defstruct [
     :name,
     :condition,
+    :module,
     :next,
     :exception_first,
     :uid,

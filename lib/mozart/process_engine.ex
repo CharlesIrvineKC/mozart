@@ -604,17 +604,16 @@ defmodule Mozart.ProcessEngine do
     Logger.info("Complete exception task [#{task.name}][#{task.uid}]")
 
     next_task_name =
-    if task.condition.(state.data) do
-      task.exception_first
-    else
-      task.next
-    end
+      if apply(task.module, task.condition, [state.data]) do
+        task.exception_first
+      else
+        task.next
+      end
 
     state
     |> create_next_tasks(next_task_name, task.name)
     |> update_completed_task_state(task, nil)
     |> execute_process()
-
   end
 
   defp complete_case_task(state, task) do
@@ -651,7 +650,6 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_new_task_instance(task_name, state) do
-
     get_task_def(task_name, state)
     |> Map.put(:uid, Ecto.UUID.generate())
     |> Map.put(:start_time, DateTime.utc_now())
@@ -731,8 +729,8 @@ defmodule Mozart.ProcessEngine do
           complete_able_task.type == :repeat ->
             complete_repeat_task(state, complete_able_task)
 
-            complete_able_task.type == :exception ->
-              complete_exception_task(state, complete_able_task)
+          complete_able_task.type == :exception ->
+            complete_exception_task(state, complete_able_task)
         end
       else
         PS.persist_process_state(state)

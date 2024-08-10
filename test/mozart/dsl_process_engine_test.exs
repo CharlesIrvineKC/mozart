@@ -62,7 +62,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "exception task and prototype task" do
-    exception_task "exception task", :test do
+    exception_task "exception task", condition: :test do
       prototype_task("exception prototype task 1")
       prototype_task("exception prototype task 2")
     end
