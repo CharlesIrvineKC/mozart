@@ -25,12 +25,12 @@ defmodule MyBpmApplication do
   end
 
   defprocess "two service tasks" do
-    service_task("service task 2", function: &MyBpmApplication.add_one_to_value/1, inputs: "value")
-    service_task("service task 3", function: &MyBpmApplication.add_one_to_value/1, inputs: "value")
+    service_task("service task 2", function: :add_one_to_value, inputs: "value")
+    service_task("service task 3", function: :add_one_to_value, inputs: "value")
   end
 
   defprocess "subprocess task process" do
-    service_task("service task 2", function: &MyBpmApplication.add_one_to_value/1, inputs: "value")
+    service_task("service task 2", function: :add_one_to_value, inputs: "value")
     subprocess_task("subprocess task", model: "two service tasks")
   end
 
@@ -55,12 +55,12 @@ defmodule MyBpmApplication do
   defprocess "two case process" do
     case_task "yes or no" do
       case_i &MyBpmApplication.x_less_than_y/1 do
-        service_task("1", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
-        service_task("2", function: &MyBpmApplication.subtract_two_from_value/1, inputs: "value")
+        service_task("1", function: :subtract_two_from_value, inputs: "value")
+        service_task("2", function: :subtract_two_from_value, inputs: "value")
       end
       case_i &MyBpmApplication.x_greater_or_equal_y/1 do
-        service_task("3", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
-        service_task("4", function: &MyBpmApplication.add_two_to_value/1, inputs: "value")
+        service_task("3", function: :add_two_to_value, inputs: "value")
+        service_task("4", function: :add_two_to_value, inputs: "value")
       end
     end
   end
@@ -75,7 +75,7 @@ defmodule MyBpmApplication do
   end
 
   defprocess "receive barrower income process" do
-    receive_task("receive barrower income", selector: &MyBpmApplication.receive_loan_income/1)
+    receive_task("receive barrower income", selector: :receive_loan_income)
   end
 
   defprocess "send barrower income process" do
@@ -104,7 +104,7 @@ defmodule MyBpmApplication do
   end
 
   defprocess "repeat task process" do
-    repeat_task "repeat task", &MyBpmApplication.continue/1 do
+    repeat_task "repeat task", condition: :continue do
       prototype_task("prototype task 1")
       prototype_task("prototype task 2")
       user_task("user task", groups: "admin", outputs: "na")
@@ -115,7 +115,7 @@ defmodule MyBpmApplication do
   ## Repeat Example with Subprocess
 
   defprocess "repeat with subprocess task process" do
-    repeat_task "repeat task", &MyBpmApplication.continue/1 do
+    repeat_task "repeat task", condition: :continue do
       subprocess_task("subprocess task", model: "subprocess with 3 prototype tasks")
       prototype_task("prototype task")
       user_task("user task", groups: "admin", outputs: "na")
@@ -132,7 +132,7 @@ defmodule MyBpmApplication do
   ## From Tests
 
   defprocess "repeat with subprocess task process 2" do
-    repeat_task "repeat task", &MyBpmApplication.continue/1 do
+    repeat_task "repeat task", condition: :continue do
       subprocess_task("subprocess task", model: "subprocess with one prototype test")
       user_task("user task", groups: "admin", outputs: "na")
     end
@@ -154,17 +154,17 @@ defmodule MyBpmApplication do
   end
 
   defprocess "repeat two service tasks" do
-    repeat_task "repeat task", &MyBpmApplication.count_is_less_than_limit/1 do
-      service_task("add one to count 1", function: &MyBpmApplication.add_1_to_count/1, inputs: "count")
+    repeat_task "repeat task", condition: :count_is_less_than_limit do
+      service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
       timer_task("timer task 1", duration: 100)
-      service_task("add one to count 2", function: &MyBpmApplication.add_1_to_count/1, inputs: "count")
+      service_task("add one to count 2", function: :add_1_to_count, inputs: "count")
       timer_task("timer task 2", duration: 100)
     end
     prototype_task("last prototype task")
   end
 
   defprocess "subprocess with  service task" do
-    service_task("add one to count", function: &MyBpmApplication.add_1_to_count/1, inputs: "count")
+    service_task("add one to count", function: :add_1_to_count, inputs: "count")
   end
 
   ## Rule Task Example

@@ -8,6 +8,7 @@ defmodule Mozart.Task.Repeat do
     :complete,
     :uid,
     :condition,
+    :module,
     :start_time,
     :finish_time,
     :duration,

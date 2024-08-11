@@ -392,7 +392,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp trigger_repeat_execution(state, new_task) do
-    if new_task.condition.(state.data) do
+    if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
       Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
       state = Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))

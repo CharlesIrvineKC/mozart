@@ -226,7 +226,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "repeat with service task process" do
-    repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
+    repeat_task "repeat task", condition: :count_is_less_than_limit do
       service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
     end
     prototype_task("last prototype task")
@@ -248,7 +248,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "repeat with subprocess task process" do
-    repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
+    repeat_task "repeat task", condition: :count_is_less_than_limit do
       service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
       subprocess_task("subprocess task", model: "subprocess with one prototype test")
     end
@@ -275,7 +275,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "repeat with subprocess service task process" do
-    repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
+    repeat_task "repeat task", condition: :count_is_less_than_limit do
       subprocess_task("subprocess task", model: "subprocess with one service test")
     end
   end
@@ -300,7 +300,7 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   defprocess "repeat task process" do
-    repeat_task "repeat task", &ME.count_is_less_than_limit/1 do
+    repeat_task "repeat task", condition: :count_is_less_than_limit do
       prototype_task("prototype task 1")
       prototype_task("prototype task 2")
       service_task("add one to count 1", function: :add_1_to_count, inputs: "count")

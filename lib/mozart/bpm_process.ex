@@ -293,9 +293,12 @@ defmodule Mozart.BpmProcess do
     end
   end
 
-  defmacro repeat_task(name, condition, do: tasks) do
+  defmacro repeat_task(name, options, do: tasks) do
     quote do
-      r_task = %Repeat{name: unquote(name), condition: unquote(condition)}
+      options = unquote(options)
+      condition = Keyword.get(options, :condition)
+      module = Keyword.get(options, :module) || __MODULE__
+      r_task = %Repeat{name: unquote(name), condition: condition, module: module}
       insert_new_task(r_task)
       @capture_subtasks true
       unquote(tasks)
