@@ -51,7 +51,7 @@ defmodule Mozart.BpmProcess do
       @route_task_names []
       @cases []
       @event_task_process_map %{}
-      @bpm_application nil
+      @bpm_applications []
       @types []
       @before_compile Mozart.BpmProcess
     end
@@ -73,7 +73,8 @@ defmodule Mozart.BpmProcess do
   defmacro def_bpm_application(name, main: main, data: data) do
     quote do
       data = parse_params(unquote(data))
-      @bpm_application %BpmApplication{name: unquote(name), main: unquote(main), data: data}
+      bpm_application = %BpmApplication{name: unquote(name), main: unquote(main), data: data}
+      @bpm_applications [bpm_application | @bpm_applications]
     end
   end
 
@@ -654,13 +655,13 @@ defmodule Mozart.BpmProcess do
         @processes assign_events_to_processes(Map.to_list(@events), @processes)
       end
 
-      def get_bpm_application, do: @bpm_application
+      # def get_bpm_application, do: @bpm_applications
       def get_processes, do: Enum.reverse(@processes)
       def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)
 
       def load() do
         ProcessService.load_process_models(get_processes())
-        ProcessService.load_bpm_application(@bpm_application)
+        ProcessService.load_bpm_applications(@bpm_applications)
         ProcessService.load_types(@types)
       end
 
