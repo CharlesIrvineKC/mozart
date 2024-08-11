@@ -10,7 +10,8 @@ defmodule Mozart.Application do
       {DynamicSupervisor, name: ProcessEngineSupervisor, strategy: :one_for_one},
       {Mozart.ProcessService, nil},
       {Mozart.UserService, nil},
-      {Phoenix.PubSub, name: :pubsub}
+      {Phoenix.PubSub, name: :pubsub},
+      Mozart.Repo
     ]
 
     opts = [strategy: :one_for_one, name: Mozart.Supervisor]
