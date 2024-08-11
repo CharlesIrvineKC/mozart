@@ -70,10 +70,18 @@ defmodule Mozart.BpmProcess do
   Example:
   def_bpm_application("Home Loan Process", main: "Home Loan", data: "Customer Name,Income,Debt")
   """
-  defmacro def_bpm_application(name, main: main, data: data) do
+  defmacro def_bpm_application(name, main: main, data: data, bk_prefix: prefix) do
     quote do
       data = parse_params(unquote(data))
-      bpm_application = %BpmApplication{name: unquote(name), main: unquote(main), data: data}
+      prefix = parse_params(unquote(prefix))
+
+      bpm_application = %BpmApplication{
+        name: unquote(name),
+        main: unquote(main),
+        data: data,
+        bk_prefix: prefix
+      }
+
       @bpm_applications [bpm_application | @bpm_applications]
     end
   end
@@ -150,8 +158,8 @@ defmodule Mozart.BpmProcess do
   defmacro def_number_type(param_name, options) do
     quote do
       options = unquote(options)
-      min = Enum.find_value(options, fn {k,v} -> if k == :min, do: v end)
-      max = Enum.find_value(options, fn {k,v} -> if k == :max, do: v end)
+      min = Enum.find_value(options, fn {k, v} -> if k == :min, do: v end)
+      max = Enum.find_value(options, fn {k, v} -> if k == :max, do: v end)
       num_type = %Number{param_name: unquote(param_name), min: min, max: max}
       @types [num_type | @types]
     end
@@ -197,7 +205,14 @@ defmodule Mozart.BpmProcess do
       exit_task = Keyword.get(options, :exit_task)
       selector = Keyword.get(options, :selector)
       module = Keyword.get(options, :module) || __MODULE__
-      event = %TaskExit{name: unquote(name), exit_task: exit_task, selector: selector, module: module}
+
+      event = %TaskExit{
+        name: unquote(name),
+        exit_task: exit_task,
+        selector: selector,
+        module: module
+      }
+
       @capture_subtasks true
       unquote(tasks)
       @subtasks set_next_tasks(@subtasks)
@@ -339,8 +354,13 @@ defmodule Mozart.BpmProcess do
       @capture_subtasks true
       tasks = unquote(tasks)
       first = hd(@subtasks)
-      @tasks Enum.map(@tasks,
-        fn t -> if t.name == name, do: Map.put(t, :exception_first, first.name), else: t end)
+
+      @tasks Enum.map(
+               @tasks,
+               fn t ->
+                 if t.name == name, do: Map.put(t, :exception_first, first.name), else: t
+               end
+             )
       @subtasks set_next_tasks(@subtasks)
       @subtask_sets [@subtasks | @subtask_sets]
       @subtasks []
@@ -445,7 +465,7 @@ defmodule Mozart.BpmProcess do
     quote do
       data = unquote(data)
       name = unquote(name)
-      task =if data, do: %Prototype{name: name, data: data}, else: %Prototype{name: name}
+      task = if data, do: %Prototype{name: name, data: data}, else: %Prototype{name: name}
       insert_new_task(task)
     end
   end
