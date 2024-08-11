@@ -19,7 +19,7 @@ defmodule Mozart.PersistenceTest do
     PE.execute(ppid)
     Process.sleep(100)
 
-    type = PS.get_type("Decision")
+    PS.get_type("Decision")
 
   end
 

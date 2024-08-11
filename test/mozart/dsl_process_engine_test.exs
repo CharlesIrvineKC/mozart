@@ -5,7 +5,6 @@ defmodule Mozart.DslProcessEngineTest do
   alias Phoenix.PubSub
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
-  alias Mozart.DslProcessEngineTest, as: ME
 
   alias Mozart.Type.Number
   alias Mozart.Type.Choice
@@ -157,7 +156,7 @@ defmodule Mozart.DslProcessEngineTest do
   defevent "exit subprocess task",
     process: "exit a subprocess task",
     exit_task: "subprocess task",
-    selector: &ME.exit_subprocess_task_event_selector/1 do
+    selector: :exit_subprocess_task_event_selector do
       prototype_task("prototype task 1")
       prototype_task("prototype task 2")
   end
@@ -194,7 +193,7 @@ defmodule Mozart.DslProcessEngineTest do
   defevent "exit loan decision",
     process: "exit a user task",
     exit_task: "user task",
-    selector: &ME.exit_user_task_event_selector/1 do
+    selector: :exit_user_task_event_selector do
       prototype_task("prototype task 1")
       prototype_task("prototype task 2")
   end

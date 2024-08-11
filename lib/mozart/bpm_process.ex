@@ -189,10 +189,14 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
-  defmacro defevent(name, opts, do: tasks) do
+  defmacro defevent(name, options, do: tasks) do
     quote do
-      [process: process, exit_task: exit_task, selector: selector] = unquote(opts)
-      event = %TaskExit{name: unquote(name), exit_task: exit_task, selector: selector}
+      options = unquote(options)
+      process = Keyword.get(options, :process)
+      exit_task = Keyword.get(options, :exit_task)
+      selector = Keyword.get(options, :selector)
+      module = Keyword.get(options, :module) || __MODULE__
+      event = %TaskExit{name: unquote(name), exit_task: exit_task, selector: selector, module: module}
       @capture_subtasks true
       unquote(tasks)
       @subtasks set_next_tasks(@subtasks)

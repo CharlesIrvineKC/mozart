@@ -314,7 +314,7 @@ defmodule Mozart.ProcessEngine do
 
   def handle_info({:event, payload}, state) do
     model = PS.get_process_model(state.model_name)
-    event = Enum.find(model.events, fn e -> e.selector.(payload) end)
+    event = Enum.find(model.events, fn e -> apply(e.module, e.selector, [payload]) end)
     state = if event, do: exit_task(event, state), else: state
     {:noreply, state}
   end

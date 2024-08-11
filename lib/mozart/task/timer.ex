@@ -2,7 +2,6 @@ defmodule Mozart.Task.Timer do
   @moduledoc false
   defstruct [
     :name,
-    :function,
     :next,
     :uid,
     :timer_duration,
