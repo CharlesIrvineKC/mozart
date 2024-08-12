@@ -23,7 +23,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Timer
   alias Mozart.Task.Prototype
   alias Mozart.Task.Repeat
-  alias Mozart.Task.Exception
+  alias Mozart.Task.Reroute
 
   alias Mozart.Type.Choice
   alias Mozart.Type.MultiChoice
@@ -343,14 +343,14 @@ defmodule Mozart.BpmProcess do
     String.split(groups_string, ",") |> Enum.map(fn s -> String.trim(s) end)
   end
 
-  defmacro exception_task(name, options, do: tasks) do
+  defmacro reroute_task(name, options, do: tasks) do
     quote do
       options = unquote(options)
       condition = Keyword.get(options, :condition)
       module = Keyword.get(options, :module) || __MODULE__
       name = unquote(name)
-      exception = %Exception{name: name, condition: condition, module: module}
-      insert_new_task(exception)
+      reroute = %Reroute{name: name, condition: condition, module: module}
+      insert_new_task(reroute)
       @capture_subtasks true
       tasks = unquote(tasks)
       first = hd(@subtasks)
@@ -358,7 +358,7 @@ defmodule Mozart.BpmProcess do
       @tasks Enum.map(
                @tasks,
                fn t ->
-                 if t.name == name, do: Map.put(t, :exception_first, first.name), else: t
+                 if t.name == name, do: Map.put(t, :reroute_first, first.name), else: t
                end
              )
       @subtasks set_next_tasks(@subtasks)

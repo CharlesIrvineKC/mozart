@@ -497,7 +497,7 @@ defmodule Mozart.ProcessEngine do
       |> Map.put(:duration, duration)
 
     open_tasks = Map.delete(state.open_tasks, task.uid)
-    completed_tasks = [task | state.completed_tasks]
+    completed_tasks = state.completed_tasks ++ [task]
 
     state
     |> Map.put(:open_tasks, open_tasks)
@@ -600,12 +600,12 @@ defmodule Mozart.ProcessEngine do
     |> execute_process()
   end
 
-  defp complete_exception_task(state, task) do
-    Logger.info("Complete exception task [#{task.name}][#{task.uid}]")
+  defp complete_reroute_task(state, task) do
+    Logger.info("Complete reroute task [#{task.name}][#{task.uid}]")
 
     next_task_name =
       if apply(task.module, task.condition, [state.data]) do
-        task.exception_first
+        task.reroute_first
       else
         task.next
       end
@@ -729,8 +729,8 @@ defmodule Mozart.ProcessEngine do
           complete_able_task.type == :repeat ->
             complete_repeat_task(state, complete_able_task)
 
-          complete_able_task.type == :exception ->
-            complete_exception_task(state, complete_able_task)
+          complete_able_task.type == :reroute ->
+            complete_reroute_task(state, complete_able_task)
         end
       else
         PS.persist_process_state(state)
@@ -767,7 +767,7 @@ defmodule Mozart.ProcessEngine do
   defp complete_able(t) when t.type == :timer, do: t.expired
   defp complete_able(t) when t.type == :parallel, do: true
   defp complete_able(t) when t.type == :case, do: true
-  defp complete_able(t) when t.type == :exception, do: true
+  defp complete_able(t) when t.type == :reroute, do: true
   defp complete_able(t) when t.type == :subprocess, do: t.complete
   defp complete_able(t) when t.type == :join, do: t.inputs == []
   defp complete_able(t) when t.type == :user, do: t.complete

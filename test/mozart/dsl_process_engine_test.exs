@@ -56,25 +56,61 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 3
   end
 
+  def fail_1(_data) do
+    false
+  end
+
+  def fail_2(_data) do
+    true
+  end
+
+  defprocess "multi branching process" do
+    prototype_task("1")
+    reroute_task "fail 1", condition: :fail_1 do
+      prototype_task("1.1")
+      prototype_task("1.1.2")
+    end
+    prototype_task("1.2")
+    reroute_task "fail 2", condition: :fail_2 do
+      prototype_task("1.2.2")
+    end
+    prototype_task("1.2.1")
+  end
+
+  test "multi branching process" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, uid, _business_key} = PE.start_process("multi branching process", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process =PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 5
+  end
+
   def test(_data) do
     false
   end
 
-  defprocess "exception task and prototype task" do
-    exception_task "exception task", condition: :test do
-      prototype_task("exception prototype task 1")
-      prototype_task("exception prototype task 2")
+  defprocess "reroute task and prototype task" do
+    reroute_task "reroute task", condition: :test do
+      prototype_task("reroute prototype task 1")
+      prototype_task("reroute prototype task 2")
     end
     prototype_task("Finish Up Task 1")
     prototype_task("Finish Up Task 2")
   end
 
-  test "exception task and prototype task" do
+  test "reroute task and prototype task" do
     PS.clear_state()
     load()
     data = %{}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process("exception task and prototype task", data)
+    {:ok, ppid, uid, _business_key} = PE.start_process("reroute task and prototype task", data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -108,8 +144,6 @@ defmodule Mozart.DslProcessEngineTest do
 
       assert PS.get_type("confirm param") == %Confirm{param_name: "confirm param", type: :confirm}
   end
-
-  def_bpm_application("bpm application test", main: "one prototype task process", data: "x,y")
 
   defprocess "one prototype task process" do
     prototype_task("a prototype task")

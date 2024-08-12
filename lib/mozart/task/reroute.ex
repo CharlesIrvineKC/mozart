@@ -1,16 +1,16 @@
-defmodule Mozart.Task.Exception do
+defmodule Mozart.Task.Reroute do
   @moduledoc false
   defstruct [
     :name,
     :condition,
     :module,
     :next,
-    :exception_first,
+    :reroute_first,
     :uid,
     :start_time,
     :finish_time,
     :duration,
     :process_uid,
-    type: :exception
+    type: :reroute
   ]
 end
