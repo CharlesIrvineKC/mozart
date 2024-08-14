@@ -1,11 +1,9 @@
 defmodule Mozart.ProcessServiceTest do
   use ExUnit.Case
 
-  alias Mozart.UserService, as: US
   alias Mozart.ProcessService, as: PS
   alias Mozart.ProcessEngine, as: PE
 
-  alias Mozart.Data.MozartUser
   alias Mozart.Data.ProcessModel
 
   alias Mozart.Task.User
@@ -16,10 +14,6 @@ defmodule Mozart.ProcessServiceTest do
 
   setup do
     PS.clear_user_tasks()
-  end
-
-  setup_all do
-    US.insert_user(%MozartUser{name: "crirvine", groups: ["admin"]})
   end
 
   def get_home_loan_process do
@@ -141,12 +135,6 @@ defmodule Mozart.ProcessServiceTest do
     completed_process = PS.get_completed_process(uid)
     completed_tasks = completed_process.completed_tasks
     assert Enum.all?(completed_tasks, fn t -> t.duration end) == true
-  end
-
-  test "get user tasks for person" do
-    PS.clear_user_tasks()
-    tasks = PS.get_user_tasks_for_user("crirvine")
-    assert tasks == []
   end
 
   defp get_exit_event_on_sub_process do

@@ -12,6 +12,7 @@ defmodule Mozart.Task.User do
     :duration,
     :business_key,
     :process_uid,
+    :assigned_user,
     assigned_groups: [],
     complete: false,
     type: :user

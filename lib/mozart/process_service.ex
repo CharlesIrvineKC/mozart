@@ -7,7 +7,6 @@ defmodule Mozart.ProcessService do
   use GenServer
 
   alias Mozart.ProcessEngine, as: PE
-  alias Mozart.UserService, as: US
 
   require Logger
 
@@ -104,13 +103,6 @@ defmodule Mozart.ProcessService do
   @doc false
   def get_user_tasks() do
     GenServer.call(__MODULE__, :get_user_tasks)
-  end
-
-  @doc """
-  Get user tasks eligible for assignment and completion by the specified user.
-  """
-  def get_user_tasks_for_user(user_id) do
-    GenServer.call(__MODULE__, {:get_user_tasks_for_user, user_id})
   end
 
   @doc false
@@ -355,12 +347,6 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:get_user_tasks_for_groups, groups}, _from, state) do
     tasks = get_user_tasks_for_groups_local(groups, state)
-    {:reply, tasks, state}
-  end
-
-  def handle_call({:get_user_tasks_for_user, user_id}, _from, state) do
-    member_groups = US.get_assigned_groups(user_id)
-    tasks = get_user_tasks_for_groups_local(member_groups, state)
     {:reply, tasks, state}
   end
 

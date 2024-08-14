@@ -20,10 +20,13 @@ defmodule Mozart.PersistenceTest do
     Process.sleep(100)
 
     PS.get_type("Decision")
-
   end
 
-  def_bpm_application("one prototype task process", main: "one prototype task process", data: "")
+  def_bpm_application("one prototype task process",
+    main: "one prototype task process",
+    data: "",
+    bk_prefix: ""
+  )
 
   defprocess "one prototype task process" do
     prototype_task("a prototype task")
@@ -54,5 +57,4 @@ defmodule Mozart.PersistenceTest do
     PE.execute(ppid)
     Process.sleep(100)
   end
-
 end

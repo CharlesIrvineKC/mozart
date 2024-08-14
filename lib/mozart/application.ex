@@ -9,7 +9,6 @@ defmodule Mozart.Application do
     children = [
       {DynamicSupervisor, name: ProcessEngineSupervisor, strategy: :one_for_one},
       {Mozart.ProcessService, nil},
-      {Mozart.UserService, nil},
       {Phoenix.PubSub, name: :pubsub}
     ]
 
