@@ -375,6 +375,54 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 2
   end
 
+  def receive_payment_details(msg) do
+    case msg do
+      {:payment_details, details} -> %{"payment_details" => details}
+      {:payment_timeout, :order_id} -> %{"payment_timeout" => :order_id}
+      {:order_canceled, :order_id} -> %{"order_canceled" => :order_id}
+    end
+  end
+
+  def payment_period_expired(data) do
+    Map.get(data, "payment_timeout")
+  end
+
+  def order_canceled(data) do
+    Map.get(data, "order_canceled")
+  end
+
+  defprocess "act on one of multiple events" do
+    prototype_task("create order")
+    receive_task("receive payment details", selector: :receive_payment_details)
+    reroute_task "payment period expired", condition: :payment_period_expired do
+      prototype_task("cancel order due to timeout")
+    end
+    reroute_task "order canceled", condition: :order_canceled do
+      prototype_task("cancel order due to order cancelation")
+    end
+    prototype_task("process payment")
+  end
+
+  test "act on one of multiple events" do
+    PS.clear_state()
+    load()
+    data = %{"barrower_id" => "511-58-1422"}
+
+    {:ok, ppid, uid, _business_key} = PE.start_process("act on one of multiple events", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    assert PE.is_complete(ppid) == false
+
+    PubSub.broadcast(:pubsub, "pe_topic", {:message, {:order_canceled, :order_id}})
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{"barrower_id" => "511-58-1422", "order_canceled" => :order_id}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 5
+  end
+
   def receive_loan_income(msg) do
     case msg do
       {:barrower_income, income} -> %{"barrower_income" => income}
