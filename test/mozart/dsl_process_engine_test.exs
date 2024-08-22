@@ -375,6 +375,46 @@ defmodule Mozart.DslProcessEngineTest do
     assert length(completed_process.completed_tasks) == 2
   end
 
+  def no_quick_score(_data) do
+    true
+  end
+
+  def do_nothing(_data) do
+    true
+  end
+
+  defprocess "get credit rating" do
+    prototype_task("get quick credit score")
+    subprocess_task("credit rating subprocess task", model: "credit rating subprocess")
+    prototype_task("user reviews credit score")
+  end
+
+  defprocess "credit rating subprocess" do
+    case_task "no quick score available" do
+      case_i :no_quick_score do
+        prototype_task("get detailed credit score")
+      end
+      case_i :do_nothing do
+        prototype_task("do notiing")
+      end
+    end
+  end
+
+  test "get credit rating" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, uid, _business_key} = PE.start_process("get credit rating", data)
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
   def receive_payment_details(msg) do
     case msg do
       {:payment_details, details} -> %{"payment_details" => details}
