@@ -328,7 +328,7 @@ defmodule Mozart.ProcessEngine do
       complete_on_task_exit_event(task.subprocess_pid)
     end
 
-    # Todo: Code exit repeat task
+    # TODO: Code exit repeat task
 
     update_completed_task_state(state, task, event.next) |> execute_process()
   end
@@ -384,10 +384,30 @@ defmodule Mozart.ProcessEngine do
     state =
       Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
 
-    if new_task.type == :repeat do
-      trigger_repeat_execution(state, new_task)
+    state =
+      if new_task.type == :repeat do
+        trigger_repeat_execution(state, new_task)
+      else
+        state
+      end
+
+    if new_task.type == :conditional do
+      trigger_conditional_execution(state, new_task)
     else
       state
+    end
+  end
+
+  defp trigger_conditional_execution(state, new_task) do
+    if apply(new_task.module, new_task.condition, [state.data]) do
+      first_task = get_new_task_instance(new_task.first, state)
+      Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
+      state = Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
+      do_new_task_side_effects(first_task.type, first_task, state)
+    else
+      new_task = Map.put(new_task, :complete, true)
+      open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
+      Map.put(state, :open_tasks, open_tasks)
     end
   end
 
@@ -503,16 +523,34 @@ defmodule Mozart.ProcessEngine do
     |> Map.put(:open_tasks, open_tasks)
     |> Map.put(:completed_tasks, completed_tasks)
     |> check_for_repeat_task_completion(task)
+    |> check_for_conditional_task_completion(task)
   end
 
   defp check_for_repeat_task_completion(state, task) do
-    r_task = find_by_last_task(state, task.name)
+    r_task = find_repeat_task_by_last_task(state, task.name)
     if r_task, do: trigger_repeat_execution(state, r_task), else: state
   end
 
-  defp find_by_last_task(state, task_name) do
+  defp check_for_conditional_task_completion(state, task) do
+    c_task = find_conditional_task_by_last_task(state, task.name)
+    if c_task do
+      c_task = Map.put(c_task, :complete, true)
+      open_tasks = Map.put(state.open_tasks, c_task.uid, c_task)
+      Map.put(state, :open_tasks, open_tasks)
+     else
+      state
+    end
+  end
+
+  defp find_repeat_task_by_last_task(state, task_name) do
     Enum.find_value(state.open_tasks, fn {_key, t} ->
       if t.type == :repeat && t.last == task_name, do: t
+    end)
+  end
+
+  defp find_conditional_task_by_last_task(state, task_name) do
+    Enum.find_value(state.open_tasks, fn {_key, t} ->
+      if t.type == :conditional && t.last == task_name, do: t
     end)
   end
 
@@ -544,6 +582,11 @@ defmodule Mozart.ProcessEngine do
 
   defp complete_repeat_task(state, task) do
     Logger.info("Complete repeat task [#{task.name}]")
+    update_completed_task_state(state, task, task.next) |> execute_process()
+  end
+
+  defp complete_conditional_task(state, task) do
+    Logger.info("Complete conditional task [#{task.name}]")
     update_completed_task_state(state, task, task.next) |> execute_process()
   end
 
@@ -729,6 +772,9 @@ defmodule Mozart.ProcessEngine do
           complete_able_task.type == :repeat ->
             complete_repeat_task(state, complete_able_task)
 
+          complete_able_task.type == :conditional ->
+            complete_conditional_task(state, complete_able_task)
+
           complete_able_task.type == :reroute ->
             complete_reroute_task(state, complete_able_task)
         end
@@ -772,5 +818,6 @@ defmodule Mozart.ProcessEngine do
   defp complete_able(t) when t.type == :join, do: t.inputs == []
   defp complete_able(t) when t.type == :user, do: t.complete
   defp complete_able(t) when t.type == :repeat, do: t.complete
+  defp complete_able(t) when t.type == :conditional, do: t.complete
   defp complete_able(t) when t.type == :prototype, do: true
 end

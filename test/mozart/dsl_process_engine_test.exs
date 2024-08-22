@@ -11,6 +11,34 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  def do_conditional_tasks(_data) do
+    true
+  end
+
+  defprocess "process with conditional task" do
+    prototype_task("initial task")
+    conditional_task "a conditional task", condition: :do_conditional_tasks do
+      prototype_task("first prototype task")
+      prototype_task("last prototype task")
+    end
+    prototype_task("final prototype task")
+  end
+
+  test "process with conditional task" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, uid, _business_key} = PE.start_process("process with conditional task", data)
+    PE.execute(ppid)
+    Process.sleep(200)
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 5
+  end
+
   defprocess "prototype task with data" do
     prototype_task("a prototype task", %{foo: :foo})
   end
@@ -412,7 +440,7 @@ defmodule Mozart.DslProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 1
+    assert length(completed_process.completed_tasks) == 3
   end
 
   def receive_payment_details(msg) do

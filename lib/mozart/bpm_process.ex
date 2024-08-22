@@ -11,6 +11,7 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
+  alias Mozart.Task.Conditional
   alias Mozart.Task.Service
   alias Mozart.Task.User
   alias Mozart.Task.Subprocess
@@ -24,6 +25,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Task.Prototype
   alias Mozart.Task.Repeat
   alias Mozart.Task.Reroute
+  alias Mozart.Task.Conditional
 
   alias Mozart.Type.Choice
   alias Mozart.Type.MultiChoice
@@ -279,6 +281,26 @@ defmodule Mozart.BpmProcess do
       task = Map.put(task, :multi_next, @route_task_names)
       insert_new_task(task)
       @route_task_names []
+    end
+  end
+
+  defmacro conditional_task(name, options, do: tasks) do
+    quote do
+      options = unquote(options)
+      condition = Keyword.get(options, :condition)
+      module = Keyword.get(options, :module) || __MODULE__
+      c_task = %Conditional{name: unquote(name), condition: condition, module: module}
+      insert_new_task(c_task)
+      @capture_subtasks true
+      unquote(tasks)
+      @subtasks set_next_tasks(@subtasks)
+      first = List.first(@subtasks)
+      last = List.last(@subtasks)
+      c_task = Map.put(c_task, :first, first.name) |> Map.put(:last, last.name)
+      @tasks Enum.map(@tasks, fn t -> if t.name == unquote(name), do: c_task, else: t end)
+      @subtask_sets [@subtasks | @subtask_sets]
+      @subtasks []
+      @capture_subtasks false
     end
   end
 
