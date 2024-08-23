@@ -194,7 +194,7 @@ defmodule Mozart.BpmProcess do
   defevent "exit loan decision 1",
     process: "exit a user task 1",
     exit_task: "user task 1",
-    selector: &BpmAppWithEvent.event_selector/1 do
+    selector: :event_selector do
       prototype_task("event 1 prototype task 1")
       prototype_task("event 1 prototype task 2")
   end
@@ -284,6 +284,37 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
+  defmacro route(do: tasks) do
+    quote do
+      @capture_subtasks true
+      unquote(tasks)
+      first = hd(@subtasks)
+      @subtasks set_next_tasks(@subtasks)
+      @subtask_sets [@subtasks | @subtask_sets]
+      @route_task_names @route_task_names ++ [first.name]
+      @subtasks []
+      @capture_subtasks false
+    end
+  end
+
+  @doc """
+  Used to define a task that executes only when a condition (function)
+  evaluates to true (a truthy value). When  the condition evaluates to
+  false, execution proceeds directly to the next task.
+
+  Example:
+
+  ```
+  defprocess "process with conditional task" do
+    prototype_task("fast initial credit check")
+    conditional_task "additional credit check", condition: :initial_check_inconclusive do
+      prototype_task("extensive credit check")
+    end
+    prototype_task("report credit check results")
+  end
+  ```
+  """
   defmacro conditional_task(name, options, do: tasks) do
     quote do
       options = unquote(options)
@@ -305,36 +336,18 @@ defmodule Mozart.BpmProcess do
   end
 
   @doc """
-  Used to define one of many parallel execution paths within a parallel task. Arguments are a task name a block of tasks.
+  Used to a sequence of tasks that repeat as long as a condition evaluates to
+  a truthy value.
 
+  Example:
   ```
-  defprocess "two parallel routes process" do
-    parallel_task "a parallel task" do
-      route do
-        user_task("1", groups: "admin")
-        user_task("2", groups: "admin")
-      end
-      route do
-        user_task("3", groups: "admin")
-        user_task("4", groups: "admin")
-      end
+  defprocess "account overdue process" do
+    repeat_task "notify customer", condition: :third_notice_sent do
+      service_task("send overdue notice", function: :record_notifiction_sent)
     end
   end
   ```
   """
-  defmacro route(do: tasks) do
-    quote do
-      @capture_subtasks true
-      unquote(tasks)
-      first = hd(@subtasks)
-      @subtasks set_next_tasks(@subtasks)
-      @subtask_sets [@subtasks | @subtask_sets]
-      @route_task_names @route_task_names ++ [first.name]
-      @subtasks []
-      @capture_subtasks false
-    end
-  end
-
   defmacro repeat_task(name, options, do: tasks) do
     quote do
       options = unquote(options)
@@ -365,6 +378,24 @@ defmodule Mozart.BpmProcess do
     String.split(groups_string, ",") |> Enum.map(fn s -> String.trim(s) end)
   end
 
+  @doc """
+  Used to reroute a process flow off the typical execution path (off the 'happy path').
+
+  Example:
+  ```
+  defprocess "act on one of multiple events" do
+    prototype_task("create order")
+    receive_task("receive payment details", selector: :receive_payment_details)
+    reroute_task "payment period expired", condition: :payment_period_expired do
+      prototype_task("cancel order due to timeout")
+    end
+    reroute_task "order canceled", condition: :order_canceled do
+      prototype_task("cancel order due to order cancelation")
+    end
+    prototype_task("process payment")
+  end
+  ```
+  """
   defmacro reroute_task(name, options, do: tasks) do
     quote do
       options = unquote(options)
@@ -396,11 +427,11 @@ defmodule Mozart.BpmProcess do
   ```
   defprocess "two case process" do
     case_task "yes or no" do
-      case_i &ME.x_less_than_y/1 do
+      case_i :x_less_than_y do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
       end
-      case_i &ME.x_greater_or_equal_y/1 do
+      case_i :x_greater_or_equal_y do
         user_task("3", groups: "admin")
         user_task("4", groups: "admin")
       end
@@ -426,7 +457,7 @@ defmodule Mozart.BpmProcess do
   ```
   defprocess "two case process" do
     case_task "yes or no" do
-      case_i &ME.x_less_than_y/1 do
+      case_i :x_less_than_y do
         user_task("1", groups: "admin")
         user_task("2", groups: "admin")
       end

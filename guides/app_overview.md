@@ -35,6 +35,8 @@ The task types currently supported are:
 | parallel_task           | Initiates two or more parallel process paths. |
 | prototype_task          | Has no behavior. Used for prototyping and subbing. |
 | repeat_task             | Repeats a set of tasks while condition is true. |
+| reroute_task            | Reroutes a process off the typical (happy) execution path |
+| conditional_task        | Implements a conditional task along the typical execution path |
 
 ## BPM Process Module
 
@@ -81,10 +83,14 @@ The purpose of a BPM application is to aid in intergration with external applica
 
 ## Parameter type specifications
 
-Each Elixir BPM process module can define any number of parameter type definitions. Here's an example:
+Each Elixir BPM process module can define any number of parameter type definitions. Here are examples
+of the currently supported types:
 
 ```elixir
-def_choice_type("Pre Approval", choices: "Approved, Declined")
+def_number_type("number param", min: 0, max: 5)
+def_choice_type("choice param", choices: "foo, bar")
+def_multi_choice_type("multi choice param", choices: "foo,bar,foobar")
+def_confirm_type("confirm param")
 ```
 
 Type definitions aid in integration with external applications, e.g. GUIs.
