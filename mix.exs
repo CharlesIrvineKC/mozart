@@ -44,7 +44,6 @@ defmodule Mozart.MixProject do
       "guides/app_overview.md",
       "guides/first_process_execution.md",
       "guides/task_types.md",
-      "guides/home_loan.md",
       "guides/event_types.md"
     ]
   end
