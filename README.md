@@ -99,8 +99,9 @@ end
 
 If you have questions, comments, suggestions, etc. feel free to open issues in GitHub.
 
-## Collaboration
+## Consulting
 
-Yes, it would be great having other developers join the effort (and discussion).
+Consulting services are avaiable for organizations and businesses which would like assistance
+using Mozart for business process automation and digitization. If interested, open a GitHub issue in the Mozart project with your contact information.
 
 

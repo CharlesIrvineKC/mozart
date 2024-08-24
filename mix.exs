@@ -4,7 +4,7 @@ defmodule Mozart.MixProject do
   def project do
     [
       app: :mozart,
-      version: "0.6.7",
+      version: "0.6.8",
       elixir: "~> 1.16",
       elixirc_paths: ["lib", "test/support"],
       start_permanent: Mix.env() == :prod,
@@ -18,8 +18,8 @@ defmodule Mozart.MixProject do
 
   defp description() do
     """
-    Mozart is a BPM platform written in Elixir. It is currently in active development,
-    but it has sufficient functionality for the development of BPM POCs.
+    Mozart is an Elixir based BPM platform. It provides a powerful
+    and highly readable DSL for implementing executable business process models.
     """
   end
 
