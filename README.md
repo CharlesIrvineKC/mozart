@@ -63,24 +63,18 @@ Another distinguishing feature is that each business process model is executed i
 
 The goal is extremely fast and relable business process model execution. We will be publishing performance metics in the near future to gage Mozart's performance charateristics. Initial results look very promising.
 
-## Project Status
+## Opera - A Proof of Concept Mozart GUI
 
-Mozart is ready for serious experimental use. A 1.0.0 release is targeted for late 2024.
-
-It requires Elixir programming, so if you already use Elixir you can be immediately productive. If you aren't using Elixir, hopefully you will have time to take a look at this amazing programming language.
-
-We will be very receptive to quickly resolve any issues you encounter and answer your questions. For either of these, please create an issues in GitHub.
-
-A proof-of-concept GUI is under active developement. It provides the ability to:
+Opera is a POC GUI for Mozart. It provides the ability to:
 
 * Load BPM process Elixir modules.
 * Start business process instances.
 * Complete user tasks.
 * Examine the state of active and completed process instances.
 
-The application is called **Opera** and is available in GitHub at https://github.com/CharlesIrvineKC/opera.
+The application is available in GitHub at https://github.com/CharlesIrvineKC/opera.
 
-It's also deployed to Fly.io at https://opera-holy-bush-2296.fly.dev/tasks.
+It's also deployed to Fly.io at https://opera-holy-bush-2296.fly.dev/
 
 ## Installation
 
@@ -101,7 +95,6 @@ If you have questions, comments, suggestions, etc. feel free to open issues in G
 
 ## Consulting
 
-Consulting services are avaiable for organizations and businesses which would like assistance
-using Mozart for business process automation and digitization. If interested, open a GitHub issue in the Mozart project with your contact information.
+Consulting services are avaiable for organizations and businesses which would like assistance using Mozart for business process automation and digitization. If interested, open a GitHub issue in the Mozart project with your contact information.
 
 
