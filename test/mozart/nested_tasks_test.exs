@@ -42,8 +42,8 @@ defmodule Mozart.NestedTasksTest do
     Process.sleep(200)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{}
+    assert completed_process.data == %{"Inner Count" => 3, "Outer Count" => 3}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 5
+    assert length(completed_process.completed_tasks) == 16
   end
 end

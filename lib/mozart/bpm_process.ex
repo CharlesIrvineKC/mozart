@@ -108,9 +108,7 @@ defmodule Mozart.BpmProcess do
       process = %ProcessModel{name: unquote(name)}
       unquote(body)
       tasks = set_next_tasks(@tasks)
-      IO.inspect(tasks, label: "*** tasks **")
       tasks = tasks ++ List.flatten(@subtask_sets)
-      IO.inspect(@subtask_sets, label: "** subtask sets **")
       check_for_duplicates("task", tasks)
       process = Map.put(process, :tasks, tasks)
       initial_task_name = Map.get(hd(tasks), :name)
@@ -344,7 +342,8 @@ defmodule Mozart.BpmProcess do
       options = unquote(options)
       condition = Keyword.get(options, :condition)
       module = Keyword.get(options, :module) || __MODULE__
-      r_task = %Repeat{name: unquote(name), condition: condition, module: module}
+      name = unquote(name)
+      r_task = %Repeat{name: name, condition: condition, module: module}
       insert_new_task(r_task)
       new_subtask_context()
       unquote(tasks)
@@ -352,8 +351,22 @@ defmodule Mozart.BpmProcess do
       first = List.first(get_subtasks())
       last = List.last(get_subtasks())
       r_task = Map.put(r_task, :first, first.name) |> Map.put(:last, last.name)
-      @tasks Enum.map(@tasks, fn t -> if t.name == unquote(name), do: r_task, else: t end)
       reset_subtasks()
+      update_tasks(r_task)
+    end
+  end
+
+  defmacro update_tasks(task) do
+    quote do
+      task = unquote(task)
+      # IO.inspect(@tasks, label: "** @tasks **")
+      # IO.inspect(@subtasks, label: "** @subtasks **")
+      if @subtasks == [] do
+        @tasks Enum.map(@tasks, fn t -> if t.name == task.name, do: task, else: t end)
+      else
+        new_subtasks = Enum.map(get_subtasks(), fn t -> if t.name == task.name, do: task, else: t end)
+        set_subtasks(new_subtasks)
+      end
     end
   end
 
@@ -371,17 +384,6 @@ defmodule Mozart.BpmProcess do
     end
   end
 
-  # @doc false
-  # defmacro insert_new_task(task) do
-  #   quote do
-  #     if @capture_subtasks do
-  #       @subtasks @subtasks ++ [unquote(task)]
-  #     else
-  #       @tasks @tasks ++ [unquote(task)]
-  #     end
-  #   end
-  # end
-
   defmacro insert_new_task(task) do
     quote do
       if @subtasks == [] do
@@ -392,17 +394,6 @@ defmodule Mozart.BpmProcess do
       end
     end
   end
-
-  # @doc false
-  # defmacro insert_new_task(task) do
-  #   quote do
-  #     if @capture_subtasks do
-  #       @subtasks @subtasks ++ [unquote(task)]
-  #     else
-  #       @tasks @tasks ++ [unquote(task)]
-  #     end
-  #   end
-  # end
 
   defmacro get_subtasks() do
     quote do
