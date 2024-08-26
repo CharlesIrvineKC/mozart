@@ -311,7 +311,8 @@ defmodule Mozart.BpmProcess do
       options = unquote(options)
       condition = Keyword.get(options, :condition)
       module = Keyword.get(options, :module) || __MODULE__
-      c_task = %Conditional{name: unquote(name), condition: condition, module: module}
+      name = unquote(name)
+      c_task = %Conditional{name: name, condition: condition, module: module}
       insert_new_task(c_task)
       new_subtask_context()
       unquote(tasks)
@@ -319,8 +320,8 @@ defmodule Mozart.BpmProcess do
       first = List.first(get_subtasks())
       last = List.last(get_subtasks())
       c_task = Map.put(c_task, :first, first.name) |> Map.put(:last, last.name)
-      @tasks Enum.map(@tasks, fn t -> if t.name == unquote(name), do: c_task, else: t end)
       reset_subtasks()
+      update_tasks(c_task)
     end
   end
 
@@ -359,8 +360,6 @@ defmodule Mozart.BpmProcess do
   defmacro update_tasks(task) do
     quote do
       task = unquote(task)
-      # IO.inspect(@tasks, label: "** @tasks **")
-      # IO.inspect(@subtasks, label: "** @subtasks **")
       if @subtasks == [] do
         @tasks Enum.map(@tasks, fn t -> if t.name == task.name, do: task, else: t end)
       else
@@ -403,7 +402,6 @@ defmodule Mozart.BpmProcess do
 
   defmacro new_subtask_context() do
     quote do
-      # @capture_subtasks true
       subtasks_push()
     end
   end
@@ -411,8 +409,6 @@ defmodule Mozart.BpmProcess do
   defmacro reset_subtasks() do
     quote do
       @subtask_sets [get_subtasks() | @subtask_sets]
-      # @subtasks []
-      # @capture_subtasks false
       subtasks_pop()
     end
   end
@@ -469,15 +465,10 @@ defmodule Mozart.BpmProcess do
       new_subtask_context()
       tasks = unquote(tasks)
       first = hd(get_subtasks())
-
-      @tasks Enum.map(
-               @tasks,
-               fn t ->
-                 if t.name == name, do: Map.put(t, :reroute_first, first.name), else: t
-               end
-             )
+      reroute = Map.put(reroute, :reroute_first, first.name)
       order_subtasks()
       reset_subtasks()
+      update_tasks(reroute)
     end
   end
 
