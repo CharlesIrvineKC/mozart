@@ -11,6 +11,7 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
+
   alias Mozart.Task.Conditional
   alias Mozart.Task.Service
   alias Mozart.Task.User
@@ -43,10 +44,13 @@ defmodule Mozart.BpmProcess do
     quote do
       import Mozart.BpmProcess
 
+      # Holds the tasks in a single process definition
       @tasks []
       @processes []
       @capture_subtasks false
+      # A stack used to hold the subtasks of a single task
       @subtasks []
+      # Holds all task subtasks. When compilation is complete list is flattened
       @subtask_sets []
       @events %{}
       @event_tasks []
@@ -104,7 +108,9 @@ defmodule Mozart.BpmProcess do
       process = %ProcessModel{name: unquote(name)}
       unquote(body)
       tasks = set_next_tasks(@tasks)
+      IO.inspect(tasks, label: "*** tasks **")
       tasks = tasks ++ List.flatten(@subtask_sets)
+      IO.inspect(@subtask_sets, label: "** subtask sets **")
       check_for_duplicates("task", tasks)
       process = Map.put(process, :tasks, tasks)
       initial_task_name = Map.get(hd(tasks), :name)
@@ -215,12 +221,12 @@ defmodule Mozart.BpmProcess do
         module: module
       }
 
-      @capture_subtasks true
+      new_subtask_context()
       unquote(tasks)
-      @subtasks set_next_tasks(@subtasks)
-      first = hd(@subtasks)
-      event = Map.put(event, :next, Map.get(hd(@subtasks), :name))
-      @event_task_process_map Map.put(@event_task_process_map, process, @subtasks)
+      order_subtasks()
+      first = hd(get_subtasks())
+      event = Map.put(event, :next, Map.get(hd(get_subtasks()), :name))
+      @event_task_process_map Map.put(@event_task_process_map, process, get_subtasks())
       @events Map.put(@events, process, event)
       @tasks []
       @subtasks []
@@ -242,17 +248,6 @@ defmodule Mozart.BpmProcess do
   def set_next_tasks([task1, task2 | rest]) do
     task1 = Map.put(task1, :next, task2.name)
     [task1 | set_next_tasks([task2 | rest])]
-  end
-
-  @doc false
-  defmacro insert_new_task(task) do
-    quote do
-      if @capture_subtasks do
-        @subtasks @subtasks ++ [unquote(task)]
-      else
-        @tasks @tasks ++ [unquote(task)]
-      end
-    end
   end
 
   @doc """
@@ -287,14 +282,12 @@ defmodule Mozart.BpmProcess do
   @doc false
   defmacro route(do: tasks) do
     quote do
-      @capture_subtasks true
+      new_subtask_context()
       unquote(tasks)
-      first = hd(@subtasks)
-      @subtasks set_next_tasks(@subtasks)
-      @subtask_sets [@subtasks | @subtask_sets]
+      first = hd(get_subtasks())
+      order_subtasks()
       @route_task_names @route_task_names ++ [first.name]
-      @subtasks []
-      @capture_subtasks false
+      reset_subtasks()
     end
   end
 
@@ -322,16 +315,14 @@ defmodule Mozart.BpmProcess do
       module = Keyword.get(options, :module) || __MODULE__
       c_task = %Conditional{name: unquote(name), condition: condition, module: module}
       insert_new_task(c_task)
-      @capture_subtasks true
+      new_subtask_context()
       unquote(tasks)
-      @subtasks set_next_tasks(@subtasks)
-      first = List.first(@subtasks)
-      last = List.last(@subtasks)
+      order_subtasks()
+      first = List.first(get_subtasks())
+      last = List.last(get_subtasks())
       c_task = Map.put(c_task, :first, first.name) |> Map.put(:last, last.name)
       @tasks Enum.map(@tasks, fn t -> if t.name == unquote(name), do: c_task, else: t end)
-      @subtask_sets [@subtasks | @subtask_sets]
-      @subtasks []
-      @capture_subtasks false
+      reset_subtasks()
     end
   end
 
@@ -355,16 +346,96 @@ defmodule Mozart.BpmProcess do
       module = Keyword.get(options, :module) || __MODULE__
       r_task = %Repeat{name: unquote(name), condition: condition, module: module}
       insert_new_task(r_task)
-      @capture_subtasks true
+      new_subtask_context()
       unquote(tasks)
-      @subtasks set_next_tasks(@subtasks)
-      first = List.first(@subtasks)
-      last = List.last(@subtasks)
+      order_subtasks()
+      first = List.first(get_subtasks())
+      last = List.last(get_subtasks())
       r_task = Map.put(r_task, :first, first.name) |> Map.put(:last, last.name)
       @tasks Enum.map(@tasks, fn t -> if t.name == unquote(name), do: r_task, else: t end)
-      @subtask_sets [@subtasks | @subtask_sets]
-      @subtasks []
-      @capture_subtasks false
+      reset_subtasks()
+    end
+  end
+
+  defmacro order_subtasks() do
+    quote do
+      ordered_subtasks = set_next_tasks(get_subtasks())
+      set_subtasks(ordered_subtasks)
+    end
+  end
+
+  defmacro set_subtasks(subtasks) do
+    quote do
+      [_first | rest] = @subtasks
+      @subtasks [unquote(subtasks) | rest]
+    end
+  end
+
+  # @doc false
+  # defmacro insert_new_task(task) do
+  #   quote do
+  #     if @capture_subtasks do
+  #       @subtasks @subtasks ++ [unquote(task)]
+  #     else
+  #       @tasks @tasks ++ [unquote(task)]
+  #     end
+  #   end
+  # end
+
+  defmacro insert_new_task(task) do
+    quote do
+      if @subtasks == [] do
+        @tasks @tasks ++ [unquote(task)]
+      else
+        new_subtasks = get_subtasks() ++ [unquote(task)]
+        set_subtasks(new_subtasks)
+      end
+    end
+  end
+
+  # @doc false
+  # defmacro insert_new_task(task) do
+  #   quote do
+  #     if @capture_subtasks do
+  #       @subtasks @subtasks ++ [unquote(task)]
+  #     else
+  #       @tasks @tasks ++ [unquote(task)]
+  #     end
+  #   end
+  # end
+
+  defmacro get_subtasks() do
+    quote do
+      hd(@subtasks)
+    end
+  end
+
+  defmacro new_subtask_context() do
+    quote do
+      # @capture_subtasks true
+      subtasks_push()
+    end
+  end
+
+  defmacro reset_subtasks() do
+    quote do
+      @subtask_sets [get_subtasks() | @subtask_sets]
+      # @subtasks []
+      # @capture_subtasks false
+      subtasks_pop()
+    end
+  end
+
+  defmacro subtasks_push() do
+    quote do
+      @subtasks [[] | @subtasks]
+    end
+  end
+
+  defmacro subtasks_pop() do
+    quote do
+      [_first | rest] = @subtasks
+      @subtasks rest
     end
   end
 
@@ -404,9 +475,9 @@ defmodule Mozart.BpmProcess do
       name = unquote(name)
       reroute = %Reroute{name: name, condition: condition, module: module}
       insert_new_task(reroute)
-      @capture_subtasks true
+      new_subtask_context()
       tasks = unquote(tasks)
-      first = hd(@subtasks)
+      first = hd(get_subtasks())
 
       @tasks Enum.map(
                @tasks,
@@ -414,10 +485,8 @@ defmodule Mozart.BpmProcess do
                  if t.name == name, do: Map.put(t, :reroute_first, first.name), else: t
                end
              )
-      @subtasks set_next_tasks(@subtasks)
-      @subtask_sets [@subtasks | @subtask_sets]
-      @subtasks []
-      @capture_subtasks false
+      order_subtasks()
+      reset_subtasks()
     end
   end
 
@@ -471,17 +540,15 @@ defmodule Mozart.BpmProcess do
   """
   defmacro case_i(expr, do: tasks) do
     quote do
-      @capture_subtasks true
+      new_subtask_context()
       unquote(tasks)
       expr = unquote(expr)
       expr = if is_atom(expr), do: Function.capture(__MODULE__, expr, 1), else: expr
-      first = hd(@subtasks)
-      @subtasks set_next_tasks(@subtasks)
-      @subtask_sets [@subtasks | @subtask_sets]
+      first = hd(get_subtasks())
+      order_subtasks()
       case = %{expression: expr, next: first.name}
       @cases @cases ++ [case]
-      @subtasks []
-      @capture_subtasks false
+      reset_subtasks()
     end
   end
 
