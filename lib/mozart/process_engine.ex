@@ -412,7 +412,6 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp trigger_repeat_execution(state, new_task) do
-    # IO.inspect(new_task, label: "** new_task **")
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
       Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
@@ -534,11 +533,12 @@ defmodule Mozart.ProcessEngine do
 
   defp check_for_conditional_task_completion(state, task) do
     c_task = find_conditional_task_by_last_task(state, task.name)
+
     if c_task do
       c_task = Map.put(c_task, :complete, true)
       open_tasks = Map.put(state.open_tasks, c_task.uid, c_task)
       Map.put(state, :open_tasks, open_tasks)
-     else
+    else
       state
     end
   end
