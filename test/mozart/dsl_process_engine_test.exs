@@ -11,16 +11,202 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  def_choice_type("Invoice Approved?", choices: "Approved, Send to Review")
+  def_choice_type("Invoice Review Determination", choices: "Rejected, Send to Approval")
+
+  def invoice_approved(data) do
+    data["Invoice Approved?"] == "Approved"
+  end
+
+  def invoice_sent_to_review(data) do
+    data["Invoice Approved?"] == "Send to Review"
+  end
+
+  def invoice_not_rejected(data) do
+    data["Invoice Review Determination"] != "Rejected"
+    true
+  end
+
+  def negotiation_not_resolved(data) do
+    data["Invoice Review Determination"] != "Rejected" &&
+      data["Invoice Approved?"] != "Approved"
+  end
+
+  defprocess "Invoice Receipt Process" do
+    prototype_task("Assign Approver Group")
+    user_task("Approve Invoice", groups: "Admin", outputs: "Invoice Approved?")
+
+    case_task "Approve Invoice Result" do
+      case_i :invoice_approved do
+        subprocess_task("Perform Bank Transfer SubTask", model: "Perform Bank Transfer")
+      end
+
+      case_i :invoice_sent_to_review do
+        subprocess_task("Perform Invoice Approval Negotiation Subprocess",
+          model: "Perform Invoice Approval Negotiation"
+        )
+      end
+    end
+  end
+
+  defprocess "Perform Bank Transfer" do
+    prototype_task("Prepare Bank Transfer")
+    prototype_task("Archive Invoice")
+  end
+
+  defprocess "Perform Invoice Approval Negotiation" do
+    repeat_task "Invoice Approval Negotiation", condition: :negotiation_not_resolved do
+      subprocess_task("Review Invoice Subprocess", model: "Review Invoice Process")
+
+      conditional_task "Reapprove if not Rejected", condition: :invoice_not_rejected do
+        user_task("Reapprove Invoice", groups: "Admin", outputs: "Invoice Approved?")
+      end
+    end
+
+    conditional_task "Negotiation Result", condition: :invoice_approved do
+      subprocess_task("Perform Bank Transfer SubTask", model: "Perform Bank Transfer")
+    end
+  end
+
+  defprocess "Review Invoice Process" do
+    user_task("Assign Reviewer", groups: "Admin", outputs: "Invoice Reviewer ID")
+    user_task("Review Invoice", groups: "Admin", outputs: "Invoice Review Determination")
+  end
+
+  test "Invoice Receipt Process" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, uid, _business_key} =
+      PE.start_process("Invoice Receipt Process", data)
+
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+
+    PS.complete_user_task(user_task.uid, %{"Invoice Approved?" => "Send to Review"})
+    Process.sleep(200)
+
+    user_task = hd(PS.get_user_tasks())
+
+    PS.complete_user_task(user_task.uid, %{"Invoice Reviewer ID" => "admin@opera.com"})
+    Process.sleep(200)
+
+    user_task = hd(PS.get_user_tasks())
+
+    PS.complete_user_task(user_task.uid, %{"Invoice Review Determination" => "Send to Approval"})
+    Process.sleep(200)
+
+    user_task = hd(PS.get_user_tasks())
+
+    PS.complete_user_task(user_task.uid, %{"Invoice Approved?" => "Approved"})
+    Process.sleep(200)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.data == %{
+             "Invoice Approved?" => "Approved",
+             "Invoice Review Determination" => "Send to Approval",
+             "Invoice Reviewer ID" => "admin@opera.com"
+           }
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 4
+  end
+
+  def while_count_less_than(data) do
+    data["count"] < 1
+  end
+
+  def true_condition(_data) do
+    true
+  end
+
+  def add_one_to_count(data) do
+    %{"count" => data["count"] + 1}
+  end
+
+  defprocess "repeat conditional task" do
+    repeat_task "repeat subprocess then conditional", condition: :while_count_less_than do
+      service_task("add 1 to count", function: :add_one_to_count, inputs: "count")
+
+      conditional_task "always execute", condition: :true_condition do
+        user_task("a user task", groups: "Admin", outputs: "foobar")
+      end
+    end
+  end
+
+  test "repeat conditional task" do
+    PS.clear_state()
+    load()
+    data = %{"count" => 0}
+
+    {:ok, ppid, uid, _business_key} =
+      PE.start_process("repeat conditional task", data)
+
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+    PS.complete_user_task(user_task.uid, %{foobar: :foobar})
+    Process.sleep(200)
+
+    assert length(PS.get_user_tasks()) == 0
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{:foobar => :foobar, "count" => 1}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 4
+  end
+
   def do_conditional_tasks(_data) do
     true
   end
 
+  defprocess "process with conditional task with user subtask" do
+    prototype_task("initial task")
+
+    conditional_task "a conditional task", condition: :do_conditional_tasks do
+      prototype_task("first prototype task")
+      user_task("last user task", groups: "Admin", outputs: "My Outputs")
+    end
+
+    prototype_task("final prototype task")
+  end
+
+  test "process with conditional task with user subtask" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, uid, _business_key} =
+      PE.start_process("process with conditional task with user subtask", data)
+
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+    PS.complete_user_task(user_task.uid, %{foobar: :foobar})
+    Process.sleep(200)
+
+    assert length(PS.get_user_tasks()) == 0
+
+    completed_process = PS.get_completed_process(uid)
+    assert completed_process.data == %{foobar: :foobar}
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 5
+  end
+
   defprocess "process with conditional task" do
     prototype_task("initial task")
+
     conditional_task "a conditional task", condition: :do_conditional_tasks do
       prototype_task("first prototype task")
       prototype_task("last prototype task")
     end
+
     prototype_task("final prototype task")
   end
 
@@ -63,6 +249,7 @@ defmodule Mozart.DslProcessEngineTest do
       route do
         prototype_task("prototype task route one")
       end
+
       route do
         prototype_task("prototype task route two")
       end
@@ -74,7 +261,7 @@ defmodule Mozart.DslProcessEngineTest do
     load()
     data = %{}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process( "parallel prototype tasks", data)
+    {:ok, ppid, uid, _business_key} = PE.start_process("parallel prototype tasks", data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -94,14 +281,18 @@ defmodule Mozart.DslProcessEngineTest do
 
   defprocess "multi branching process" do
     prototype_task("1")
+
     reroute_task "fail 1", condition: :fail_1 do
       prototype_task("1.1")
       prototype_task("1.1.2")
     end
+
     prototype_task("1.2")
+
     reroute_task "fail 2", condition: :fail_2 do
       prototype_task("1.2.2")
     end
+
     prototype_task("1.2.1")
   end
 
@@ -114,7 +305,7 @@ defmodule Mozart.DslProcessEngineTest do
     PE.execute(ppid)
     Process.sleep(100)
 
-    completed_process =PS.get_completed_process(uid)
+    completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 5
@@ -129,6 +320,7 @@ defmodule Mozart.DslProcessEngineTest do
       prototype_task("reroute prototype task 1")
       prototype_task("reroute prototype task 2")
     end
+
     prototype_task("Finish Up Task 1")
     prototype_task("Finish Up Task 2")
   end
@@ -159,18 +351,19 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(100)
 
     assert PS.get_type("number param") ==
-      %Number{param_name: "number param", max: 5, min: 0, type: :number}
+             %Number{param_name: "number param", max: 5, min: 0, type: :number}
 
     assert PS.get_type("choice param") ==
-      %Choice{param_name: "choice param", choices: ["foo", "bar"], type: :choice}
+             %Choice{param_name: "choice param", choices: ["foo", "bar"], type: :choice}
 
     assert PS.get_type("multi choice param") ==
-      %MultiChoice{
-        param_name: "multi choice param",
-        choices: ["foo", "bar", "foobar"],
-        type: :multi_choice}
+             %MultiChoice{
+               param_name: "multi choice param",
+               choices: ["foo", "bar", "foobar"],
+               type: :multi_choice
+             }
 
-      assert PS.get_type("confirm param") == %Confirm{param_name: "confirm param", type: :confirm}
+    assert PS.get_type("confirm param") == %Confirm{param_name: "confirm param", type: :confirm}
   end
 
   defprocess "one prototype task process" do
@@ -219,16 +412,16 @@ defmodule Mozart.DslProcessEngineTest do
     process: "exit a subprocess task",
     exit_task: "subprocess task",
     selector: :exit_subprocess_task_event_selector do
-      prototype_task("prototype task 1")
-      prototype_task("prototype task 2")
+    prototype_task("prototype task 1")
+    prototype_task("prototype task 2")
   end
 
-  test  "exit a subprocess task" do
+  test "exit a subprocess task" do
     PS.clear_state()
     load()
     data = %{}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process( "exit a subprocess task", data)
+    {:ok, ppid, uid, _business_key} = PE.start_process("exit a subprocess task", data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -256,16 +449,16 @@ defmodule Mozart.DslProcessEngineTest do
     process: "exit a user task",
     exit_task: "user task",
     selector: :exit_user_task_event_selector do
-      prototype_task("prototype task 1")
-      prototype_task("prototype task 2")
+    prototype_task("prototype task 1")
+    prototype_task("prototype task 2")
   end
 
-  test  "exit a user task 1" do
+  test "exit a user task 1" do
     PS.clear_state()
     load()
     data = %{}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process( "exit a user task", data)
+    {:ok, ppid, uid, _business_key} = PE.start_process("exit a user task", data)
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -290,6 +483,7 @@ defmodule Mozart.DslProcessEngineTest do
     repeat_task "repeat task", condition: :count_is_less_than_limit do
       service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
     end
+
     prototype_task("last prototype task")
   end
 
@@ -313,6 +507,7 @@ defmodule Mozart.DslProcessEngineTest do
       service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
       subprocess_task("subprocess task", model: "subprocess with one prototype test")
     end
+
     prototype_task("last prototype task")
   end
 
@@ -325,14 +520,16 @@ defmodule Mozart.DslProcessEngineTest do
     load()
     data = %{"count" => 0, "limit" => 2}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process("repeat with subprocess task process", data)
+    {:ok, ppid, uid, _business_key} =
+      PE.start_process("repeat with subprocess task process", data)
+
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 4
+    assert length(completed_process.completed_tasks) == 6
   end
 
   defprocess "repeat with subprocess service task process" do
@@ -350,14 +547,16 @@ defmodule Mozart.DslProcessEngineTest do
     load()
     data = %{"count" => 0, "limit" => 2}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process("repeat with subprocess service task process", data)
+    {:ok, ppid, uid, _business_key} =
+      PE.start_process("repeat with subprocess service task process", data)
+
     PE.execute(ppid)
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 2
+    assert length(completed_process.completed_tasks) == 3
   end
 
   defprocess "repeat task process" do
@@ -366,6 +565,7 @@ defmodule Mozart.DslProcessEngineTest do
       prototype_task("prototype task 2")
       service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
     end
+
     prototype_task("last prototype task")
   end
 
@@ -373,7 +573,9 @@ defmodule Mozart.DslProcessEngineTest do
     PS.clear_state()
     load()
 
-    {:ok, ppid, uid, _business_key} = PE.start_process("repeat task process", %{"count" => 0, "limit" => 5})
+    {:ok, ppid, uid, _business_key} =
+      PE.start_process("repeat task process", %{"count" => 0, "limit" => 5})
+
     PE.execute(ppid)
     Process.sleep(100)
 
@@ -422,6 +624,7 @@ defmodule Mozart.DslProcessEngineTest do
       case_i :no_quick_score do
         prototype_task("get detailed credit score")
       end
+
       case_i :do_nothing do
         prototype_task("do notiing")
       end
@@ -462,12 +665,15 @@ defmodule Mozart.DslProcessEngineTest do
   defprocess "act on one of multiple events" do
     prototype_task("create order")
     receive_task("receive payment details", selector: :receive_payment_details)
+
     reroute_task "payment period expired", condition: :payment_period_expired do
       prototype_task("cancel order due to timeout")
     end
+
     reroute_task "order canceled", condition: :order_canceled do
       prototype_task("cancel order due to order cancelation")
     end
+
     prototype_task("process payment")
   end
 
@@ -486,7 +692,12 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{"barrower_id" => "511-58-1422", "order_canceled" => :order_id}
+
+    assert completed_process.data == %{
+             "barrower_id" => "511-58-1422",
+             "order_canceled" => :order_id
+           }
+
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 5
   end
@@ -517,7 +728,12 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{"barrower_income" => 100000, "barrower_id" => "511-58-1422"}
+
+    assert completed_process.data == %{
+             "barrower_income" => 100_000,
+             "barrower_id" => "511-58-1422"
+           }
+
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end
@@ -531,7 +747,9 @@ defmodule Mozart.DslProcessEngineTest do
     load()
     data = %{"barrower_id" => "511-58-1422"}
 
-    {:ok, r_ppid, r_uid, _business_key} = PE.start_process("receive barrower income process", data)
+    {:ok, r_ppid, r_uid, _business_key} =
+      PE.start_process("receive barrower income process", data)
+
     PE.execute(r_ppid)
     Process.sleep(500)
 
@@ -540,14 +758,18 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(500)
 
     completed_process = PS.get_completed_process(r_uid)
-    assert completed_process.data == %{"barrower_income" => 100000, "barrower_id" => "511-58-1422"}
+
+    assert completed_process.data == %{
+             "barrower_income" => 100_000,
+             "barrower_id" => "511-58-1422"
+           }
+
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 1
   end
 
   def square(data) do
     Map.put(data, "square", data["x"] * data["x"])
-
   end
 
   defprocess "one service task process" do
@@ -654,6 +876,7 @@ defmodule Mozart.DslProcessEngineTest do
         user_task("1", groups: "admin", outputs: "na")
         user_task("2", groups: "admin", outputs: "na")
       end
+
       route do
         user_task("3", groups: "admin", outputs: "na")
         user_task("4", groups: "admin", outputs: "na")
@@ -686,6 +909,7 @@ defmodule Mozart.DslProcessEngineTest do
         user_task("1", groups: "admin", outputs: "na")
         user_task("2", groups: "admin", outputs: "na")
       end
+
       case_i :x_greater_or_equal_y do
         user_task("3", groups: "admin", outputs: "na")
         user_task("4", groups: "admin", outputs: "na")
@@ -696,7 +920,7 @@ defmodule Mozart.DslProcessEngineTest do
   test "two case process" do
     PS.clear_state()
     load()
-    data = %{"x" => 1,"y" => 2}
+    data = %{"x" => 1, "y" => 2}
 
     {:ok, ppid, _uid, _business_key} = PE.start_process("two case process", data)
     PE.execute(ppid)
@@ -718,21 +942,23 @@ defmodule Mozart.DslProcessEngineTest do
   end
 
   def send_approval(_data) do
-    IO.puts "Approval Sent"
+    IO.puts("Approval Sent")
     %{}
   end
 
   def send_decline(_data) do
-    IO.puts "Decline Sent"
+    IO.puts("Decline Sent")
     %{}
   end
 
   defprocess "two service task case process" do
     service_task("decide loan approval", function: :decide_loan, inputs: "income")
+
     case_task "yes or no" do
       case_i :loan_approved do
         service_task("send approval notice", function: :send_approval, inputs: "income")
       end
+
       case_i :loan_declined do
         service_task("send decline notice", function: :send_decline, inputs: "income")
       end
@@ -749,7 +975,7 @@ defmodule Mozart.DslProcessEngineTest do
     Process.sleep(1000)
 
     completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{"income" => 100000, "decision" => "Approved"}
+    assert completed_process.data == %{"income" => 100_000, "decision" => "Approved"}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 3
   end
@@ -801,5 +1027,4 @@ defmodule Mozart.DslProcessEngineTest do
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 2
   end
-
 end

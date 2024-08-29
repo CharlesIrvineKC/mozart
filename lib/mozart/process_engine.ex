@@ -260,18 +260,19 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast({:notify_child_complete, subprocess_name, subprocess_data}, state) do
-    {_k, subprocess_task} =
-      Enum.find(state.open_tasks, fn {_uid, t} ->
-        t.type == :subprocess && t.model == subprocess_name
+    subprocess_task =
+      Enum.find_value(state.open_tasks, fn {_uid, t} ->
+        if t.type == :subprocess && t.model == subprocess_name, do: t
       end)
 
     subprocess_task = Map.put(subprocess_task, :complete, true)
     open_tasks = Map.put(state.open_tasks, subprocess_task.uid, subprocess_task)
 
-    state
-    |> Map.put(:open_tasks, open_tasks)
-    |> Map.put(:data, subprocess_data)
-    |> execute_process()
+    state =
+      state
+      |> Map.put(:open_tasks, open_tasks)
+      |> Map.put(:data, subprocess_data)
+      |> execute_process()
 
     {:noreply, state}
   end
@@ -391,17 +392,19 @@ defmodule Mozart.ProcessEngine do
         state
       end
 
-    if new_task.type == :conditional do
-      trigger_conditional_execution(state, new_task)
-    else
-      state
-    end
+      if new_task.type == :conditional do
+        trigger_conditional_execution(state, new_task)
+      else
+        state
+      end
   end
 
   defp trigger_conditional_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
+
       Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
+
       state = Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
       do_new_task_side_effects(first_task.type, first_task, state)
     else
@@ -479,15 +482,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_existing_task_instance(state, task_name) do
-    result =
-      Enum.find(state.open_tasks, fn {_uid, task} -> task.name == task_name end)
-
-    if result,
-      do:
-        (
-          {_uid, task_instance} = result
-          task_instance
-        )
+      Enum.find_value(state.open_tasks, fn {_uid, task} -> if task.name == task_name, do: task end)
   end
 
   defp process_existing_join_next_task(state, existing_task, previous_task_name) do
@@ -701,12 +696,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_complete_able_task(state) do
-    result = Enum.find(state.open_tasks, fn {_uid, task} -> complete_able(task) end)
-
-    if result do
-      {_uid, task} = result
-      task
-    end
+    Enum.find_value(state.open_tasks, fn {_uid, task} -> if complete_able(task), do: task end)
   end
 
   defp complete_user_task_impl(state, task_uid, return_data) do

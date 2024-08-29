@@ -28,6 +28,11 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
+  def get_all_open_tasks() do
+    GenServer.call(__MODULE__, :get_all_open_tasks)
+  end
+
+  @doc false
   def get_persisted_process_state(pe_uid) do
     GenServer.call(__MODULE__, {:get_persisted_process_state, pe_uid})
   end
@@ -271,6 +276,16 @@ defmodule Mozart.ProcessService do
     state = Map.merge(state, database_config)
 
     {:noreply, state}
+  end
+
+  def handle_call(:get_all_open_tasks, _from, state) do
+    processes = state.active_processes
+    states = Enum.map(processes, fn {_uid, pid} -> Mozart.ProcessEngine.get_state(pid) end)
+    open_tasks = Enum.map(states, fn s -> s.open_tasks end)
+    task_lists = Enum.map(open_tasks, fn map -> Map.values(map) end)
+    task_list = List.flatten(task_lists)
+    open_task_names = Enum.map(task_list, fn t -> t.name end)
+    {:reply, open_task_names, state}
   end
 
   def handle_call({:get_processes_for_business_key, business_key}, _from, state) do
