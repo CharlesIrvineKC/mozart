@@ -360,10 +360,13 @@ defmodule Mozart.BpmProcess do
   defmacro update_tasks(task) do
     quote do
       task = unquote(task)
+
       if @subtasks == [] do
         @tasks Enum.map(@tasks, fn t -> if t.name == task.name, do: task, else: t end)
       else
-        new_subtasks = Enum.map(get_subtasks(), fn t -> if t.name == task.name, do: task, else: t end)
+        new_subtasks =
+          Enum.map(get_subtasks(), fn t -> if t.name == task.name, do: task, else: t end)
+
         set_subtasks(new_subtasks)
       end
     end
@@ -702,19 +705,11 @@ defmodule Mozart.BpmProcess do
   """
   defmacro user_task(name, args) do
     quote do
-      {groups, inputs, outputs} =
-        case unquote(args) do
-          [groups: groups, inputs: inputs, outputs: outputs] ->
-            groups = parse_user_groups(groups)
-            inputs = parse_params(inputs)
-            outputs = parse_params(outputs)
-            {groups, inputs, outputs}
+      args = unquote(args)
 
-          [groups: groups, outputs: outputs] ->
-            groups = parse_user_groups(groups)
-            outputs = parse_params(outputs)
-            {groups, nil, outputs}
-        end
+      groups = Keyword.get(args, :groups) |> then(fn g -> if g, do: parse_user_groups(g) end)
+      inputs = Keyword.get(args, :inputs) |> then(fn i -> if i, do: parse_params(i) end)
+      outputs = Keyword.get(args, :outputs) |> then(fn o -> if o, do: parse_params(o) end)
 
       user_task = %User{
         name: unquote(name),
