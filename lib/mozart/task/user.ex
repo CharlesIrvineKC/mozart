@@ -2,7 +2,8 @@ defmodule Mozart.Task.User do
   @moduledoc false
   defstruct [
     :name,
-    :function,
+    :listener,
+    :module,
     :uid,
     :next,
     :inputs,

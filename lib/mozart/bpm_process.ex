@@ -710,12 +710,16 @@ defmodule Mozart.BpmProcess do
       groups = Keyword.get(args, :groups) |> then(fn g -> if g, do: parse_user_groups(g) end)
       inputs = Keyword.get(args, :inputs) |> then(fn i -> if i, do: parse_params(i) end)
       outputs = Keyword.get(args, :outputs) |> then(fn o -> if o, do: parse_params(o) end)
+      listener = Keyword.get(args, :listener)
+      module = Keyword.get(args, :module) || __MODULE__
 
       user_task = %User{
         name: unquote(name),
         assigned_groups: groups,
         inputs: inputs,
-        outputs: outputs
+        outputs: outputs,
+        listener: listener,
+        module: module
       }
 
       insert_new_task(user_task)

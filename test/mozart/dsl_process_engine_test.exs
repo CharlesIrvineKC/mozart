@@ -11,6 +11,30 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  def assign_user(user_task, data) do
+    Map.put(user_task, :assigned_user, data["Assigned User"])
+  end
+
+  defprocess "user task with listener" do
+    user_task("a user task", listener: :assign_user)
+  end
+
+  test "user task with listener" do
+    PS.clear_state()
+    load()
+    data = %{"Assigned User" => "admin@opera.com"}
+
+    {:ok, ppid, _uid, _business_key} =
+      PE.start_process("user task with listener", data)
+
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+
+    assert user_task.assigned_user == "admin@opera.com"
+  end
+
   def_choice_type("Invoice Approved?", choices: "Approved, Send to Review")
   def_choice_type("Invoice Review Determination", choices: "Rejected, Send to Approval")
 

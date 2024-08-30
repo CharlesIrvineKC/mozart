@@ -392,11 +392,11 @@ defmodule Mozart.ProcessEngine do
         state
       end
 
-      if new_task.type == :conditional do
-        trigger_conditional_execution(state, new_task)
-      else
-        state
-      end
+    if new_task.type == :conditional do
+      trigger_conditional_execution(state, new_task)
+    else
+      state
+    end
   end
 
   defp trigger_conditional_execution(state, new_task) do
@@ -438,6 +438,13 @@ defmodule Mozart.ProcessEngine do
         Map.take(state.data, new_task.inputs)
       else
         state.data
+      end
+
+    new_task =
+      if new_task.listener do
+        apply(new_task.module, new_task.listener, [new_task, input_data])
+      else
+        new_task
       end
 
     new_task = Map.put(new_task, :data, input_data) |> Map.put(:business_key, state.business_key)
@@ -482,7 +489,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_existing_task_instance(state, task_name) do
-      Enum.find_value(state.open_tasks, fn {_uid, task} -> if task.name == task_name, do: task end)
+    Enum.find_value(state.open_tasks, fn {_uid, task} -> if task.name == task_name, do: task end)
   end
 
   defp process_existing_join_next_task(state, existing_task, previous_task_name) do
