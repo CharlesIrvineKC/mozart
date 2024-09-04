@@ -357,6 +357,7 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   defmacro update_tasks(task) do
     quote do
       task = unquote(task)
@@ -372,6 +373,7 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   defmacro order_subtasks() do
     quote do
       ordered_subtasks = set_next_tasks(get_subtasks())
@@ -379,6 +381,7 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   defmacro set_subtasks(subtasks) do
     quote do
       [_first | rest] = @subtasks
@@ -386,6 +389,7 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   defmacro insert_new_task(task) do
     quote do
       if @subtasks == [] do
@@ -397,18 +401,21 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   defmacro get_subtasks() do
     quote do
       hd(@subtasks)
     end
   end
 
+  @doc false
   defmacro new_subtask_context() do
     quote do
       subtasks_push()
     end
   end
 
+  @doc false
   defmacro reset_subtasks() do
     quote do
       @subtask_sets [get_subtasks() | @subtask_sets]
@@ -416,12 +423,14 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   defmacro subtasks_push() do
     quote do
       @subtasks [[] | @subtasks]
     end
   end
 
+  @doc false
   defmacro subtasks_pop() do
     quote do
       [_first | rest] = @subtasks

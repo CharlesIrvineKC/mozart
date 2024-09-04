@@ -75,7 +75,7 @@ defmodule Mozart.ProcessEngine do
     {:ok, pid, uid, business_key}
   end
 
-  @doc nil
+  @doc false
   def restart_process(state) do
     uid = state.uid
     model_name = state.model_name

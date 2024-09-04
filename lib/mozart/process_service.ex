@@ -165,10 +165,12 @@ defmodule Mozart.ProcessService do
     GenServer.call(__MODULE__, {:load_process_models, models})
   end
 
+  @doc false
   def load_types(types) do
     GenServer.call(__MODULE__, {:load_types, types})
   end
 
+  @doc false
   def get_type(type_name) do
     GenServer.call(__MODULE__, {:get_type, type_name})
   end
