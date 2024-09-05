@@ -11,6 +11,30 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  defprocess "user task has top level model name" do
+    user_task("a user task", groups: "admin")
+  end
+
+  defprocess "top level process" do
+    subprocess_task("a subprocess task", model: "user task has top level model name")
+  end
+
+  test "top level process" do
+    PS.clear_state()
+    load()
+    data = %{}
+
+    {:ok, ppid, _uid, _business_key} =
+      PE.start_process("top level process", data)
+
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+
+    assert user_task.top_level_model_name == "top level process"
+  end
+
   def assign_user(user_task, data) do
     Map.put(user_task, :assigned_user, data["Assigned User"])
   end

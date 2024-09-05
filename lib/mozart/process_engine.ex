@@ -16,9 +16,12 @@ defmodule Mozart.ProcessEngine do
   ## Client API
 
   @doc false
-  def start_link(uid, model_name, data, business_key, parent_uid) do
+  def start_link(uid, model_name, data, business_key, top_level_model_name, parent_uid) do
     {:ok, pid} =
-      GenServer.start_link(__MODULE__, {uid, model_name, data, business_key, parent_uid})
+      GenServer.start_link(
+        __MODULE__,
+        {uid, model_name, data, business_key, top_level_model_name, parent_uid}
+      )
 
     {:ok, pid, {uid, business_key}}
   end
@@ -58,14 +61,22 @@ defmodule Mozart.ProcessEngine do
   {:ok, ppid, uid, business_key} = ProcessEngine.start_process("a process model name", )
   ```
   """
-  def start_process(model_name, data, business_key \\ nil, parent_uid \\ nil) do
+  def start_process(
+        model_name,
+        data,
+        business_key \\ nil,
+        top_level_model_name \\ nil,
+        parent_uid \\ nil
+      ) do
     uid = UUID.generate()
     business_key = business_key || UUID.generate()
+    top_level_model_name = top_level_model_name || model_name
 
     child_spec = %{
       id: MyProcessEngine,
       start:
-        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, business_key, parent_uid]},
+        {Mozart.ProcessEngine, :start_link,
+         [uid, model_name, data, business_key, top_level_model_name, parent_uid]},
       restart: :transient
     }
 
@@ -81,12 +92,14 @@ defmodule Mozart.ProcessEngine do
     model_name = state.model_name
     data = state.data
     business_key = state.business_key
+    top_level_model_name = state.top_level_model_name
     parent_uid = state.parent_uid
 
     child_spec = %{
       id: MyProcessEngine,
       start:
-        {Mozart.ProcessEngine, :start_link, [uid, model_name, data, business_key, parent_uid]},
+        {Mozart.ProcessEngine, :start_link,
+         [uid, model_name, data, business_key, top_level_model_name, parent_uid]},
       restart: :transient
     }
 
@@ -163,13 +176,14 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   @doc false
-  def init({uid, model_name, data, business_key, parent_uid}) do
+  def init({uid, model_name, data, business_key, top_level_model_name, parent_uid}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
     state =
       pe_recovered_state ||
         %ProcessState{
           model_name: model_name,
+          top_level_model_name: top_level_model_name,
           data: data,
           uid: uid,
           parent_uid: parent_uid,
@@ -382,6 +396,9 @@ defmodule Mozart.ProcessEngine do
 
     state = do_new_task_side_effects(new_task.type, new_task, state)
 
+    new_task =
+      if new_task.type == :user, do: update_user_task(new_task, state), else: new_task
+
     state =
       Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
 
@@ -399,9 +416,36 @@ defmodule Mozart.ProcessEngine do
     end
   end
 
+  defp update_user_task(new_task, state) do
+    input_data =
+      if new_task.inputs do
+        Map.take(state.data, new_task.inputs)
+      else
+        state.data
+      end
+
+    new_task =
+      if new_task.listener do
+        apply(new_task.module, new_task.listener, [new_task, input_data])
+      else
+        new_task
+      end
+
+    new_task =
+      Map.put(new_task, :data, input_data)
+      |> Map.put(:business_key, state.business_key)
+      |> Map.put(:top_level_model_name, state.top_level_model_name)
+
+    PS.insert_user_task(new_task)
+
+    new_task
+  end
+
   defp trigger_conditional_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
+      first_task =
+        if first_task.type == :user, do: update_user_task(first_task, state), else: first_task
 
       Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
 
@@ -417,6 +461,8 @@ defmodule Mozart.ProcessEngine do
   defp trigger_repeat_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
+      first_task =
+        if first_task.type == :user, do: update_user_task(first_task, state), else: first_task
       Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
       state = Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
       do_new_task_side_effects(first_task.type, first_task, state)
@@ -432,26 +478,6 @@ defmodule Mozart.ProcessEngine do
     state
   end
 
-  defp do_new_task_side_effects(:user, new_task, state) do
-    input_data =
-      if new_task.inputs do
-        Map.take(state.data, new_task.inputs)
-      else
-        state.data
-      end
-
-    new_task =
-      if new_task.listener do
-        apply(new_task.module, new_task.listener, [new_task, input_data])
-      else
-        new_task
-      end
-
-    new_task = Map.put(new_task, :data, input_data) |> Map.put(:business_key, state.business_key)
-    PS.insert_user_task(new_task)
-    state
-  end
-
   defp do_new_task_side_effects(:send, new_task, state) do
     PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
     state
@@ -461,7 +487,13 @@ defmodule Mozart.ProcessEngine do
     data = state.data
 
     {:ok, process_pid, _uid, _business_key} =
-      start_process(new_task.model, data, state.business_key, state.uid)
+      start_process(
+        new_task.model,
+        data,
+        state.business_key,
+        state.top_level_model_name,
+        state.uid
+      )
 
     execute(process_pid)
     state
@@ -472,11 +504,14 @@ defmodule Mozart.ProcessEngine do
   defp create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
     existing_task = get_existing_task_instance(state, next_task_name)
 
-    if existing_task && existing_task.type == :join do
-      process_existing_join_next_task(state, existing_task, previous_task_name)
-    else
-      create_new_next_task(state, next_task_name, previous_task_name)
-    end
+    state =
+      if existing_task && existing_task.type == :join do
+        process_existing_join_next_task(state, existing_task, previous_task_name)
+      else
+        create_new_next_task(state, next_task_name, previous_task_name)
+      end
+
+    state
   end
 
   defp process_next_task_list(state, [], _parent_name) do

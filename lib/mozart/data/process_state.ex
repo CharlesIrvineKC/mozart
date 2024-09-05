@@ -44,6 +44,7 @@ end
     :business_key,
     :parent_uid,
     :model_name,
+    :top_level_model_name,
     :start_time,
     :end_time,
     :execute_duration,
