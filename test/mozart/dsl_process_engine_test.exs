@@ -11,6 +11,21 @@ defmodule Mozart.DslProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  def_bpm_application("Test BPM Application",
+    main: "top level process",
+    data: "foo, bar",
+    bk_prefix: "bar,foo"
+  )
+
+  test "bpm application" do
+    PS.clear_state()
+    load()
+
+    apps = PS.get_bpm_applications()
+    {"Test BPM Application", app} = hd(apps)
+    assert app.module == Mozart.DslProcessEngineTest
+  end
+
   defprocess "user task has top level model name" do
     user_task("a user task", groups: "admin")
   end

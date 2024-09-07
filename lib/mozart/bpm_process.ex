@@ -85,7 +85,8 @@ defmodule Mozart.BpmProcess do
         name: unquote(name),
         main: unquote(main),
         data: data,
-        bk_prefix: prefix
+        bk_prefix: prefix,
+        module: __MODULE__
       }
 
       @bpm_applications [bpm_application | @bpm_applications]
