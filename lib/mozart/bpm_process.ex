@@ -257,12 +257,12 @@ defmodule Mozart.BpmProcess do
   defprocess "two parallel routes process" do
     parallel_task "a parallel task" do
       route do
-        user_task("1", groups: "admin")
-        user_task("2", groups: "admin")
+        user_task("1", group: "admin")
+        user_task("2", group: "admin")
       end
       route do
-        user_task("3", groups: "admin")
-        user_task("4", groups: "admin")
+        user_task("3", group: "admin")
+        user_task("4", group: "admin")
       end
     end
   end
@@ -492,12 +492,12 @@ defmodule Mozart.BpmProcess do
   defprocess "two case process" do
     case_task "yes or no" do
       case_i :x_less_than_y do
-        user_task("1", groups: "admin")
-        user_task("2", groups: "admin")
+        user_task("1", group: "admin")
+        user_task("2", group: "admin")
       end
       case_i :x_greater_or_equal_y do
-        user_task("3", groups: "admin")
-        user_task("4", groups: "admin")
+        user_task("3", group: "admin")
+        user_task("4", group: "admin")
       end
     end
   end
@@ -522,12 +522,12 @@ defmodule Mozart.BpmProcess do
   defprocess "two case process" do
     case_task "yes or no" do
       case_i :x_less_than_y do
-        user_task("1", groups: "admin")
-        user_task("2", groups: "admin")
+        user_task("1", group: "admin")
+        user_task("2", group: "admin")
       end
       case_i :x_greater_or_equal_y do
-        user_task("3", groups: "admin")
-        user_task("4", groups: "admin")
+        user_task("3", group: "admin")
+        user_task("4", group: "admin")
       end
     end
   end
@@ -709,7 +709,7 @@ defmodule Mozart.BpmProcess do
 
   ```
   defprocess "single user task process" do
-    user_task("add one to x", groups: "admin,customer_service")
+    user_task("add one to x", group: "admin,customer_service")
   end
   ```
   """
@@ -717,7 +717,7 @@ defmodule Mozart.BpmProcess do
     quote do
       args = unquote(args)
 
-      groups = Keyword.get(args, :groups) |> then(fn g -> if g, do: parse_user_groups(g) end)
+      group = Keyword.get(args, :group)
       inputs = Keyword.get(args, :inputs) |> then(fn i -> if i, do: parse_params(i) end)
       outputs = Keyword.get(args, :outputs) |> then(fn o -> if o, do: parse_params(o) end)
       listener = Keyword.get(args, :listener)
@@ -725,7 +725,7 @@ defmodule Mozart.BpmProcess do
 
       user_task = %User{
         name: unquote(name),
-        assigned_groups: groups,
+        assigned_group: group,
         inputs: inputs,
         outputs: outputs,
         listener: listener,

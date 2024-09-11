@@ -15,7 +15,7 @@ defmodule MyBpmApplication do
   ## User Task Example
 
   defprocess "one user task process" do
-    user_task("user gives sum of x and y", groups: "admin", inputs: "x,y", outputs: "na")
+    user_task("user gives sum of x and y", group: "admin", inputs: "x,y", outputs: "na")
   end
 
   ## Subprocess Task Example
@@ -107,7 +107,7 @@ defmodule MyBpmApplication do
     repeat_task "repeat task", condition: :continue do
       prototype_task("prototype task 1")
       prototype_task("prototype task 2")
-      user_task("user task", groups: "admin", outputs: "na")
+      user_task("user task", group: "admin", outputs: "na")
     end
     prototype_task("last prototype task")
   end
@@ -118,7 +118,7 @@ defmodule MyBpmApplication do
     repeat_task "repeat task", condition: :continue do
       subprocess_task("subprocess task", model: "subprocess with 3 prototype tasks")
       prototype_task("prototype task")
-      user_task("user task", groups: "admin", outputs: "na")
+      user_task("user task", group: "admin", outputs: "na")
     end
     prototype_task("last prototype task")
   end
@@ -134,7 +134,7 @@ defmodule MyBpmApplication do
   defprocess "repeat with subprocess task process 2" do
     repeat_task "repeat task", condition: :continue do
       subprocess_task("subprocess task", model: "subprocess with one prototype test")
-      user_task("user task", groups: "admin", outputs: "na")
+      user_task("user task", group: "admin", outputs: "na")
     end
     prototype_task("last prototype task")
   end
@@ -193,7 +193,7 @@ defmodule MyBpmApplication do
   end
 
   defprocess "subprocess process" do
-    user_task("user task", groups: "admin", outputs: "na")
+    user_task("user task", group: "admin", outputs: "na")
   end
 
   defevent "exit subprocess task",

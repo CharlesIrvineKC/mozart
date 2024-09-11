@@ -8,7 +8,7 @@ defmodule Mozart.PersistenceTest do
   def_choice_type("Decision", choices: "Yes, No")
 
   defprocess "choice process" do
-    user_task("a user task", groups: "Admin", outputs: "Decision")
+    user_task("a user task", group: "Admin", outputs: "Decision")
   end
 
   test "choice process" do
@@ -42,7 +42,7 @@ defmodule Mozart.PersistenceTest do
   end
 
   defprocess "one user task process" do
-    user_task("add one to x 1", groups: "admin", outputs: "x")
+    user_task("add one to x 1", group: "admin", outputs: "x")
   end
 
   test "one user task process" do

@@ -136,9 +136,9 @@ A **User Task** works by having a user complete some required task. This often t
 
 **Important Note**: Users interact with a BPM platfrom such as Mozart by way of end user GUI application. The user application will allow the user to find tasks appropriate to his role. Once the user accepts responsibility for a task, the application will then provide an input form appropriate for accomplishing the given task. For now, we will use Mozart functions for finding and completing tasks.
 
-A user task has two unique arguments: **groups** and **:inputs**.
+A user task has two unique arguments: **group** and **:inputs**.
 
-* The **groups** field specifies the user groups in the form of a comma separated list that are elibigle to complete the task. 
+* The **group** field specifies the user group in the form of a comma separated list that are elibigle to complete the task. 
 * The **inputs** field is used to select which process data fields are passed to the user that will compleete the task. If no value is supplied for this field, the entire process data is passed.
 
 ### User Task example
@@ -154,7 +154,7 @@ defmodule MyBpmApplication do
   ## User Task Example
 
   defprocess "one user task process" do
-    user_task("user gives sum of x and y", groups: "admin", inputs: "x,y")
+    user_task("user gives sum of x and y", group: "admin", inputs: "x,y")
   end
 
 end
@@ -621,7 +621,7 @@ defmodule MyBpmApplication do
     repeat_task "repeat task", &ME.continue/1 do
       prototype_task("prototype task 1")
       prototype_task("prototype task 2")
-      user_task("user task", groups: "admin")
+      user_task("user task", group: "admin")
     end
     prototype_task("last prototype task")
   end

@@ -8,9 +8,9 @@ If you are a developer working for a bank, you might be asked to develop a proce
 
 ```elixir
   defprocess "process loan application" do
-    user_task("record and check loan application",  groups: "customer service")
-    user_task("determine loan acceptance",          groups: "underwriting")
-    user_task("inform customer of result",          groups: "customer service")
+    user_task("record and check loan application",  group: "customer service")
+    user_task("determine loan acceptance",          group: "underwriting")
+    user_task("inform customer of result",          group: "customer service")
   end
 ```
 
@@ -53,8 +53,8 @@ defmodule MyProcessApplication do
   end
 
   defprocess "process loan application" do
-    user_task("record and check loan application", groups: "customer service")
-    user_task("determine loan acceptance", groups: "underwriting")
+    user_task("record and check loan application", group: "customer service")
+    user_task("determine loan acceptance", group: "underwriting")
     service_task("inform customer of result", function: &MyProcessApplication.send_loan_response/1)
   end
 
@@ -127,8 +127,8 @@ When process execution is triggered by calling **ProcessEngine.execute/1**, the 
 
 ```elixir
  defprocess "process loan application" do
-    user_task("record and check loan application", groups: "customer service")
-    user_task("determine loan acceptance", groups: "underwriting")
+    user_task("record and check loan application", group: "customer service")
+    user_task("determine loan acceptance", group: "underwriting")
     service_task("inform customer of result", function: &MyProcessApplication.send_loan_response/1)
   end
 ```

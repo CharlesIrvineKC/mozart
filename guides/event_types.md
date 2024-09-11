@@ -51,7 +51,7 @@ defmodule MyBpmApplication do
   end
 
   defprocess "subprocess process" do
-    user_task("user task", groups: "admin")
+    user_task("user task", group: "admin")
   end
 
   defevent "exit subprocess task",

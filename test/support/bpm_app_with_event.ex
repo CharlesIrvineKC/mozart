@@ -10,7 +10,7 @@ defmodule BpmAppWithEvent do
   end
 
   defprocess "exit a user task 1" do
-    user_task("user task 1", groups: "admin", outputs: "tbd")
+    user_task("user task 1", group: "admin", outputs: "tbd")
   end
 
   defevent "exit loan decision 1",
@@ -22,7 +22,7 @@ defmodule BpmAppWithEvent do
   end
 
   defprocess "exit a user task 2" do
-    user_task("user task 2", groups: "admin", outputs: "tbd")
+    user_task("user task 2", group: "admin", outputs: "tbd")
   end
 
   defevent "exit loan decision 2",

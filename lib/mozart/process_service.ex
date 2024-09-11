@@ -79,10 +79,10 @@ defmodule Mozart.ProcessService do
   end
 
   @doc """
-  Returns the user tasks that can be completed by users belonging to one of the input groups.
+  Returns the user tasks that can be completed by users belonging to one of the input group.
   """
-  def get_user_tasks_for_groups(groups) do
-    GenServer.call(__MODULE__, {:get_user_tasks_for_groups, groups})
+  def get_user_tasks_for_group(group) do
+    GenServer.call(__MODULE__, {:get_user_tasks_for_group, group})
   end
 
   @doc false
@@ -362,8 +362,8 @@ defmodule Mozart.ProcessService do
     {:reply, completed_process.data, state}
   end
 
-  def handle_call({:get_user_tasks_for_groups, groups}, _from, state) do
-    tasks = get_user_tasks_for_groups_local(groups, state)
+  def handle_call({:get_user_tasks_for_group, group}, _from, state) do
+    tasks = get_user_tasks_for_groups_local(group, state)
     {:reply, tasks, state}
   end
 
@@ -518,12 +518,10 @@ defmodule Mozart.ProcessService do
     CubDB.put(state.user_task_db, task.uid, task)
   end
 
-  defp get_user_tasks_for_groups_local(groups, state) do
-    intersection = fn l1, l2 -> Enum.filter(l2, fn item -> Enum.member?(l1, item) end) end
-
+  defp get_user_tasks_for_groups_local(group, state) do
     CubDB.select(state.user_task_db)
     |> Stream.map(fn {_uid, t} -> t end)
-    |> Stream.filter(fn t -> intersection.(groups, t.assigned_groups) end)
+    |> Stream.filter(&(&1.assigned_group == group))
     |> Enum.to_list()
   end
 
