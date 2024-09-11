@@ -7,6 +7,7 @@ defmodule Mozart.ProcessServiceTest do
 
   defprocess "process with one user task" do
     user_task("a user task", group: "admin")
+    prototype_task("a prototype test")
   end
 
   test "process with one user task" do
@@ -24,6 +25,10 @@ defmodule Mozart.ProcessServiceTest do
 
     assert user_task.assigned_group == "admin"
     assert PS.get_user_tasks_for_group("admin") == [user_task]
+  end
+
+  test "get process source code" do
+    get_process("process with one user task")
   end
 
 end
