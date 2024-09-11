@@ -1,4 +1,4 @@
-defmodule Mozart.DslProcessEngineTest do
+defmodule Mozart.ProcessEngineTest do
   use ExUnit.Case
   use Mozart.BpmProcess
 
@@ -23,7 +23,7 @@ defmodule Mozart.DslProcessEngineTest do
 
     apps = PS.get_bpm_applications()
     {"Test BPM Application", app} = hd(apps)
-    assert app.module == Mozart.DslProcessEngineTest
+    assert app.module == Mozart.ProcessEngineTest
   end
 
   defprocess "user task has top level model name" do
