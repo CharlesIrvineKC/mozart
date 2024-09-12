@@ -74,16 +74,15 @@ defmodule Mozart.BpmProcess do
   initialized with.
 
   Example:
-  def_bpm_application("Home Loan Process", main: "Home Loan", data: "Customer Name,Income,Debt")
+  def_bpm_application("Home Loan", data: "Customer Name,Income,Debt")
   """
-  defmacro def_bpm_application(name, main: main, data: data, bk_prefix: prefix) do
+  defmacro def_bpm_application(main_model, data: data, bk_prefix: prefix) do
     quote do
       data = parse_params(unquote(data))
       prefix = parse_params(unquote(prefix))
 
       bpm_application = %BpmApplication{
-        name: unquote(name),
-        main: unquote(main),
+        main_model: unquote(main_model),
         data: data,
         bk_prefix: prefix,
         module: __MODULE__

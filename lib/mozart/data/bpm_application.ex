@@ -1,4 +1,4 @@
 defmodule Mozart.Data.BpmApplication do
   @moduledoc false
-  defstruct [:name, :main, :data, :bk_prefix, :module]
+  defstruct [:main_model, :data, :bk_prefix, :module]
 end

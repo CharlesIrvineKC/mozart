@@ -74,7 +74,7 @@ MyProcessApplication.load()
 Each Elixir BPM module can define zero or more **BPM Applications**. Here is an example
 
 ```elixir
-def_bpm_application("Home Loan Process", main: "Home Loan", data: "Customer Name,Income,Debt")
+def_bpm_application("Home Loan", data: "Customer Name,Income,Debt")
 ```
 Each application specifies a user level name, the name of the top level process definition and a set of required 
 input parameters.

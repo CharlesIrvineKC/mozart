@@ -390,7 +390,7 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:load_bpm_applications, bpm_applications}, _from, state) do
     Enum.each(bpm_applications, fn app ->
-      CubDB.put(state.bpm_application_db, app.name, app) end)
+      CubDB.put(state.bpm_application_db, app.main_model, app) end)
     {:reply, :ok, state}
   end
 

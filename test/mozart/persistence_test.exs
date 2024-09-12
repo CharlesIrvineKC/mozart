@@ -23,7 +23,6 @@ defmodule Mozart.PersistenceTest do
   end
 
   def_bpm_application("one prototype task process",
-    main: "one prototype task process",
     data: "",
     bk_prefix: ""
   )

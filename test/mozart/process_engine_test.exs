@@ -11,18 +11,14 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
-  def_bpm_application("Test BPM Application",
-    main: "top level process",
-    data: "foo, bar",
-    bk_prefix: "bar,foo"
-  )
+  def_bpm_application("test bpm app", data: "foo, bar", bk_prefix: "bar,foo")
 
-  test "bpm application" do
+  test "test bpm app" do
     PS.clear_state()
     load()
 
     apps = PS.get_bpm_applications()
-    {"Test BPM Application", app} = hd(apps)
+    {"test bpm app", app} = hd(apps)
     assert app.module == Mozart.ProcessEngineTest
   end
 
