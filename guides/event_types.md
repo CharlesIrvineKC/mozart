@@ -47,7 +47,7 @@ defmodule MyBpmApplication do
   end
 
   defprocess "exit a subprocess task" do
-    subprocess_task("subprocess task", model: "subprocess process")
+    subprocess_task("subprocess task", process: "subprocess process")
   end
 
   defprocess "subprocess process" do

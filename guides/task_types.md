@@ -252,7 +252,7 @@ defmodule MyBpmApplication do
 
   defprocess "subprocess task process" do
     service_task("service task 1", function: &MyBpmApplication.add_one_to_value/1, inputs: "value")
-    subprocess_task("subprocess task", model: "two service tasks")
+    subprocess_task("subprocess task", process: "two service tasks")
   end
 
 end

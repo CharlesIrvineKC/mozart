@@ -16,11 +16,11 @@ defmodule Mozart.ProcessEngine do
   ## Client API
 
   @doc false
-  def start_link(uid, model_name, data, business_key, top_level_model_name, parent_uid) do
+  def start_link(uid, process, data, business_key, top_level_process, parent_uid) do
     {:ok, pid} =
       GenServer.start_link(
         __MODULE__,
-        {uid, model_name, data, business_key, top_level_model_name, parent_uid}
+        {uid, process, data, business_key, top_level_process, parent_uid}
       )
 
     {:ok, pid, {uid, business_key}}
@@ -62,21 +62,21 @@ defmodule Mozart.ProcessEngine do
   ```
   """
   def start_process(
-        model_name,
+        process,
         data,
         business_key \\ nil,
-        top_level_model_name \\ nil,
+        top_level_process \\ nil,
         parent_uid \\ nil
       ) do
     uid = UUID.generate()
     business_key = business_key || UUID.generate()
-    top_level_model_name = top_level_model_name || model_name
+    top_level_process = top_level_process || process
 
     child_spec = %{
       id: MyProcessEngine,
       start:
         {Mozart.ProcessEngine, :start_link,
-         [uid, model_name, data, business_key, top_level_model_name, parent_uid]},
+         [uid, process, data, business_key, top_level_process, parent_uid]},
       restart: :transient
     }
 
@@ -89,17 +89,17 @@ defmodule Mozart.ProcessEngine do
   @doc false
   def restart_process(state) do
     uid = state.uid
-    model_name = state.model_name
+    process = state.process
     data = state.data
     business_key = state.business_key
-    top_level_model_name = state.top_level_model_name
+    top_level_process = state.top_level_process
     parent_uid = state.parent_uid
 
     child_spec = %{
       id: MyProcessEngine,
       start:
         {Mozart.ProcessEngine, :start_link,
-         [uid, model_name, data, business_key, top_level_model_name, parent_uid]},
+         [uid, process, data, business_key, top_level_process, parent_uid]},
       restart: :transient
     }
 
@@ -176,14 +176,14 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   @doc false
-  def init({uid, model_name, data, business_key, top_level_model_name, parent_uid}) do
+  def init({uid, process, data, business_key, top_level_process, parent_uid}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
     state =
       pe_recovered_state ||
         %ProcessState{
-          model_name: model_name,
-          top_level_model_name: top_level_model_name,
+          process: process,
+          top_level_process: top_level_process,
           data: data,
           uid: uid,
           parent_uid: parent_uid,
@@ -192,12 +192,12 @@ defmodule Mozart.ProcessEngine do
         }
 
     # if pe_recovered_state do
-    #   Logger.warning("Restart process instance [#{model_name}][#{uid}]")
+    #   Logger.warning("Restart process instance [#{process}][#{uid}]")
     # else
-    #   Logger.info("Start process instance [#{model_name}][#{uid}]")
+    #   Logger.info("Start process instance [#{process}][#{uid}]")
     # end
 
-    Logger.info("Start process instance [#{model_name}][#{uid}]")
+    Logger.info("Start process instance [#{process}][#{uid}]")
 
     {:ok, state, {:continue, {:register_and_subscribe, uid}}}
   end
@@ -244,14 +244,14 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_call(:execute, _from, state) do
-    model = PS.get_process_model(state.model_name)
+    model = PS.get_process_model(state.process)
     state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
     {:reply, state, state}
   end
 
   def handle_cast(:execute, state) do
-    model = PS.get_process_model(state.model_name)
+    model = PS.get_process_model(state.process)
     state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
     {:noreply, state}
@@ -265,7 +265,7 @@ defmodule Mozart.ProcessEngine do
       |> Map.put(:end_time, now)
       |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
-    Logger.info("Process complete due to task exit event [#{state.model_name}][#{state.uid}]")
+    Logger.info("Process complete due to task exit event [#{state.process}][#{state.uid}]")
 
     PS.update_for_completed_process(state)
 
@@ -276,7 +276,7 @@ defmodule Mozart.ProcessEngine do
   def handle_cast({:notify_child_complete, subprocess_name, subprocess_data}, state) do
     subprocess_task =
       Enum.find_value(state.open_tasks, fn {_uid, t} ->
-        if t.type == :subprocess && t.model == subprocess_name, do: t
+        if t.type == :subprocess && t.process == subprocess_name, do: t
       end)
 
     subprocess_task = Map.put(subprocess_task, :complete, true)
@@ -328,7 +328,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_info({:event, payload}, state) do
-    model = PS.get_process_model(state.model_name)
+    model = PS.get_process_model(state.process)
     event = Enum.find(model.events, fn e -> apply(e.module, e.selector, [payload]) end)
     state = if event, do: exit_task(event, state), else: state
     {:noreply, state}
@@ -434,7 +434,7 @@ defmodule Mozart.ProcessEngine do
     new_task =
       Map.put(new_task, :data, input_data)
       |> Map.put(:business_key, state.business_key)
-      |> Map.put(:top_level_model_name, state.top_level_model_name)
+      |> Map.put(:top_level_process, state.top_level_process)
 
     PS.insert_user_task(new_task)
 
@@ -488,10 +488,10 @@ defmodule Mozart.ProcessEngine do
 
     {:ok, process_pid, _uid, _business_key} =
       start_process(
-        new_task.model,
+        new_task.process,
         data,
         state.business_key,
-        state.top_level_model_name,
+        state.top_level_process,
         state.uid
       )
 
@@ -722,7 +722,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_task_def(task_name, state) do
-    model = PS.get_process_model(state.model_name)
+    model = PS.get_process_model(state.process)
     Enum.find(model.tasks, fn task -> task.name == task_name end)
   end
 
@@ -819,7 +819,7 @@ defmodule Mozart.ProcessEngine do
       ## no work remaining so process is complete
       if state.parent_uid do
         parent_pid = PS.get_process_pid_from_uid(state.parent_uid)
-        notify_child_complete(parent_pid, state.model_name, state.data)
+        notify_child_complete(parent_pid, state.process, state.data)
       end
 
       now = DateTime.utc_now()
@@ -829,7 +829,7 @@ defmodule Mozart.ProcessEngine do
         |> Map.put(:end_time, now)
         |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
-      Logger.info("Process complete [#{state.model_name}][#{state.uid}]")
+      Logger.info("Process complete [#{state.process}][#{state.uid}]")
 
       PS.update_for_completed_process(state)
       PS.delete_process_state(state)

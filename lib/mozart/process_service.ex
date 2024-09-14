@@ -199,8 +199,8 @@ defmodule Mozart.ProcessService do
   @doc """
   Retrieves a process model by name.
   """
-  def get_process_model(model_name) do
-    GenServer.call(__MODULE__, {:get_process_model, model_name})
+  def get_process_model(process) do
+    GenServer.call(__MODULE__, {:get_process_model, process})
   end
 
   @doc false
@@ -390,7 +390,7 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:load_bpm_applications, bpm_applications}, _from, state) do
     Enum.each(bpm_applications, fn app ->
-      CubDB.put(state.bpm_application_db, app.main_model, app) end)
+      CubDB.put(state.bpm_application_db, app.process, app) end)
     {:reply, :ok, state}
   end
 

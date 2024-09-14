@@ -4,7 +4,7 @@ defmodule Mozart.Task.Subprocess do
     :name,
     :next,
     :uid,
-    :model,
+    :process,
     :subprocess_pid,
     :start_time,
     :finish_time,

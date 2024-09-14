@@ -9,7 +9,7 @@ provide the following information:
 corresponding to a hierarchial process model.
 * **parent_uid**: If the process is a child process, this is the pid of the parent process
 execution.
-* **model_name**: The name of the process model being executed.
+* **process**: The name of the process model being executed.
 * **start_time**: The time when the process started executing.
 * **end_time**: The time when the process finished executing.
 * **execution_duration**: The duration of time over which the process executed.
@@ -26,7 +26,7 @@ defstruct [
     :uid,
     :business_key,
     :parent_uid,
-    :model_name,
+    :process,
     :start_time,
     :end_time,
     :execute_duration,
@@ -43,8 +43,8 @@ end
     :uid,
     :business_key,
     :parent_uid,
-    :model_name,
-    :top_level_model_name,
+    :process,
+    :top_level_process,
     :start_time,
     :end_time,
     :execute_duration,

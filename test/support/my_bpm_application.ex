@@ -31,7 +31,7 @@ defmodule MyBpmApplication do
 
   defprocess "subprocess task process" do
     service_task("service task 2", function: :add_one_to_value, inputs: "value")
-    subprocess_task("subprocess task", model: "two service tasks")
+    subprocess_task("subprocess task", process: "two service tasks")
   end
 
   ## Case Task Example
@@ -116,7 +116,7 @@ defmodule MyBpmApplication do
 
   defprocess "repeat with subprocess task process" do
     repeat_task "repeat task", condition: :continue do
-      subprocess_task("subprocess task", model: "subprocess with 3 prototype tasks")
+      subprocess_task("subprocess task", process: "subprocess with 3 prototype tasks")
       prototype_task("prototype task")
       user_task("user task", group: "admin", outputs: "na")
     end
@@ -133,7 +133,7 @@ defmodule MyBpmApplication do
 
   defprocess "repeat with subprocess task process 2" do
     repeat_task "repeat task", condition: :continue do
-      subprocess_task("subprocess task", model: "subprocess with one prototype test")
+      subprocess_task("subprocess task", process: "subprocess with one prototype test")
       user_task("user task", group: "admin", outputs: "na")
     end
     prototype_task("last prototype task")
@@ -189,7 +189,7 @@ defmodule MyBpmApplication do
   end
 
   defprocess "exit a subprocess task" do
-    subprocess_task("subprocess task", model: "subprocess process")
+    subprocess_task("subprocess task", process: "subprocess process")
   end
 
   defprocess "subprocess process" do

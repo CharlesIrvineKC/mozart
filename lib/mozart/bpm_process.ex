@@ -68,20 +68,20 @@ defmodule Mozart.BpmProcess do
   business process implemented in a Elixir module. It's purpose is to facilitate external tool
   integration. A single Elixir module might have zero or more such definitions. It's parameters
   are as follows:
-  * **main_model**: The name of the top level process defintion.
+  * **process**: The name of the top level process defintion.
   * **data**: A comma separated list of input parameters that the busines process should be
   initialized with.
 
   Example:
   def_bpm_application("Home Loan", data: "Customer Name,Income,Debt")
   """
-  defmacro def_bpm_application(main_model, data: data, bk_prefix: prefix) do
+  defmacro def_bpm_application(process, data: data, bk_prefix: prefix) do
     quote do
       data = parse_params(unquote(data))
       prefix = parse_params(unquote(prefix))
 
       bpm_application = %BpmApplication{
-        main_model: unquote(main_model),
+        process: unquote(process),
         data: data,
         bk_prefix: prefix,
         module: __MODULE__
@@ -614,14 +614,14 @@ defmodule Mozart.BpmProcess do
 
   ```
   defprocess "subprocess task process" do
-    subprocess_task("subprocess task", model: "two service tasks")
+    subprocess_task("subprocess task", process: "two service tasks")
   end
   ```
   """
-  defmacro subprocess_task(name, model: subprocess_name) do
+  defmacro subprocess_task(name, process: subprocess_name) do
     quote do
       subprocess =
-        %Subprocess{name: unquote(name), model: unquote(subprocess_name)}
+        %Subprocess{name: unquote(name), process: unquote(subprocess_name)}
 
       insert_new_task(subprocess)
     end

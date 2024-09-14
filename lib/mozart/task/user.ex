@@ -14,7 +14,7 @@ defmodule Mozart.Task.User do
     :business_key,
     :process_uid,
     :assigned_user,
-    :top_level_model_name,
+    :top_level_process,
     :assigned_group,
     complete: false,
     type: :user

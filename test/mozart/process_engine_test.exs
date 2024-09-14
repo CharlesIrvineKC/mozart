@@ -27,7 +27,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "top level process" do
-    subprocess_task("a subprocess task", model: "user task has top level model name")
+    subprocess_task("a subprocess task", process: "user task has top level model name")
   end
 
   test "top level process" do
@@ -43,7 +43,7 @@ defmodule Mozart.ProcessEngineTest do
 
     user_task = hd(PS.get_user_tasks())
 
-    assert user_task.top_level_model_name == "top level process"
+    assert user_task.top_level_process == "top level process"
   end
 
   def assign_user(user_task, data) do
@@ -97,12 +97,12 @@ defmodule Mozart.ProcessEngineTest do
 
     case_task "Approve Invoice Result" do
       case_i :invoice_approved do
-        subprocess_task("Perform Bank Transfer SubTask", model: "Perform Bank Transfer")
+        subprocess_task("Perform Bank Transfer SubTask", process: "Perform Bank Transfer")
       end
 
       case_i :invoice_sent_to_review do
         subprocess_task("Perform Invoice Approval Negotiation Subprocess",
-          model: "Perform Invoice Approval Negotiation"
+          process: "Perform Invoice Approval Negotiation"
         )
       end
     end
@@ -115,7 +115,7 @@ defmodule Mozart.ProcessEngineTest do
 
   defprocess "Perform Invoice Approval Negotiation" do
     repeat_task "Invoice Approval Negotiation", condition: :negotiation_not_resolved do
-      subprocess_task("Review Invoice Subprocess", model: "Review Invoice Process")
+      subprocess_task("Review Invoice Subprocess", process: "Review Invoice Process")
 
       conditional_task "Reapprove if not Rejected", condition: :invoice_not_rejected do
         user_task("Reapprove Invoice", group: "Admin", outputs: "Invoice Approved?")
@@ -123,7 +123,7 @@ defmodule Mozart.ProcessEngineTest do
     end
 
     conditional_task "Negotiation Result", condition: :invoice_approved do
-      subprocess_task("Perform Bank Transfer SubTask", model: "Perform Bank Transfer")
+      subprocess_task("Perform Bank Transfer SubTask", process: "Perform Bank Transfer")
     end
   end
 
@@ -460,7 +460,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "exit a subprocess task" do
-    subprocess_task("subprocess task", model: "subprocess process")
+    subprocess_task("subprocess task", process: "subprocess process")
   end
 
   defprocess "subprocess process" do
@@ -564,7 +564,7 @@ defmodule Mozart.ProcessEngineTest do
   defprocess "repeat with subprocess task process" do
     repeat_task "repeat task", condition: :count_is_less_than_limit do
       service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
-      subprocess_task("subprocess task", model: "subprocess with one prototype test")
+      subprocess_task("subprocess task", process: "subprocess with one prototype test")
     end
 
     prototype_task("last prototype task")
@@ -593,7 +593,7 @@ defmodule Mozart.ProcessEngineTest do
 
   defprocess "repeat with subprocess service task process" do
     repeat_task "repeat task", condition: :count_is_less_than_limit do
-      subprocess_task("subprocess task", model: "subprocess with one service test")
+      subprocess_task("subprocess task", process: "subprocess with one service test")
     end
   end
 
@@ -674,7 +674,7 @@ defmodule Mozart.ProcessEngineTest do
 
   defprocess "get credit rating" do
     prototype_task("get quick credit score")
-    subprocess_task("credit rating subprocess task", model: "credit rating subprocess")
+    subprocess_task("credit rating subprocess task", process: "credit rating subprocess")
     prototype_task("user reviews credit score")
   end
 
@@ -1049,7 +1049,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "subprocess task process" do
-    subprocess_task("subprocess task", model: "two service tasks")
+    subprocess_task("subprocess task", process: "two service tasks")
   end
 
   test "subprocess task process" do
