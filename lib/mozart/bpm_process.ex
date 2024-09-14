@@ -68,8 +68,7 @@ defmodule Mozart.BpmProcess do
   business process implemented in a Elixir module. It's purpose is to facilitate external tool
   integration. A single Elixir module might have zero or more such definitions. It's parameters
   are as follows:
-  * **name**: A user level name for the business process.
-  * **name**: The name of the top level process defintion.
+  * **main_model**: The name of the top level process defintion.
   * **data**: A comma separated list of input parameters that the busines process should be
   initialized with.
 
@@ -735,54 +734,27 @@ defmodule Mozart.BpmProcess do
     end
   end
 
-  @doc false
-  def merge_event_tasks_to_process(event_task_process_map, processes) do
-    process_name_task_list = Map.to_list(event_task_process_map)
-    merge_recursive(process_name_task_list, processes)
+  def merge_event_tasks(event_task_map, processes) do
+    Enum.map(processes, fn p ->
+      tasks = Map.get(event_task_map, p.name)
+      if  tasks, do: Map.put(p, :tasks, p.tasks ++ tasks), else: p
+    end)
   end
 
-  @doc false
-  def merge_recursive([], processes), do: processes
-
-  def merge_recursive([{process_name, tasks} | rest], processes) do
-    merge_recursive(
-      rest,
-      Enum.map(
-        processes,
-        fn p ->
-          if process_name == p.name do
-            tasks = p.tasks ++ tasks
-            Map.put(p, :tasks, tasks)
-          else
-            p
-          end
-        end
-      )
-    )
-  end
-
-  @doc false
-  def assign_events_to_processes([], processes), do: processes
-
-  def assign_events_to_processes([{pname, event} | rest], processes) do
-    assign_events_to_processes(
-      rest,
-      Enum.map(processes, fn p ->
-        if pname == p.name do
-          events = [event | p.events]
-          Map.put(p, :events, events)
-        else
-          p
-        end
+  def assign_events(event_map, processes) do
+    Enum.map(processes, fn p ->
+      events = Enum.reduce(event_map, [], fn {pname, event}, acc ->
+        if pname == p.name, do: [event | acc], else: acc
       end)
-    )
+      Map.put(p, :events, events)
+    end)
   end
 
   defmacro __before_compile__(_env) do
     quote do
       if @event_task_process_map != %{} do
-        @processes merge_event_tasks_to_process(@event_task_process_map, @processes)
-        @processes assign_events_to_processes(Map.to_list(@events), @processes)
+        @processes merge_event_tasks(@event_task_process_map, @processes)
+        @processes assign_events(Map.to_list(@events), @processes)
       end
 
       # def get_bpm_application, do: @bpm_applications
