@@ -20,10 +20,11 @@ defmodule Mozart.ProcessEngineTest do
     apps = PS.get_bpm_applications()
     {"test bpm app", app} = hd(apps)
     assert app.module == Mozart.ProcessEngineTest
+    assert app.groups == ["Admin", "Customer Service"]
   end
 
   defprocess "user task has top level model name" do
-    user_task("a user task", group: "admin")
+    user_task("a user task", group: "Customer Service")
   end
 
   defprocess "top level process" do
@@ -433,7 +434,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "one user task process" do
-    user_task("add one to x 1", group: "admin", outputs: "x")
+    user_task("add one to x 1", group: "Admin", outputs: "x")
   end
 
   test "multiple processes of on user task" do
@@ -464,7 +465,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "subprocess process" do
-    user_task("user task", group: "admin", outputs: "na")
+    user_task("user task", group: "Admin", outputs: "na")
   end
 
   defevent "exit subprocess task",
@@ -501,7 +502,7 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "exit a user task" do
-    user_task("user task", group: "admin", outputs: "na")
+    user_task("user task", group: "Admin", outputs: "na")
   end
 
   defevent "exit loan decision",
@@ -870,8 +871,8 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "two user task process" do
-    user_task("add one to x 1", group: "admin", outputs: "na")
-    user_task("add one to x 2", group: "admin", inputs: "x", outputs: "na")
+    user_task("add one to x 1", group: "Admin", outputs: "na")
+    user_task("add one to x 2", group: "Admin", inputs: "x", outputs: "na")
   end
 
   test "two user task process" do
@@ -887,9 +888,9 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "three user task process" do
-    user_task("1", group: "admin", outputs: "na")
-    user_task("2", group: "admin", inputs: "x,y", outputs: "na")
-    user_task("3", group: "admin", outputs: "na")
+    user_task("1", group: "Admin", outputs: "na")
+    user_task("2", group: "Admin", inputs: "x,y", outputs: "na")
+    user_task("3", group: "Admin", outputs: "na")
   end
 
   test "three user task process" do
@@ -932,13 +933,13 @@ defmodule Mozart.ProcessEngineTest do
   defprocess "two parallel routes process" do
     parallel_task "a parallel task" do
       route do
-        user_task("1", group: "admin", outputs: "na")
-        user_task("2", group: "admin", outputs: "na")
+        user_task("1", group: "Admin", outputs: "na")
+        user_task("2", group: "Admin", outputs: "na")
       end
 
       route do
-        user_task("3", group: "admin", outputs: "na")
-        user_task("4", group: "admin", outputs: "na")
+        user_task("3", group: "Admin", outputs: "na")
+        user_task("4", group: "Admin", outputs: "na")
       end
     end
   end
@@ -965,13 +966,13 @@ defmodule Mozart.ProcessEngineTest do
   defprocess "two case process" do
     case_task "yes or no" do
       case_i :x_less_than_y do
-        user_task("1", group: "admin", outputs: "na")
-        user_task("2", group: "admin", outputs: "na")
+        user_task("1", group: "Admin", outputs: "na")
+        user_task("2", group: "Admin", outputs: "na")
       end
 
       case_i :x_greater_or_equal_y do
-        user_task("3", group: "admin", outputs: "na")
-        user_task("4", group: "admin", outputs: "na")
+        user_task("3", group: "Admin", outputs: "na")
+        user_task("4", group: "Admin", outputs: "na")
       end
     end
   end

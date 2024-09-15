@@ -178,8 +178,8 @@ defmodule Mozart.ProcessService do
   @doc """
   Loads a BPM Application
   """
-  def load_bpm_applications(bpm_application) do
-    GenServer.call(__MODULE__, {:load_bpm_applications, bpm_application})
+  def load_bpm_application(bpm_application) do
+    GenServer.call(__MODULE__, {:load_bpm_application, bpm_application})
   end
 
   @doc """
@@ -388,9 +388,8 @@ defmodule Mozart.ProcessService do
     {:reply, pe_state, state}
   end
 
-  def handle_call({:load_bpm_applications, bpm_applications}, _from, state) do
-    Enum.each(bpm_applications, fn app ->
-      CubDB.put(state.bpm_application_db, app.process, app) end)
+  def handle_call({:load_bpm_application, bpm_application}, _from, state) do
+    CubDB.put(state.bpm_application_db, bpm_application.process, bpm_application)
     {:reply, :ok, state}
   end
 

@@ -57,8 +57,9 @@ defmodule Mozart.BpmProcess do
       @route_task_names []
       @cases []
       @event_task_process_map %{}
-      @bpm_applications []
+      @bpm_application nil
       @types []
+      @groups []
       @before_compile Mozart.BpmProcess
     end
   end
@@ -77,6 +78,7 @@ defmodule Mozart.BpmProcess do
   """
   defmacro def_bpm_application(process, data: data, bk_prefix: prefix) do
     quote do
+      if @bpm_application, do: raise "Only one BPM application allowed per module"
       data = parse_params(unquote(data))
       prefix = parse_params(unquote(prefix))
 
@@ -87,7 +89,8 @@ defmodule Mozart.BpmProcess do
         module: __MODULE__
       }
 
-      @bpm_applications [bpm_application | @bpm_applications]
+      @bpm_application bpm_application
+
     end
   end
 
@@ -396,6 +399,16 @@ defmodule Mozart.BpmProcess do
       else
         new_subtasks = get_subtasks() ++ [unquote(task)]
         set_subtasks(new_subtasks)
+      end
+    end
+  end
+
+  @doc false
+  defmacro insert_group(group) do
+    quote do
+      group = unquote(group)
+      unless Enum.member?(@groups, group) do
+        @groups [group | @groups]
       end
     end
   end
@@ -731,6 +744,7 @@ defmodule Mozart.BpmProcess do
       }
 
       insert_new_task(user_task)
+      if group, do: insert_group(group)
     end
   end
 
@@ -757,13 +771,16 @@ defmodule Mozart.BpmProcess do
         @processes assign_events(Map.to_list(@events), @processes)
       end
 
-      # def get_bpm_application, do: @bpm_applications
+      if @bpm_application do
+        @bpm_application Map.put(@bpm_application, :groups, @groups)
+      end
+
       def get_processes, do: Enum.reverse(@processes)
       def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)
 
       def load() do
         ProcessService.load_process_models(get_processes())
-        ProcessService.load_bpm_applications(@bpm_applications)
+        if @bpm_application, do: ProcessService.load_bpm_application(@bpm_application)
         ProcessService.load_types(@types)
       end
 
