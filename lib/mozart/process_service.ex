@@ -490,8 +490,10 @@ defmodule Mozart.ProcessService do
   end
 
   def handle_cast({:assign_user_task, task_uid, user_id}, state) do
-    task = get_user_task_by_id(state, task_uid) |> Map.put(:assigned_user, user_id)
-    insert_user_task(state, task)
+    user_task = get_user_task_by_id(state, task_uid) |> Map.put(:assigned_user, user_id)
+    ppid = Map.get(state.active_processes, user_task.process_uid)
+    insert_user_task(state, user_task)
+    PE.assign_user_task(ppid, task_uid, user_id)
     {:noreply, state}
   end
 

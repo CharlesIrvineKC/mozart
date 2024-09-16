@@ -154,6 +154,11 @@ defmodule Mozart.ProcessEngine do
   end
 
   @doc false
+  def assign_user_task(ppid, task_uid, user_id) do
+    GenServer.cast(ppid, {:assign_user_task, task_uid, user_id})
+  end
+
+  @doc false
   def complete_user_task_and_go(ppid, task_uid, data) do
     GenServer.cast(ppid, {:complete_user_task, task_uid, data})
   end
@@ -293,6 +298,13 @@ defmodule Mozart.ProcessEngine do
 
   def handle_cast({:complete_user_task, task_uid, return_data}, state) do
     state = complete_user_task_impl(state, task_uid, return_data)
+    {:noreply, state}
+  end
+
+  def handle_cast({:assign_user_task, task_uid, user_id}, state) do
+    task_instance = get_task_instance(task_uid, state)
+    task_instance = Map.put(task_instance, :assigned_user, user_id)
+    state = Map.put(state, :open_tasks, Map.put(state.open_tasks, task_uid, task_instance))
     {:noreply, state}
   end
 

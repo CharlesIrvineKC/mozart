@@ -11,6 +11,36 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  defprocess "process to test user assignment" do
+    user_task("a user task to assign user", groups: "Admin")
+  end
+
+  test "process to test user assignment" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, _uid, _business_key} =
+      PE.start_process("process to test user assignment", %{})
+
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+
+    PS.assign_user_task(user_task.uid, "foobar@foo.bar.com")
+    Process.sleep(100)
+
+    user_task = hd(PS.get_user_tasks())
+
+    assert user_task.assigned_user == "foobar@foo.bar.com"
+
+    user_task = Map.get(PE.get_open_tasks(ppid), user_task.uid)
+
+    assert user_task.assigned_user == "foobar@foo.bar.com"
+  end
+
+
+
   def_bpm_application("test bpm app", data: "foo, bar", bk_prefix: "bar,foo")
 
   test "test bpm app" do
