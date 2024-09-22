@@ -391,7 +391,10 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp wait_and_notify(parent_pe, task_uid, timer_duration) do
-    Process.sleep(timer_duration)
+    :timer.apply_after(timer_duration, __MODULE__, :send_timer_expired, [parent_pe, task_uid])
+  end
+
+  def send_timer_expired(parent_pe, task_uid) do
     send(parent_pe, {:timer_expired, task_uid})
   end
 
