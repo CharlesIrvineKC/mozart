@@ -569,9 +569,13 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
-  defmacro timer_task(name, duration: duration) do
+  defmacro timer_task(name, options) do
     quote do
-      task = %Timer{name: unquote(name), timer_duration: unquote(duration)}
+      options = unquote(options)
+      function = Keyword.get(options, :function)
+      duration = Keyword.get(options, :duration)
+      module = Keyword.get(options, :module) || __MODULE__
+      task = %Timer{name: unquote(name), timer_duration: duration, function: function, module: module}
       insert_new_task(task)
     end
   end

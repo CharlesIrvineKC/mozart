@@ -377,25 +377,13 @@ defmodule Mozart.ProcessEngine do
   defp update_receive_event_task(s_task, payload) do
     select_result = apply(s_task.module, s_task.selector, [payload])
 
-    if select_result do
-      Map.put(s_task, :data, select_result)
-      |> Map.put(:complete, true)
-    else
-      s_task
-    end
+    if select_result,
+      do: Map.put(s_task, :data, select_result) |> Map.put(:complete, true),
+      else: s_task
   end
 
-  defp set_timer_for(task_uid, timer_duration) do
-    self = self()
-    spawn(fn -> wait_and_notify(self, task_uid, timer_duration) end)
-  end
-
-  defp wait_and_notify(parent_pe, task_uid, timer_duration) do
-    :timer.apply_after(timer_duration, __MODULE__, :send_timer_expired, [parent_pe, task_uid])
-  end
-
-  def send_timer_expired(parent_pe, task_uid) do
-    send(parent_pe, {:timer_expired, task_uid})
+  defp set_timer_for(timer_task, timer_duration) do
+    apply(timer_task.module, timer_task.function, [timer_task.uid, timer_duration])
   end
 
   defp create_new_next_task(state, next_task_name, previous_task_name) do
@@ -489,7 +477,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp do_new_task_side_effects(:timer, new_task, state) do
-    set_timer_for(new_task.uid, new_task.timer_duration)
+    set_timer_for(new_task, new_task.timer_duration)
     state
   end
 

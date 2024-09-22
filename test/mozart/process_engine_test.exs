@@ -676,8 +676,21 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "two timer task process" do
-    timer_task("one second timer task", duration: 1000)
-    timer_task("two second timer task", duration: 2000)
+    timer_task("one second timer task", duration: 1000, function: :schedule_timer_expiration)
+    timer_task("two second timer task", duration: 2000, function: :schedule_timer_expiration)
+  end
+  
+  def schedule_timer_expiration(task_uid, timer_duration) do
+    self = self()
+    spawn(fn -> wait_and_notify(self, task_uid, timer_duration) end)
+  end
+
+  defp wait_and_notify(parent_pe, task_uid, timer_duration) do
+    :timer.apply_after(timer_duration, __MODULE__, :send_timer_expired, [parent_pe, task_uid])
+  end
+
+  def send_timer_expired(parent_pe, task_uid) do
+    send(parent_pe, {:timer_expired, task_uid})
   end
 
   test "two timer task process" do
