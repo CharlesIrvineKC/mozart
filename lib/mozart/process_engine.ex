@@ -383,7 +383,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp set_timer_for(timer_task, timer_duration) do
-    apply(timer_task.module, timer_task.function, [timer_task.uid, timer_duration])
+    apply(timer_task.module, timer_task.function, [timer_task, timer_duration])
   end
 
   defp create_new_next_task(state, next_task_name, previous_task_name) do
