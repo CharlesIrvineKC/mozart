@@ -114,7 +114,6 @@ defmodule Mozart.ProcessEngineTest do
 
   def invoice_not_rejected(data) do
     data["Invoice Review Determination"] != "Rejected"
-    true
   end
 
   def negotiation_not_resolved(data) do
