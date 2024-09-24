@@ -78,7 +78,7 @@ defmodule Mozart.BpmProcess do
   """
   defmacro def_bpm_application(process, data: data, bk_prefix: prefix) do
     quote do
-      if @bpm_application, do: raise "Only one BPM application allowed per module"
+      if @bpm_application, do: raise("Only one BPM application allowed per module")
       data = parse_params(unquote(data))
       prefix = parse_params(unquote(prefix))
 
@@ -90,7 +90,6 @@ defmodule Mozart.BpmProcess do
       }
 
       @bpm_application bpm_application
-
     end
   end
 
@@ -407,6 +406,7 @@ defmodule Mozart.BpmProcess do
   defmacro insert_group(group) do
     quote do
       group = unquote(group)
+
       unless Enum.member?(@groups, group) do
         @groups [group | @groups]
       end
@@ -575,7 +575,14 @@ defmodule Mozart.BpmProcess do
       function = Keyword.get(options, :function)
       duration = Keyword.get(options, :duration)
       module = Keyword.get(options, :module) || __MODULE__
-      task = %Timer{name: unquote(name), timer_duration: duration, function: function, module: module}
+
+      task = %Timer{
+        name: unquote(name),
+        timer_duration: duration,
+        function: function,
+        module: module
+      }
+
       insert_new_task(task)
     end
   end
@@ -755,15 +762,17 @@ defmodule Mozart.BpmProcess do
   def merge_event_tasks(event_task_map, processes) do
     Enum.map(processes, fn p ->
       tasks = Map.get(event_task_map, p.name)
-      if  tasks, do: Map.put(p, :tasks, p.tasks ++ tasks), else: p
+      if tasks, do: Map.put(p, :tasks, p.tasks ++ tasks), else: p
     end)
   end
 
   def assign_events(event_map, processes) do
     Enum.map(processes, fn p ->
-      events = Enum.reduce(event_map, [], fn {pname, event}, acc ->
-        if pname == p.name, do: [event | acc], else: acc
-      end)
+      events =
+        Enum.reduce(event_map, [], fn {pname, event}, acc ->
+          if pname == p.name, do: [event | acc], else: acc
+        end)
+
       Map.put(p, :events, events)
     end)
   end
@@ -777,16 +786,20 @@ defmodule Mozart.BpmProcess do
 
       if @bpm_application do
         @bpm_application Map.put(@bpm_application, :groups, @groups)
+        def load() do
+          ProcessService.load_process_models(get_processes())
+          ProcessService.load_bpm_application(@bpm_application)
+          ProcessService.load_types(@types)
+        end
+      else
+        def load() do
+          ProcessService.load_process_models(get_processes())
+          ProcessService.load_types(@types)
+        end
       end
 
       def get_processes, do: Enum.reverse(@processes)
       def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)
-
-      def load() do
-        ProcessService.load_process_models(get_processes())
-        if @bpm_application, do: ProcessService.load_bpm_application(@bpm_application)
-        ProcessService.load_types(@types)
-      end
 
       def get_events, do: Map.to_list(@events)
     end
