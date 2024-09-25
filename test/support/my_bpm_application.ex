@@ -196,7 +196,7 @@ defmodule MyBpmApplication do
     user_task("user task", group: "admin", outputs: "na")
   end
 
-  defevent "exit subprocess task",
+  def_task_exit_event "exit subprocess task",
     process: "exit a subprocess task",
     exit_task: "subprocess task",
     selector: &MyBpmApplication.exit_subprocess_task_event_selector/1 do

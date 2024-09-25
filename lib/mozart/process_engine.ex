@@ -255,14 +255,8 @@ defmodule Mozart.ProcessEngine do
     {:reply, state, state}
   end
 
-  def handle_cast(:execute, state) do
-    model = PS.get_process_model(state.process)
-    state = create_next_tasks(state, model.initial_task)
-    state = execute_process(state)
-    {:noreply, state}
-  end
-
   def handle_cast(:complete_on_task_exit_event, state) do
+    Process.sleep(200)
     now = DateTime.utc_now()
 
     state =
@@ -270,11 +264,18 @@ defmodule Mozart.ProcessEngine do
       |> Map.put(:end_time, now)
       |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
-    Logger.info("Process complete due to task exit event [#{state.process}][#{state.uid}]")
-
     PS.update_for_completed_process(state)
 
+    Logger.info("Exit process: complete due to task exit event [#{state.process}][#{state.uid}]")
+
     Process.exit(self(), :shutdown)
+    {:noreply, state}
+  end
+
+  def handle_cast(:execute, state) do
+    model = PS.get_process_model(state.process)
+    state = create_next_tasks(state, model.initial_task)
+    state = execute_process(state)
     {:noreply, state}
   end
 
@@ -383,7 +384,11 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp set_timer_for(timer_task, timer_duration) do
-    apply(timer_task.module, timer_task.function, [timer_task.uid, timer_task.process_uid, timer_duration])
+    apply(timer_task.module, timer_task.function, [
+      timer_task.uid,
+      timer_task.process_uid,
+      timer_duration
+    ])
   end
 
   defp create_new_next_task(state, next_task_name, previous_task_name) do
@@ -400,6 +405,14 @@ defmodule Mozart.ProcessEngine do
     state = do_new_task_side_effects(new_task.type, new_task, state)
 
     new_task =
+    if new_task.type == :subprocess do
+       child_pid = spawn_subprocess_task(new_task, state)
+       Map.put(new_task, :subprocess_pid, child_pid)
+    else
+      new_task
+    end
+
+    new_task =
       if new_task.type == :user, do: update_user_task(new_task, state), else: new_task
 
     state =
@@ -412,11 +425,14 @@ defmodule Mozart.ProcessEngine do
         state
       end
 
-    if new_task.type == :conditional do
-      trigger_conditional_execution(state, new_task)
-    else
-      state
-    end
+    state =
+      if new_task.type == :conditional do
+        trigger_conditional_execution(state, new_task)
+      else
+        state
+      end
+
+    state
   end
 
   defp update_user_task(new_task, state) do
@@ -447,6 +463,7 @@ defmodule Mozart.ProcessEngine do
   defp trigger_conditional_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
+
       first_task =
         if first_task.type == :user, do: update_user_task(first_task, state), else: first_task
 
@@ -464,8 +481,10 @@ defmodule Mozart.ProcessEngine do
   defp trigger_repeat_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
+
       first_task =
         if first_task.type == :user, do: update_user_task(first_task, state), else: first_task
+
       Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
       state = Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
       do_new_task_side_effects(first_task.type, first_task, state)
@@ -486,23 +505,21 @@ defmodule Mozart.ProcessEngine do
     state
   end
 
-  defp do_new_task_side_effects(:subprocess, new_task, state) do
-    data = state.data
+  defp do_new_task_side_effects(_, _, state), do: state
 
+  defp spawn_subprocess_task(new_task, state) do
     {:ok, process_pid, _uid, _business_key} =
       start_process(
         new_task.process,
-        data,
+        state.data,
         state.business_key,
         state.top_level_process,
         state.uid
       )
 
     execute(process_pid)
-    state
+    process_pid
   end
-
-  defp do_new_task_side_effects(_, _, state), do: state
 
   defp create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
     existing_task = get_existing_task_instance(state, next_task_name)
@@ -832,7 +849,7 @@ defmodule Mozart.ProcessEngine do
         |> Map.put(:end_time, now)
         |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
-      Logger.info("Process complete [#{state.process}][#{state.uid}]")
+      Logger.info("Exit process: process complete [#{state.process}][#{state.uid}]")
 
       PS.update_for_completed_process(state)
       PS.delete_process_state(state)

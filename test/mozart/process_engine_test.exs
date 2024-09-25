@@ -11,6 +11,71 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  defprocess "Pizza Order" do
+    subprocess_task("Prepare and Deliver Subprocess Task", process: "Prepare and Deliver Pizza")
+    timer_task("Settle Purchase", duration: 100, function: :schedule_timer_expiration)
+  end
+
+  defprocess "Prepare and Deliver Pizza" do
+    timer_task("Prepare Pizza", duration: 200, function: :schedule_timer_expiration)
+    timer_task("Deliver Pizza", duration: 200, function: :schedule_timer_expiration)
+  end
+
+  test "Prepare and Deliver Pizza" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, uid, _business_key1} = PE.start_process("Prepare and Deliver Pizza", %{})
+    PE.execute(ppid)
+
+    Process.sleep(600)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 2
+
+  end
+
+  def_task_exit_event "Cancel Pizza Order",
+    process: "Pizza Order",
+    exit_task: "Prepare and Deliver Subprocess Task",
+    selector: :exit_subprocess_task_event_selector do
+    prototype_task("Cancel Preparation")
+    prototype_task("Cancel Delivery")
+  end
+
+  def exit_subprocess_task_event_selector(:exit_subprocess_task), do: true
+  def exit_subprocess_task_event_selector(_), do: false
+
+  test "Pizza Order" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid1, uid1, _business_key1} = PE.start_process("Pizza Order", %{})
+    PE.execute(ppid1)
+
+    {:ok, ppid2, uid2, _business_key2} = PE.start_process("Pizza Order", %{})
+    PE.execute(ppid2)
+
+    Process.sleep(100)
+
+    send(ppid1, {:event, :exit_subprocess_task})
+
+    Process.sleep(800)
+
+    completed_process = PS.get_completed_process(uid1)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
+
+    completed_process = PS.get_completed_process(uid2)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 2
+
+  end
+
   defprocess "process to test user assignment" do
     user_task("a user task to assign user", groups: "Admin")
   end
@@ -38,8 +103,6 @@ defmodule Mozart.ProcessEngineTest do
 
     assert user_task.assigned_user == "foobar@foo.bar.com"
   end
-
-
 
   def_bpm_application("test bpm app", data: "foo, bar", bk_prefix: "bar,foo")
 
@@ -455,13 +518,6 @@ defmodule Mozart.ProcessEngineTest do
     assert PS.get_type("confirm param") == %Confirm{param_name: "confirm param", type: :confirm}
   end
 
-  defprocess "one prototype task process" do
-    prototype_task("a prototype task")
-  end
-
-  test "test bpm application test" do
-  end
-
   defprocess "one user task process" do
     user_task("add one to x 1", group: "Admin", outputs: "x")
   end
@@ -482,27 +538,19 @@ defmodule Mozart.ProcessEngineTest do
     assert length(PS.get_user_tasks()) == 3
   end
 
-  def exit_subprocess_task_event_selector(message) do
-    case message do
-      :exit_subprocess_task -> true
-      _ -> nil
-    end
-  end
-
   defprocess "exit a subprocess task" do
     subprocess_task("subprocess task", process: "subprocess process")
   end
 
   defprocess "subprocess process" do
-    user_task("user task", group: "Admin", outputs: "na")
+    timer_task("subprocess timer task", duration: 2000, function: :schedule_timer_expiration)
   end
 
-  defevent "exit subprocess task",
+  def_task_exit_event "exit subprocess task",
     process: "exit a subprocess task",
     exit_task: "subprocess task",
     selector: :exit_subprocess_task_event_selector do
-    prototype_task("prototype task 1")
-    prototype_task("prototype task 2")
+    prototype_task("prototype task upon task exit")
   end
 
   test "exit a subprocess task" do
@@ -514,13 +562,13 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute(ppid)
     Process.sleep(100)
 
-    PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_subprocess_task})
-    Process.sleep(100)
+    send(ppid, {:event, :exit_subprocess_task})
+    Process.sleep(3000)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 3
+    assert length(completed_process.completed_tasks) == 2
   end
 
   def exit_user_task_event_selector(message) do
@@ -534,7 +582,7 @@ defmodule Mozart.ProcessEngineTest do
     user_task("user task", group: "Admin", outputs: "na")
   end
 
-  defevent "exit loan decision",
+  def_task_exit_event "exit loan decision",
     process: "exit a user task",
     exit_task: "user task",
     selector: :exit_user_task_event_selector do
@@ -558,10 +606,6 @@ defmodule Mozart.ProcessEngineTest do
     assert completed_process.data == %{}
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 3
-  end
-
-  def count_is_less_than_limit(data) do
-    data["count"] < data["limit"]
   end
 
   def add_1_to_count(data) do
@@ -631,6 +675,10 @@ defmodule Mozart.ProcessEngineTest do
     service_task("add one to count 1", function: :add_1_to_count, inputs: "count")
   end
 
+  def count_is_less_than_limit(data) do
+    data["count"] < data["limit"]
+  end
+
   test "repeat with subprocess service task process" do
     PS.clear_state()
     load()
@@ -689,7 +737,7 @@ defmodule Mozart.ProcessEngineTest do
 
   def send_timer_expired(task_uid, process_uid) do
     ppid = PS.get_process_pid_from_uid(process_uid)
-    send(ppid, {:timer_expired, task_uid})
+    if ppid, do: send(ppid, {:timer_expired, task_uid})
   end
 
   test "two timer task process" do

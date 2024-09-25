@@ -6,7 +6,7 @@ Currently, there is just one event type has been implemented (see below). This d
 
 A **Task Exit Event** allows a process execution to exit an open task in response to an external event (a Phoenix.PubSub event). When the task exits in this way, process execution will follow an alternate execution path as specified the the *task exit event*.
 
-The *task exit event* is implemented by the **defevent/3** DSL function which takes the following arguments:
+The *task exit event* is implemented by the **def_task_exit_event/3** DSL function which takes the following arguments:
 
   * the name of the event
   * **process**: the name of the process that the event will act upon
@@ -17,7 +17,7 @@ The *task exit event* is implemented by the **defevent/3** DSL function which ta
   Here is an example:
 
   ```elixir
-  defevent "exit loan decision 1",
+  def_task_exit_event "exit loan decision 1",
     process: "exit a user task 1",
     exit_task: "user task 1",
     selector: &BpmAppWithEvent.event_selector/1 do
@@ -54,7 +54,7 @@ defmodule MyBpmApplication do
     user_task("user task", group: "admin")
   end
 
-  defevent "exit subprocess task",
+  def_task_exit_event "exit subprocess task",
     process: "exit a subprocess task",
     exit_task: "subprocess task",
     selector: &ME.exit_subprocess_task_event_selector/1 do

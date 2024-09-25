@@ -196,7 +196,7 @@ defmodule Mozart.BpmProcess do
   * **selector**: a function that matches on the target event
   * **do**: one or more tasks to be executed when the target task is exited.
   ```
-  defevent "exit loan decision 1",
+  def_task_exit_event "exit loan decision 1",
     process: "exit a user task 1",
     exit_task: "user task 1",
     selector: :event_selector do
@@ -205,7 +205,7 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
-  defmacro defevent(name, options, do: tasks) do
+  defmacro def_task_exit_event(name, options, do: tasks) do
     quote do
       options = unquote(options)
       process = Keyword.get(options, :process)
