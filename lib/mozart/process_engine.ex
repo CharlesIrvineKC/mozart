@@ -352,9 +352,7 @@ defmodule Mozart.ProcessEngine do
     task = Enum.find(open_tasks, fn t -> t.name == event.exit_task end)
     task = Map.put(task, :complete, :exit_on_task_event)
 
-    if task.type == :subprocess do
-      complete_on_task_exit_event(task.subprocess_pid)
-    end
+    if task.type == :subprocess, do: complete_on_task_exit_event(task.subprocess_pid)
 
     # TODO: Code exit repeat task
 
@@ -391,8 +389,7 @@ defmodule Mozart.ProcessEngine do
     ])
   end
 
-  defp create_new_next_task(state, next_task_name, previous_task_name) do
-    new_task = get_new_task_instance(next_task_name, state)
+  defp process_new_task(state, new_task, previous_task_name) do
     Logger.info("New #{new_task.type} task instance [#{new_task.name}][#{new_task.uid}]")
 
     new_task =
@@ -405,12 +402,12 @@ defmodule Mozart.ProcessEngine do
     state = do_new_task_side_effects(new_task.type, new_task, state)
 
     new_task =
-    if new_task.type == :subprocess do
-       child_pid = spawn_subprocess_task(new_task, state)
-       Map.put(new_task, :subprocess_pid, child_pid)
-    else
-      new_task
-    end
+      if new_task.type == :subprocess do
+        child_pid = spawn_subprocess_task(new_task, state)
+        Map.put(new_task, :subprocess_pid, child_pid)
+      else
+        new_task
+      end
 
     new_task =
       if new_task.type == :user, do: update_user_task(new_task, state), else: new_task
@@ -419,36 +416,33 @@ defmodule Mozart.ProcessEngine do
       Map.put(state, :open_tasks, Map.put(state.open_tasks, new_task.uid, new_task))
 
     state =
-      if new_task.type == :repeat do
-        trigger_repeat_execution(state, new_task)
-      else
-        state
-      end
+      if new_task.type == :repeat,
+        do: trigger_repeat_execution(state, new_task),
+        else: state
 
     state =
-      if new_task.type == :conditional do
-        trigger_conditional_execution(state, new_task)
-      else
-        state
-      end
+      if new_task.type == :conditional,
+        do: trigger_conditional_execution(state, new_task),
+        else: state
 
     state
   end
 
+  defp create_new_next_task(state, next_task_name, previous_task_name) do
+    new_task = get_new_task_instance(next_task_name, state)
+    process_new_task(state, new_task, previous_task_name)
+  end
+
   defp update_user_task(new_task, state) do
     input_data =
-      if new_task.inputs do
-        Map.take(state.data, new_task.inputs)
-      else
-        state.data
-      end
+      if new_task.inputs,
+        do: Map.take(state.data, new_task.inputs),
+        else: state.data
 
     new_task =
-      if new_task.listener do
-        apply(new_task.module, new_task.listener, [new_task, input_data])
-      else
-        new_task
-      end
+      if new_task.listener,
+        do: apply(new_task.module, new_task.listener, [new_task, input_data]),
+        else: new_task
 
     new_task =
       Map.put(new_task, :data, input_data)
@@ -463,14 +457,7 @@ defmodule Mozart.ProcessEngine do
   defp trigger_conditional_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
-
-      first_task =
-        if first_task.type == :user, do: update_user_task(first_task, state), else: first_task
-
-      Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
-
-      state = Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
-      do_new_task_side_effects(first_task.type, first_task, state)
+      process_new_task(state, first_task, new_task.name)
     else
       new_task = Map.put(new_task, :complete, true)
       open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
@@ -481,13 +468,7 @@ defmodule Mozart.ProcessEngine do
   defp trigger_repeat_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
-
-      first_task =
-        if first_task.type == :user, do: update_user_task(first_task, state), else: first_task
-
-      Logger.info("New #{first_task.type} task instance [#{first_task.name}][#{first_task.uid}]")
-      state = Map.put(state, :open_tasks, Map.put(state.open_tasks, first_task.uid, first_task))
-      do_new_task_side_effects(first_task.type, first_task, state)
+      process_new_task(state, first_task, new_task.name)
     else
       new_task = Map.put(new_task, :complete, true)
       open_tasks = Map.put(state.open_tasks, new_task.uid, new_task)
@@ -652,11 +633,9 @@ defmodule Mozart.ProcessEngine do
     Logger.info("Complete service task [#{task.name}[#{task.uid}]")
 
     input_data =
-      if task.inputs do
-        Map.filter(state.data, fn {k, _v} -> Enum.member?(task.inputs, k) end)
-      else
-        state.data
-      end
+      if task.inputs,
+        do: Map.filter(state.data, fn {k, _v} -> Enum.member?(task.inputs, k) end),
+        else: state.data
 
     output_data = apply(task.module, task.function, [input_data])
 
@@ -705,11 +684,9 @@ defmodule Mozart.ProcessEngine do
     Logger.info("Complete reroute task [#{task.name}][#{task.uid}]")
 
     next_task_name =
-      if apply(task.module, task.condition, [state.data]) do
-        task.reroute_first
-      else
-        task.next
-      end
+      if apply(task.module, task.condition, [state.data]),
+        do: task.reroute_first,
+        else: task.next
 
     state
     |> create_next_tasks(next_task_name, task.name)
@@ -721,10 +698,7 @@ defmodule Mozart.ProcessEngine do
     Logger.info("Complete case task [#{task.name}][#{task.uid}]")
 
     next_task_name =
-      Enum.find_value(
-        task.cases,
-        fn case -> if case.expression.(state.data), do: case.next end
-      )
+      Enum.find_value(task.cases, fn case -> if case.expression.(state.data), do: case.next end)
 
     state
     |> create_next_tasks(next_task_name, task.name)
