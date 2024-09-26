@@ -327,11 +327,9 @@ defmodule Mozart.ProcessEngine do
   def handle_info({:message, payload}, state) do
     open_tasks =
       Enum.into(state.open_tasks, %{}, fn {uid, task} ->
-        if task.type == :receive do
-          {uid, update_receive_event_task(task, payload)}
-        else
-          {uid, task}
-        end
+        if task.type == :receive,
+          do: {uid, update_receive_event_task(task, payload)},
+          else: {uid, task}
       end)
 
     state = Map.put(state, :open_tasks, open_tasks)
@@ -531,18 +529,10 @@ defmodule Mozart.ProcessEngine do
   defp process_existing_join_next_task(state, existing_task, previous_task_name) do
     ## delete previous task name from inputs
     existing_task =
-      Map.put(
-        existing_task,
-        :inputs,
-        List.delete(existing_task.inputs, previous_task_name)
-      )
+      Map.put(existing_task, :inputs, List.delete(existing_task.inputs, previous_task_name))
 
     ## Update existing task instance in state
-    Map.put(
-      state,
-      :open_tasks,
-      Map.put(state.open_tasks, existing_task.uid, existing_task)
-    )
+    Map.put(state,:open_tasks, Map.put(state.open_tasks, existing_task.uid, existing_task))
   end
 
   defp update_for_completed_task(state, task) do
@@ -720,9 +710,7 @@ defmodule Mozart.ProcessEngine do
     Enum.find(model.tasks, fn task -> task.name == task_name end)
   end
 
-  defp get_task_instance(task_uid, state) do
-    Map.get(state.open_tasks, task_uid)
-  end
+  defp get_task_instance(task_uid, state), do: Map.get(state.open_tasks, task_uid)
 
   defp get_new_task_instance(task_name, state) do
     get_task_def(task_name, state)
