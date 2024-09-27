@@ -34,6 +34,7 @@ defmodule Mozart.BpmProcess do
   alias Mozart.Type.Confirm
 
   alias Mozart.Event.TaskExit
+  alias Mozart.Event.ProcessExit
 
   alias Mozart.Data.ProcessModel
   alias Mozart.Data.BpmApplication
@@ -216,6 +217,34 @@ defmodule Mozart.BpmProcess do
       event = %TaskExit{
         name: unquote(name),
         exit_task: exit_task,
+        selector: selector,
+        module: module
+      }
+
+      new_subtask_context()
+      unquote(tasks)
+      order_subtasks()
+      first = hd(get_subtasks())
+      event = Map.put(event, :next, Map.get(hd(get_subtasks()), :name))
+      @event_task_process_map Map.put(@event_task_process_map, process, get_subtasks())
+      @events Map.put(@events, process, event)
+      @tasks []
+      @subtasks []
+      @subtask_sets []
+      @capture_subtasks false
+    end
+  end
+
+
+  defmacro def_process_exit_event(name, options, do: tasks) do
+    quote do
+      options = unquote(options)
+      process = Keyword.get(options, :process)
+      selector = Keyword.get(options, :selector)
+      module = Keyword.get(options, :module) || __MODULE__
+
+      event = %ProcessExit{
+        name: unquote(name),
         selector: selector,
         module: module
       }

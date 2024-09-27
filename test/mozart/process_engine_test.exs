@@ -34,7 +34,6 @@ defmodule Mozart.ProcessEngineTest do
 
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 2
-
   end
 
   def_task_exit_event "Cancel Pizza Order",
@@ -60,7 +59,7 @@ defmodule Mozart.ProcessEngineTest do
 
     Process.sleep(100)
 
-    send(ppid1, {:event, :exit_subprocess_task})
+    send(ppid1, {:exit_task_event, :exit_subprocess_task})
 
     Process.sleep(800)
 
@@ -73,7 +72,6 @@ defmodule Mozart.ProcessEngineTest do
 
     assert completed_process.complete == true
     assert length(completed_process.completed_tasks) == 2
-
   end
 
   defprocess "process to test user assignment" do
@@ -562,7 +560,7 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute(ppid)
     Process.sleep(100)
 
-    send(ppid, {:event, :exit_subprocess_task})
+    send(ppid, {:exit_task_event, :exit_subprocess_task})
     Process.sleep(3000)
 
     completed_process = PS.get_completed_process(uid)
@@ -599,7 +597,7 @@ defmodule Mozart.ProcessEngineTest do
     PE.execute(ppid)
     Process.sleep(100)
 
-    PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_user_task})
+    PubSub.broadcast(:pubsub, "pe_topic", {:exit_task_event, :exit_user_task})
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
@@ -1092,12 +1090,10 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   def send_approval(_data) do
-    IO.puts("Approval Sent")
     %{}
   end
 
   def send_decline(_data) do
-    IO.puts("Decline Sent")
     %{}
   end
 

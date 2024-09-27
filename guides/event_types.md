@@ -103,14 +103,14 @@ From the logs, we see that the subprocess started and a user task was opened.
 Now we will send an event that will cause the subprocess to exit. Additionally, the top level subprocess task will be completed and the tasks on the event will be executed:
 
 ```elixir
-PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_subprocess_task})
+PubSub.broadcast(:pubsub, "pe_topic", {:exit_task_event, :exit_subprocess_task})
     
 ```
 
 You should see:
 
 ```elixir
-iex [10:21 :: 7] > PubSub.broadcast(:pubsub, "pe_topic", {:event, :exit_subprocess_task})
+iex [10:21 :: 7] > PubSub.broadcast(:pubsub, "pe_topic", {:exit_task_event, :exit_subprocess_task})
 :ok
 10:28:18.310 [info] New prototype task instance [prototype task 1][985d41a3-3e5c-469a-847b-7295a6d405c0]
 10:28:18.310 [info] Complete prototype task [prototype task 1]
