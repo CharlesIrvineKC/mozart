@@ -11,6 +11,45 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  defprocess "Top Level Process" do
+    subprocess_task("Subprocess Task", process: "Subprocess")
+    prototype_task("Final prototype task")
+  end
+
+  defprocess "Subprocess" do
+    prototype_task("Prototype Task in Subprocess")
+  end
+
+  test "Simple Subprocess" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, uid, _business_key1} = PE.start_process("Subprocess", %{})
+    PE.execute(ppid)
+
+    Process.sleep(600)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
+  test "Top Level Process" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, uid, _business_key1} = PE.start_process("Top Level Process", %{})
+    PE.execute(ppid)
+
+    Process.sleep(600)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
+  end
+
   defprocess "Pizza Order" do
     subprocess_task("Prepare and Deliver Subprocess Task", process: "Prepare and Deliver Pizza")
     timer_task("Settle Purchase", duration: 100, function: :schedule_timer_expiration)
@@ -122,21 +161,21 @@ defmodule Mozart.ProcessEngineTest do
     subprocess_task("a subprocess task", process: "user task has top level model name")
   end
 
-  test "top level process" do
-    PS.clear_state()
-    load()
-    data = %{}
+  # test "top level process" do
+  #   PS.clear_state()
+  #   load()
+  #   data = %{}
 
-    {:ok, ppid, _uid, _business_key} =
-      PE.start_process("top level process", data)
+  #   {:ok, ppid, _uid, _business_key} =
+  #     PE.start_process("top level process", data)
 
-    PE.execute(ppid)
-    Process.sleep(100)
+  #   PE.execute(ppid)
+  #   Process.sleep(100)
 
-    user_task = hd(PS.get_user_tasks())
+  #   user_task = hd(PS.get_user_tasks())
 
-    assert user_task.top_level_process == "top level process"
-  end
+  #   assert user_task.top_level_process == "top level process"
+  # end
 
   def assign_user(user_task, data) do
     Map.put(user_task, :assigned_user, data["Assigned User"])
@@ -660,7 +699,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 6
+    assert length(completed_process.completed_tasks) == 8
   end
 
   defprocess "repeat with subprocess service task process" do
@@ -691,7 +730,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 3
+    assert length(completed_process.completed_tasks) == 5
   end
 
   defprocess "repeat task process" do
@@ -791,7 +830,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 3
+    assert length(completed_process.completed_tasks) == 5
   end
 
   def receive_payment_details(msg) do
@@ -1151,7 +1190,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"value" => 3}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 1
+    assert length(completed_process.completed_tasks) == 3
   end
 
   defprocess "two prototype task process" do
