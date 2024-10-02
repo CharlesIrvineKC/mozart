@@ -142,6 +142,10 @@ defmodule Mozart.ProcessEngine do
     GenServer.cast(ppid, :complete_on_task_exit_event)
   end
 
+  def get_completed_tasks(ppid) do
+    GenServer.call(ppid, :get_completed_tasks)
+  end
+
   @doc """
   Returns the state of the process. Useful for debugging.
   """
@@ -174,6 +178,11 @@ defmodule Mozart.ProcessEngine do
   """
   def get_open_tasks(ppid) do
     GenServer.call(ppid, :get_open_tasks)
+  end
+
+  @doc false
+  def get_all_open_tasks(ppid) do
+    GenServer.call(ppid, :get_all_open_tasks)
   end
 
   @doc false
@@ -253,6 +262,15 @@ defmodule Mozart.ProcessEngine do
     {:reply, state.complete, state}
   end
 
+  def handle_call(:get_all_open_tasks, _from, state) do
+    open_tasks = get_all_open_tasks_impl(state)
+    {:reply, open_tasks, state}
+  end
+
+  def handle_call(:get_completed_tasks, _from, state) do
+    {:reply, state.completed_tasks, state}
+  end
+
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
@@ -304,8 +322,7 @@ defmodule Mozart.ProcessEngine do
     current_state = get_current_execution_state(state)
     model = PS.get_process_model(current_state.process)
 
-    state = create_next_tasks(state, model.initial_task)
-    state = execute_process(state)
+    state = create_next_tasks(state, model.initial_task) |> execute_process()
     {:noreply, state}
   end
 
@@ -486,14 +503,19 @@ defmodule Mozart.ProcessEngine do
       else
         new_task
       end
+
     state = do_new_task_side_effects(new_task.type, new_task, state)
+
     new_task =
       if new_task.type == :user, do: update_user_task(new_task, state), else: new_task
+
     state = insert_open_task(state, new_task)
+
     state =
       if new_task.type == :repeat,
         do: trigger_repeat_execution(state, new_task),
         else: state
+
     state =
       if new_task.type == :conditional,
         do: trigger_conditional_execution(state, new_task),
@@ -581,6 +603,11 @@ defmodule Mozart.ProcessEngine do
   defp get_open_tasks_local(state) do
     current_state = get_current_execution_state(state)
     current_state.open_tasks
+  end
+
+  defp get_all_open_tasks_impl(state) do
+    Enum.map(state.execution_states, fn ex_state -> Map.values(ex_state.open_tasks) end)
+    |> List.flatten()
   end
 
   defp get_existing_task_instance(state, task_name) do
@@ -828,7 +855,7 @@ defmodule Mozart.ProcessEngine do
             complete_case_task(state, complete_able_task)
 
           complete_able_task.type == :subprocess ->
-            complete_subprocess_task(state, complete_able_task)
+           complete_subprocess_task(state, complete_able_task)
 
           complete_able_task.type == :parallel ->
             complete_parallel_task(state, complete_able_task)
@@ -876,32 +903,35 @@ defmodule Mozart.ProcessEngine do
         "Exit process: process complete [#{get_process_from_state(state)}][#{state.uid}]"
       )
 
-      PS.update_for_completed_process(state)
-      PS.delete_process_state(state)
+      new_execution_states = tl(state.execution_states)
+      completed_execution_state = hd(state.execution_states)
 
-      execution_states = tl(state.execution_states)
-
-      if execution_states == [] do
+      if new_execution_states == [] do
+        PS.update_for_completed_process(state)
+        PS.delete_process_state(state)
         Process.exit(self(), :shutdown)
       else
-        complete_execution_state = hd(state.execution_states)
-        spawning_task_uid = complete_execution_state.parent_task_uid
-        new_execution_state = hd(execution_states)
-        completing_task_open_tasks = new_execution_state.open_tasks
+        new_current_execution_state = hd(new_execution_states)
+
+        completing_task_open_tasks = new_current_execution_state.open_tasks
+
+        spawning_task_uid = completed_execution_state.parent_task_uid
         completing_task = Map.get(completing_task_open_tasks, spawning_task_uid)
         completing_task = Map.put(completing_task, :complete, true)
 
         completing_task_open_tasks =
           Map.put(completing_task_open_tasks, completing_task.uid, completing_task)
 
-        new_execution_state =
-          Map.put(new_execution_state, :open_tasks, completing_task_open_tasks)
+        new_current_execution_state =
+          Map.put(new_current_execution_state, :open_tasks, completing_task_open_tasks)
 
-        state = Map.put(state, :execution_states, [new_execution_state | tl(execution_states)])
+        state =
+          Map.put(state, :execution_states, [
+            new_current_execution_state | tl(new_execution_states)
+          ])
+
         execute_process(state)
       end
-
-      state
     end
   end
 

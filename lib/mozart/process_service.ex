@@ -33,6 +33,21 @@ defmodule Mozart.ProcessService do
   end
 
   @doc false
+  def get_open_tasks(process_id) do
+    GenServer.call(__MODULE__, {:get_open_tasks, process_id})
+  end
+
+  @doc false
+  def get_completed_tasks(process_id) do
+    GenServer.call(__MODULE__, {:get_completed_tasks, process_id})
+  end
+
+  @doc false
+  def get_process_state(process_id) do
+    GenServer.call(__MODULE__, {:get_process_state, process_id})
+  end
+
+  @doc false
   def get_persisted_process_state(pe_uid) do
     GenServer.call(__MODULE__, {:get_persisted_process_state, pe_uid})
   end
@@ -347,6 +362,23 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:get_process_pid_from_uid, uid}, _from, state) do
     {:reply, Map.get(state.active_processes, uid), state}
+  end
+
+  def handle_call({:get_open_tasks, process_id}, _from, state) do
+    ppid = Map.get(state.active_processes, process_id)
+    open_tasks = PE.get_all_open_tasks(ppid)
+    {:reply, open_tasks, state}
+  end
+
+  def handle_call({:get_completed_tasks, process_id}, _from, state) do
+    ppid = Map.get(state.active_processes, process_id)
+    completed_tasks = PE.get_completed_tasks(ppid)
+    {:reply, completed_tasks, state}
+  end
+
+  def handle_call({:get_process_state, process_id}, _from, state) do
+    ppid = Map.get(state.active_processes, process_id)
+    {:reply, PE.get_state(ppid), state}
   end
 
   def handle_call({:get_process_ppid, process_uid}, _from, state) do
