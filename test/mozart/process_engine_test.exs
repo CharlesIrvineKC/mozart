@@ -11,6 +11,22 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  defprocess "Simple Process with User Task" do
+    user_task("User Task", groups: "Foobar")
+  end
+
+  test "Simple Process with User Task" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, _uid, _business_key1} = PE.start_process("Simple Process with User Task", %{})
+    PE.execute(ppid)
+
+    Process.sleep(100)
+
+   assert PE.get_state(ppid).top_level_process == "Simple Process with User Task"
+  end
+
   defprocess "Top Level Process" do
     subprocess_task("Subprocess Task", process: "Subprocess")
     prototype_task("Final prototype task")

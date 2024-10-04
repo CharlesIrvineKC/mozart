@@ -6,9 +6,10 @@ defmodule Mozart.Data.ProcessState do
     :business_key,
     :start_time,
     :end_time,
+    :top_level_process,
     :execute_duration,
     data: %{},
-    execution_states: [],
+    execution_frames: [],
     completed_tasks: [],
     complete: false
   ]

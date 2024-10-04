@@ -1,4 +1,4 @@
-defmodule Mozart.Data.ExecutionState do
+defmodule Mozart.Data.ExecutionFrame do
   @moduledoc false
 
   defstruct [

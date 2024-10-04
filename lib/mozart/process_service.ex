@@ -13,6 +13,11 @@ defmodule Mozart.ProcessService do
   ## Client API
 
   @doc false
+  def get_process_state_process(process_state) do
+    (process_state.execution_frames |> hd()).process
+  end
+
+  @doc false
   def start_link(_init_arg) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
