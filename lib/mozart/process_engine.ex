@@ -468,7 +468,8 @@ defmodule Mozart.ProcessEngine do
 
     if new_task.type == :timer, do: set_timer_for(new_task, new_task.timer_duration)
 
-    if new_task.type == :send, do: PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
+    if new_task.type == :send,
+      do: PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
 
     new_task =
       if new_task.type == :user, do: update_user_task(new_task, state), else: new_task
@@ -516,6 +517,7 @@ defmodule Mozart.ProcessEngine do
     initial_task_name = model.initial_task
     initial_task = get_task_def_from_model(initial_task_name, model)
     initial_task = initialize_new_task(initial_task, state.uid)
+
     initial_task =
       if initial_task.type == :user, do: update_user_task(initial_task, state), else: initial_task
 
@@ -539,11 +541,10 @@ defmodule Mozart.ProcessEngine do
 
     state =
       if initial_task.type == :repeat,
-      do: trigger_repeat_execution(state, initial_task),
-      else: state
+        do: trigger_repeat_execution(state, initial_task),
+        else: state
 
     state
-
   end
 
   defp trigger_conditional_execution(state, new_task) do
@@ -722,47 +723,48 @@ defmodule Mozart.ProcessEngine do
         PS.persist_process_state(state)
         state
       end
-    else
-      now = DateTime.utc_now()
 
+    else
+      # No work remaining.
+      Logger.info(
+        "Exit process: process complete [#{get_process_from_state(state)}][#{state.uid}]"
+      )
+
+      now = DateTime.utc_now()
       state =
         Map.put(state, :complete, true)
         |> Map.put(:end_time, now)
         |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
-      Logger.info(
-        "Exit process: process complete [#{get_process_from_state(state)}][#{state.uid}]"
-      )
-
-      new_execution_frames = tl(state.execution_frames)
-      completed_execution_frame = hd(state.execution_frames)
-
-      if new_execution_frames == [] do
+      if tl(state.execution_frames) == [] do
+        # This is the top level process, so exit process
         PS.update_for_completed_process(state)
         PS.delete_process_state(state)
         Process.exit(self(), :shutdown)
       else
-        new_current_execution_frame = hd(new_execution_frames)
-
-        completing_task_open_tasks = new_current_execution_frame.open_tasks
-
-        spawning_task_uid = completed_execution_frame.parent_task_uid
-        completing_task = Map.get(completing_task_open_tasks, spawning_task_uid)
-        completing_task = Map.put(completing_task, :complete, true)
-
-        completing_task_open_tasks =
-          Map.put(completing_task_open_tasks, completing_task.uid, completing_task)
-
-        new_current_execution_frame =
-          Map.put(new_current_execution_frame, :open_tasks, completing_task_open_tasks)
-
-        state =
-          Map.put(state, :execution_frames, [
-            new_current_execution_frame | tl(new_execution_frames)
-          ])
-
-        execute_process(state)
+        update_execution_frame_stack(state) |> execute_process()
       end
     end
+  end
+
+  defp update_execution_frame_stack(state) do
+    new_execution_frames = tl(state.execution_frames)
+    completed_execution_frame = hd(state.execution_frames)
+
+    new_current_execution_frame = hd(new_execution_frames)
+
+    completing_task_open_tasks = new_current_execution_frame.open_tasks
+
+    spawning_task_uid = completed_execution_frame.parent_task_uid
+    completing_task = Map.get(completing_task_open_tasks, spawning_task_uid)
+    completing_task = Map.put(completing_task, :complete, true)
+
+    completing_task_open_tasks =
+      Map.put(completing_task_open_tasks, completing_task.uid, completing_task)
+
+    new_current_execution_frame =
+      Map.put(new_current_execution_frame, :open_tasks, completing_task_open_tasks)
+
+    Map.put(state, :execution_frames, [new_current_execution_frame | tl(new_execution_frames)])
   end
 end
