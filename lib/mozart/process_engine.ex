@@ -19,11 +19,7 @@ defmodule Mozart.ProcessEngine do
 
   @doc false
   def start_link(uid, process, data, business_key) do
-    {:ok, pid} =
-      GenServer.start_link(
-        __MODULE__,
-        {uid, process, data, business_key}
-      )
+    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, process, data, business_key})
 
     {:ok, pid, {uid, business_key}}
   end
@@ -64,11 +60,7 @@ defmodule Mozart.ProcessEngine do
   ```
   """
 
-  def start_process(
-        process,
-        data,
-        business_key \\ nil
-      ) do
+  def start_process(process, data, business_key \\ nil) do
     uid = UUID.generate()
     business_key = business_key || UUID.generate()
 
@@ -444,13 +436,6 @@ defmodule Mozart.ProcessEngine do
     end
   end
 
-  # defp do_new_task_side_effects(:send, new_task, state) do
-  #   PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
-  #   state
-  # end
-
-  # defp do_new_task_side_effects(_, _, state), do: state
-
   defp create_new_next_task(state, next_task_name, previous_task_name) do
     new_task = get_new_task_instance(next_task_name, state)
     process_new_task(state, new_task, previous_task_name)
@@ -584,8 +569,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   defp get_open_tasks_local(state) do
-    current_state = get_current_execution_frame(state)
-    current_state.open_tasks
+    get_current_execution_frame(state) |> Map.get(:open_tasks)
   end
 
   defp get_all_open_tasks_impl(state) do
@@ -723,7 +707,6 @@ defmodule Mozart.ProcessEngine do
         PS.persist_process_state(state)
         state
       end
-
     else
       # No work remaining.
       Logger.info(
