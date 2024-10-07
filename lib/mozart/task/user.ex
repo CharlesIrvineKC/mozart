@@ -20,7 +20,3 @@ defmodule Mozart.Task.User do
     type: :user
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.User do
-  def completable(user), do: user.complete
-end

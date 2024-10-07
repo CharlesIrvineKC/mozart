@@ -14,7 +14,3 @@ defmodule Mozart.Task.Service do
     type: :service
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.Service do
-  def completable(_service), do: true
-end

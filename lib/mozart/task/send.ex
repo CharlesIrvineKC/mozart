@@ -12,7 +12,3 @@ defmodule Mozart.Task.Send do
     type: :send
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.Send do
-  def completable(_send), do: true
-end

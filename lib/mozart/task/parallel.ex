@@ -11,7 +11,3 @@ defmodule Mozart.Task.Parallel do
     type: :parallel
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.Parallel do
-  def completable(_parallel), do: true
-end

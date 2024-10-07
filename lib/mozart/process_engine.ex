@@ -573,11 +573,11 @@ defmodule Mozart.ProcessEngine do
     state
   end
 
-  defp process_next_task_list(state, [], _parent_name) do
+  def process_next_task_list(state, [], _parent_name) do
     state
   end
 
-  defp process_next_task_list(state, [task_name | rest], parent_name) do
+  def process_next_task_list(state, [task_name | rest], parent_name) do
     state = create_next_tasks(state, task_name, parent_name)
     process_next_task_list(state, rest, parent_name)
   end
@@ -607,7 +607,7 @@ defmodule Mozart.ProcessEngine do
     insert_open_task(state, existing_task)
   end
 
-  defp update_for_completed_task(state, task) do
+  def update_for_completed_task(state, task) do
     now = DateTime.utc_now()
     duration = DateTime.diff(now, task.start_time, :microsecond)
 
@@ -674,129 +674,12 @@ defmodule Mozart.ProcessEngine do
     if next_task, do: create_next_tasks(state, next_task, task.name), else: state
   end
 
-  defp complete_send_event_task(state, task) do
-    Logger.info("Complete send event task [#{task.name}[#{task.uid}]")
-    update_completed_task_state(state, task, task.next) |> execute_process()
-  end
-
-  defp complete_join_task(state, task) do
-    Logger.info("Complete join task [#{task.name}]")
-    update_completed_task_state(state, task, task.next) |> execute_process()
-  end
-
-  defp complete_timer_task(state, task) do
-    Logger.info("Complete timer task [#{task.name}]")
-    update_completed_task_state(state, task, task.next) |> execute_process()
-  end
-
-  defp complete_prototype_task(state, task) do
-    Logger.info("Complete prototype task [#{task.name}]")
-    state = if task.data, do: Map.put(state, :data, Map.merge(state.data, task.data)), else: state
-    update_completed_task_state(state, task, task.next) |> execute_process()
-  end
-
-  defp complete_repeat_task(state, task) do
-    Logger.info("Complete repeat task [#{task.name}]")
-    update_completed_task_state(state, task, task.next) |> execute_process()
-  end
-
-  defp complete_conditional_task(state, task) do
-    Logger.info("Complete conditional task [#{task.name}]")
-    update_completed_task_state(state, task, task.next) |> execute_process()
-  end
-
-  defp complete_service_task(state, task) do
-    Logger.info("Complete service task [#{task.name}[#{task.uid}]")
-
-    input_data =
-      if task.inputs,
-        do: Map.filter(state.data, fn {k, _v} -> Enum.member?(task.inputs, k) end),
-        else: state.data
-
-    output_data = apply(task.module, task.function, [input_data])
-
-    Map.put(state, :data, Map.merge(state.data, output_data))
-    |> update_completed_task_state(task, task.next)
-    |> execute_process()
-  end
-
-  defp complete_rule_task(state, task) do
-    Logger.info("Complete rule task [#{task.name}[#{task.uid}]")
-
-    filtered_data = Map.filter(state.data, fn {k, _v} -> Enum.member?(task.inputs, k) end)
-
-    decide_args =
-      Enum.map(filtered_data, fn {key, value} -> {String.to_existing_atom(key), value} end)
-
-    decide_result = Tablex.decide(task.rule_table, decide_args)
-
-    decide_result = Enum.map(decide_result, fn {k, v} -> {Atom.to_string(k), v} end)
-    data = Map.new(decide_result)
-    data = Map.merge(state.data, data)
-
-    Map.put(state, :data, data)
-    |> update_completed_task_state(task, task.next)
-    |> execute_process()
-  end
-
-  defp complete_parallel_task(state, task) do
-    Logger.info("Complete parallel task [#{task.name}]")
-    next_states = task.multi_next
-
-    update_for_completed_task(state, task)
-    |> process_next_task_list(next_states, task.name)
-    |> execute_process()
-  end
-
-  defp complete_receive_event_task(state, task) do
-    Logger.info("Complete receive event task [#{task.name}]")
-
-    Map.put(state, :data, Map.merge(state.data, task.data))
-    |> update_completed_task_state(task, task.next)
-    |> execute_process()
-  end
-
-  defp complete_reroute_task(state, task) do
-    Logger.info("Complete reroute task [#{task.name}][#{task.uid}]")
-
-    next_task_name =
-      if apply(task.module, task.condition, [state.data]),
-        do: task.reroute_first,
-        else: task.next
-
-    state
-    |> create_next_tasks(next_task_name, task.name)
-    |> update_completed_task_state(task, nil)
-    |> execute_process()
-  end
-
-  def complete_case_task(state, task) do
-    Logger.info("Complete case task [#{task.name}][#{task.uid}]")
-
-    next_task_name =
-      Enum.find_value(task.cases, fn case -> if case.expression.(state.data), do: case.next end)
-
-    state
-    |> create_next_tasks(next_task_name, task.name)
-    |> update_completed_task_state(task, task.next)
-    |> execute_process()
-  end
-
-  defp complete_subprocess_task(state, task) do
-    Logger.info("Complete subprocess task [#{task.name}][#{task.uid}]")
-    data = Map.merge(task.data, state.data)
-
-    Map.put(state, :data, data)
-    |> update_completed_task_state(task, task.next)
-    |> execute_process()
-  end
-
   def get_process_from_state(state) do
     current_state = get_current_execution_frame(state)
     current_state.process
   end
 
-  defp get_task_instance(task_uid, state), do: Map.get(get_open_tasks_local(state), task_uid)
+  def get_task_instance(task_uid, state), do: Map.get(get_open_tasks_local(state), task_uid)
 
   defp get_complete_able_task(state) do
     Enum.find_value(get_open_tasks_local(state), fn {_uid, task} ->
@@ -834,46 +717,7 @@ defmodule Mozart.ProcessEngine do
       complete_able_task = get_complete_able_task(state)
 
       if complete_able_task do
-        cond do
-          complete_able_task.type == :service ->
-            complete_service_task(state, complete_able_task)
-
-          complete_able_task.type == :case ->
-            complete_case_task(state, complete_able_task)
-
-          complete_able_task.type == :subprocess ->
-            complete_subprocess_task(state, complete_able_task)
-
-          complete_able_task.type == :parallel ->
-            complete_parallel_task(state, complete_able_task)
-
-          complete_able_task.type == :join ->
-            complete_join_task(state, complete_able_task)
-
-          complete_able_task.type == :timer ->
-            complete_timer_task(state, complete_able_task)
-
-          complete_able_task.type == :receive ->
-            complete_receive_event_task(state, complete_able_task)
-
-          complete_able_task.type == :send ->
-            complete_send_event_task(state, complete_able_task)
-
-          complete_able_task.type == :rule ->
-            complete_rule_task(state, complete_able_task)
-
-          complete_able_task.type == :prototype ->
-            complete_prototype_task(state, complete_able_task)
-
-          complete_able_task.type == :repeat ->
-            complete_repeat_task(state, complete_able_task)
-
-          complete_able_task.type == :conditional ->
-            complete_conditional_task(state, complete_able_task)
-
-          complete_able_task.type == :reroute ->
-            complete_reroute_task(state, complete_able_task)
-        end
+        Task.complete_task(complete_able_task, state)
       else
         PS.persist_process_state(state)
         state

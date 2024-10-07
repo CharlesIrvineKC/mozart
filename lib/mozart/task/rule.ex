@@ -14,7 +14,3 @@ defmodule Mozart.Task.Rule do
     type: :rule
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.Rule do
-  def completable(_rule), do: true
-end

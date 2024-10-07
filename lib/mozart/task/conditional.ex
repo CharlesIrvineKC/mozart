@@ -17,7 +17,3 @@ defmodule Mozart.Task.Conditional do
     type: :conditional
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.Conditional do
-  def completable(conditional), do: conditional.complete
-end

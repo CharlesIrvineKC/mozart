@@ -15,7 +15,3 @@ defmodule Mozart.Task.Subprocess do
     type: :subprocess
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.Subprocess do
-  def completable(subprocess), do: subprocess.complete
-end

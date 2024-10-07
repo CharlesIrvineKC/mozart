@@ -14,7 +14,3 @@ defmodule Mozart.Task.Case do
     type: :case
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.Case do
-  def completable(_case), do: true
-end

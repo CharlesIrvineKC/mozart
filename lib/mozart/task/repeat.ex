@@ -17,7 +17,3 @@ defmodule Mozart.Task.Repeat do
     type: :repeat
   ]
 end
-
-defimpl Mozart.Task, for: Mozart.Task.Repeat do
-  def completable(repeat), do: repeat.complete
-end
