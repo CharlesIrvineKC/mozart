@@ -15,3 +15,7 @@ defmodule Mozart.Task.Receive do
     type: :receive
   ]
 end
+
+defimpl Mozart.Task, for: Mozart.Task.Receive do
+  def completable(receive), do: receive.complete
+end

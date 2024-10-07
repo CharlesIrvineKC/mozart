@@ -12,3 +12,7 @@ defmodule Mozart.Task.Prototype do
     type: :prototype
   ]
 end
+
+defimpl Mozart.Task, for: Mozart.Task.Prototype do
+  def completable(_prototype), do: true
+end

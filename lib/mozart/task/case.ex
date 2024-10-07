@@ -1,5 +1,6 @@
 defmodule Mozart.Task.Case do
   @moduledoc false
+
   defstruct [
     :name,
     :function,
@@ -12,4 +13,8 @@ defmodule Mozart.Task.Case do
     cases: [],
     type: :case
   ]
+end
+
+defimpl Mozart.Task, for: Mozart.Task.Case do
+  def completable(_case), do: true
 end

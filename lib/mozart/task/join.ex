@@ -12,3 +12,7 @@ defmodule Mozart.Task.Join do
     type: :join
   ]
 end
+
+defimpl Mozart.Task, for: Mozart.Task.Join do
+  def completable(join), do: join.inputs == []
+end

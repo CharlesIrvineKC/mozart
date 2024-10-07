@@ -15,3 +15,7 @@ defmodule Mozart.Task.Timer do
     type: :timer
   ]
 end
+
+defimpl Mozart.Task, for: Mozart.Task.Timer do
+  def completable(timer), do: timer.expired
+end

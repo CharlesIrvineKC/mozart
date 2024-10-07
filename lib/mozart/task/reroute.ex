@@ -14,3 +14,7 @@ defmodule Mozart.Task.Reroute do
     type: :reroute
   ]
 end
+
+defimpl Mozart.Task, for: Mozart.Task.Reroute do
+  def completable(_reroute), do: true
+end
