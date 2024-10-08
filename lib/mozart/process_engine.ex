@@ -427,27 +427,20 @@ defmodule Mozart.ProcessEngine do
   defp trigger_repeat_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
-      process_new_task(state, first_task, new_task.name)
+      process_new_task(state, first_task)
     else
       new_task = Map.put(new_task, :complete, true)
       insert_open_task(state, new_task)
     end
   end
 
-  defp create_new_next_task(state, next_task_name, previous_task_name) do
+  def create_next_tasks(state, next_task_name) do
     new_task = get_new_task_instance(next_task_name, state)
-    process_new_task(state, new_task, previous_task_name)
+    process_new_task(state, new_task)
   end
 
-  defp process_new_task(state, new_task, previous_task_name) do
+  defp process_new_task(state, new_task) do
     Logger.info("New #{new_task.type} task instance [#{new_task.name}][#{new_task.uid}]")
-
-    new_task =
-      if new_task.type == :join do
-        Map.put(new_task, :inputs, List.delete(new_task.inputs, previous_task_name))
-      else
-        new_task
-      end
 
     if new_task.type == :timer, do: set_timer_for(new_task, new_task.timer_duration)
 
@@ -533,7 +526,7 @@ defmodule Mozart.ProcessEngine do
   defp trigger_conditional_execution(state, new_task) do
     if apply(new_task.module, new_task.condition, [state.data]) do
       first_task = get_new_task_instance(new_task.first, state)
-      process_new_task(state, first_task, new_task.name)
+      process_new_task(state, first_task)
     else
       new_task = Map.put(new_task, :complete, true)
       insert_open_task(state, new_task)
@@ -544,25 +537,12 @@ defmodule Mozart.ProcessEngine do
     state.execution_frames |> hd()
   end
 
-  def create_next_tasks(state, next_task_name, previous_task_name \\ nil) do
-    existing_task = get_existing_task_instance(state, next_task_name)
-
-    state =
-      if existing_task && existing_task.type == :join do
-        process_existing_join_next_task(state, existing_task, previous_task_name)
-      else
-        create_new_next_task(state, next_task_name, previous_task_name)
-      end
-
-    state
-  end
-
   def process_next_task_list(state, [], _parent_name) do
     state
   end
 
   def process_next_task_list(state, [task_name | rest], parent_name) do
-    state = create_next_tasks(state, task_name, parent_name)
+    state = create_next_tasks(state, task_name)
     process_next_task_list(state, rest, parent_name)
   end
 
@@ -573,21 +553,6 @@ defmodule Mozart.ProcessEngine do
   defp get_all_open_tasks_impl(state) do
     Enum.map(state.execution_frames, fn ex_state -> Map.values(ex_state.open_tasks) end)
     |> List.flatten()
-  end
-
-  defp get_existing_task_instance(state, task_name) do
-    Enum.find_value(get_open_tasks_impl(state), fn {_uid, task} ->
-      if task.name == task_name, do: task
-    end)
-  end
-
-  defp process_existing_join_next_task(state, existing_task, previous_task_name) do
-    ## delete previous task name from inputs
-    existing_task =
-      Map.put(existing_task, :inputs, List.delete(existing_task.inputs, previous_task_name))
-
-    ## Update existing task instance in state
-    insert_open_task(state, existing_task)
   end
 
   def update_for_completed_task(state, task) do
@@ -654,7 +619,7 @@ defmodule Mozart.ProcessEngine do
 
   def update_completed_task_state(state, task, next_task) do
     state = update_for_completed_task(state, task)
-    if next_task, do: create_next_tasks(state, next_task, task.name), else: state
+    if next_task, do: create_next_tasks(state, next_task), else: state
   end
 
   def get_process_from_state(state) do
@@ -681,7 +646,7 @@ defmodule Mozart.ProcessEngine do
 
       state =
         if task_instance.next,
-          do: create_next_tasks(state, task_instance.next, task_instance.name),
+          do: create_next_tasks(state, task_instance.next),
           else: state
 
       Logger.info("Complete user task [#{task_instance.name}][#{task_instance.uid}]")

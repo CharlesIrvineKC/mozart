@@ -24,7 +24,7 @@ defimpl Mozart.Task, for: Mozart.Task.Case do
       Enum.find_value(task.cases, fn case -> if case.expression.(state.data), do: case.next end)
 
     state
-    |> create_next_tasks(next_task_name, task.name)
+    |> create_next_tasks(next_task_name)
     |> update_completed_task_state(task, task.next)
     |> execute_process()
   end
@@ -127,7 +127,7 @@ defimpl Mozart.Task, for: Mozart.Task.Reroute do
         else: task.next
 
     state
-    |> create_next_tasks(next_task_name, task.name)
+    |> create_next_tasks(next_task_name)
     |> update_completed_task_state(task, nil)
     |> execute_process()
   end
