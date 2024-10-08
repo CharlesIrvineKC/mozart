@@ -671,7 +671,7 @@ defmodule Mozart.ProcessEngine do
         state
       end
     else
-      # No work remaining.
+      # No work remaining in current execution frame.
       Logger.info(
         "Exit process: process complete [#{get_process_from_state(state)}][#{state.uid}]"
       )
@@ -683,11 +683,12 @@ defmodule Mozart.ProcessEngine do
         |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
 
       if tl(state.execution_frames) == [] do
-        # This is the top level process, so exit process
+        # This is the top level BPM process, so exit Elixir process
         PS.update_for_completed_process(state)
         PS.delete_process_state(state)
         Process.exit(self(), :shutdown)
       else
+        # Finished a BPM subprocess execution frame. Pop the frame and resume execution.
         update_execution_frame_stack(state) |> execute_process()
       end
     end
@@ -697,20 +698,19 @@ defmodule Mozart.ProcessEngine do
     new_execution_frames = tl(state.execution_frames)
     completed_execution_frame = hd(state.execution_frames)
 
-    new_current_execution_frame = hd(new_execution_frames)
+    current_execution_frame = hd(new_execution_frames)
 
-    completing_task_open_tasks = new_current_execution_frame.open_tasks
+    open_tasks = current_execution_frame.open_tasks
 
     spawning_task_uid = completed_execution_frame.parent_task_uid
-    completing_task = Map.get(completing_task_open_tasks, spawning_task_uid)
-    completing_task = Map.put(completing_task, :complete, true)
+    complete_subprocess_task = Map.get(open_tasks, spawning_task_uid) |> Map.put(:complete, true)
 
-    completing_task_open_tasks =
-      Map.put(completing_task_open_tasks, completing_task.uid, completing_task)
+    open_tasks =
+      Map.put(open_tasks, complete_subprocess_task.uid, complete_subprocess_task)
 
-    new_current_execution_frame =
-      Map.put(new_current_execution_frame, :open_tasks, completing_task_open_tasks)
+    current_execution_frame =
+      Map.put(current_execution_frame, :open_tasks, open_tasks)
 
-    Map.put(state, :execution_frames, [new_current_execution_frame | tl(new_execution_frames)])
+    Map.put(state, :execution_frames, [current_execution_frame | tl(new_execution_frames)])
   end
 end
