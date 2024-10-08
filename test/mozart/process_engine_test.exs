@@ -115,16 +115,6 @@ defmodule Mozart.ProcessEngineTest do
     assert length(completed_process.completed_tasks) == 3
   end
 
-  defprocess "Pizza Order" do
-    subprocess_task("Prepare and Deliver Subprocess Task", process: "Prepare and Deliver Pizza")
-    timer_task("Settle Purchase", duration: 100, function: :schedule_timer_expiration)
-  end
-
-  defprocess "Prepare and Deliver Pizza" do
-    timer_task("Prepare Pizza", duration: 200, function: :schedule_timer_expiration)
-    timer_task("Deliver Pizza", duration: 200, function: :schedule_timer_expiration)
-  end
-
   test "Prepare and Deliver Pizza" do
     PS.clear_state()
     load()
@@ -140,6 +130,19 @@ defmodule Mozart.ProcessEngineTest do
     assert length(completed_process.completed_tasks) == 2
   end
 
+  def schedule_timer_expiration(task_uid, process_uid, timer_duration) do
+    spawn(fn -> wait_and_notify(task_uid, process_uid, timer_duration) end)
+  end
+
+  defprocess "Pizza Order" do
+    subprocess_task("Prepare and Deliver Subprocess Task", process: "Prepare and Deliver Pizza")
+  end
+
+  defprocess "Prepare and Deliver Pizza" do
+    timer_task("Prepare Pizza", duration: 200, function: :schedule_timer_expiration)
+    timer_task("Deliver Pizza", duration: 200, function: :schedule_timer_expiration)
+  end
+
   def_task_exit_event "Cancel Pizza Order",
     process: "Pizza Order",
     exit_task: "Prepare and Deliver Subprocess Task",
@@ -148,35 +151,21 @@ defmodule Mozart.ProcessEngineTest do
     prototype_task("Cancel Delivery")
   end
 
-  def exit_subprocess_task_event_selector(:exit_subprocess_task), do: true
-  def exit_subprocess_task_event_selector(_), do: false
+  def exit_subprocess_task_event_selector(event) do
+    IO.inspect(event, label: "** event **")
+    event == :exit_subprocess_task
+  end
 
-  # test "Pizza Order" do
-  #   PS.clear_state()
-  #   load()
+  def send_timer_expired(task_uid, process_uid) do
+    ppid = PS.get_process_pid_from_uid(process_uid)
+    IO.inspect(ppid, label: "** ppid in send timer expired **")
+    if ppid, do: send(ppid, {:timer_expired, task_uid})
+  end
 
-  #   {:ok, ppid1, uid1, _business_key1} = PE.start_process("Pizza Order", %{})
-  #   PE.execute(ppid1)
-
-  #   {:ok, ppid2, uid2, _business_key2} = PE.start_process("Pizza Order", %{})
-  #   PE.execute(ppid2)
-
-  #   Process.sleep(100)
-
-  #   send(ppid1, {:exit_task_event, :exit_subprocess_task})
-
-  #   Process.sleep(800)
-
-  #   completed_process = PS.get_completed_process(uid1)
-
-  #   assert completed_process.complete == true
-  #   assert length(completed_process.completed_tasks) == 3
-
-  #   completed_process = PS.get_completed_process(uid2)
-
-  #   assert completed_process.complete == true
-  #   assert length(completed_process.completed_tasks) == 2
-  # end
+  defp wait_and_notify(task_uid, process_uid, timer_duration) do
+    IO.inspect({task_uid, process_uid, timer_duration}, label: "** task_uid, process_uid, timer_duration")
+    :timer.apply_after(timer_duration, __MODULE__, :send_timer_expired, [task_uid, process_uid])
+  end
 
   defprocess "process to test user assignment" do
     user_task("a user task to assign user", groups: "Admin")
@@ -226,21 +215,20 @@ defmodule Mozart.ProcessEngineTest do
     subprocess_task("a subprocess task", process: "user task has top level model name")
   end
 
-  # test "top level process" do
-  #   PS.clear_state()
-  #   load()
-  #   data = %{}
+  test "top level process" do
+    PS.clear_state()
+    load()
+    data = %{}
 
-  #   {:ok, ppid, _uid, _business_key} =
-  #     PE.start_process("top level process", data)
+    {:ok, ppid, _uid, _business_key} =PE.start_process("top level process", data)
 
-  #   PE.execute(ppid)
-  #   Process.sleep(100)
+    PE.execute(ppid)
+    Process.sleep(100)
 
-  #   user_task = hd(PS.get_user_tasks())
-
-  #   assert user_task.top_level_process == "top level process"
-  # end
+    user_task = hd(PS.get_user_tasks())
+    assert user_task.name == "a user task"
+    assert PE.get_state(ppid) |> Map.get(:execution_frames) |> length() == 2
+  end
 
   def assign_user(user_task, data) do
     Map.put(user_task, :assigned_user, data["Assigned User"])
@@ -829,19 +817,6 @@ defmodule Mozart.ProcessEngineTest do
   defprocess "two timer task process" do
     timer_task("one second timer task", duration: 1000, function: :schedule_timer_expiration)
     timer_task("two second timer task", duration: 2000, function: :schedule_timer_expiration)
-  end
-
-  def schedule_timer_expiration(task_uid, process_uid, timer_duration) do
-    spawn(fn -> wait_and_notify(task_uid, process_uid, timer_duration) end)
-  end
-
-  defp wait_and_notify(task_uid, process_uid, timer_duration) do
-    :timer.apply_after(timer_duration, __MODULE__, :send_timer_expired, [task_uid, process_uid])
-  end
-
-  def send_timer_expired(task_uid, process_uid) do
-    ppid = PS.get_process_pid_from_uid(process_uid)
-    if ppid, do: send(ppid, {:timer_expired, task_uid})
   end
 
   test "two timer task process" do
