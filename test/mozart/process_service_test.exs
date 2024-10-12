@@ -5,6 +5,8 @@ defmodule Mozart.ProcessServiceTest do
   alias Mozart.ProcessEngine, as: PE
   alias Mozart.ProcessService, as: PS
 
+
+
   defprocess "process with one user task" do
     user_task("a user task", group: "admin")
     prototype_task("a prototype test")
@@ -66,7 +68,11 @@ defmodule Mozart.ProcessServiceTest do
     PE.execute(ppid)
     Process.sleep(100)
 
+    state = PE.get_state(ppid)
+
     assert length(PS.get_open_tasks(uid)) == 2
+
+    assert PS.get_open_tasks(uid) == PS.get_open_tasks(state)
   end
 
   defprocess "process with two prototype tasks" do

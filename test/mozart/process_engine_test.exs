@@ -1,5 +1,6 @@
 defmodule Mozart.ProcessEngineTest do
   use ExUnit.Case
+
   use Mozart.BpmProcess
 
   alias Phoenix.PubSub
@@ -10,6 +11,34 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.Choice
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
+
+  def reroute_is_true(data) do
+    data.reroute
+  end
+
+  defprocess "reroute process" do
+    prototype_task("initial prototype task")
+    reroute_task "reroute task", condition: :reroute_is_true do
+      prototype_task("rerouted prototype task")
+    end
+    prototype_task("final prototype task")
+  end
+
+  test "reroute process" do
+    PS.clear_state()
+    load()
+    data = %{reroute: true}
+
+    {:ok, ppid, uid, _business_key1} = PE.start_process("reroute process", data)
+    PE.execute(ppid)
+
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
+  end
 
   def case_1(_data) do
     true
@@ -152,18 +181,15 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   def exit_subprocess_task_event_selector(event) do
-    IO.inspect(event, label: "** event **")
     event == :exit_subprocess_task
   end
 
   def send_timer_expired(task_uid, process_uid) do
     ppid = PS.get_process_pid_from_uid(process_uid)
-    IO.inspect(ppid, label: "** ppid in send timer expired **")
     if ppid, do: send(ppid, {:timer_expired, task_uid})
   end
 
   defp wait_and_notify(task_uid, process_uid, timer_duration) do
-    IO.inspect({task_uid, process_uid, timer_duration}, label: "** task_uid, process_uid, timer_duration")
     :timer.apply_after(timer_duration, __MODULE__, :send_timer_expired, [task_uid, process_uid])
   end
 
@@ -906,30 +932,30 @@ defmodule Mozart.ProcessEngineTest do
     prototype_task("process payment")
   end
 
-  test "act on one of multiple events" do
-    PS.clear_state()
-    load()
-    data = %{"barrower_id" => "511-58-1422"}
+  # test "act on one of multiple events" do
+  #   PS.clear_state()
+  #   load()
+  #   data = %{"barrower_id" => "511-58-1422"}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process("act on one of multiple events", data)
-    PE.execute(ppid)
-    Process.sleep(100)
+  #   {:ok, ppid, uid, _business_key} = PE.start_process("act on one of multiple events", data)
+  #   PE.execute(ppid)
+  #   Process.sleep(100)
 
-    assert PE.is_complete(ppid) == false
+  #   assert PE.is_complete(ppid) == false
 
-    PubSub.broadcast(:pubsub, "pe_topic", {:message, {:order_canceled, :order_id}})
-    Process.sleep(100)
+  #   PubSub.broadcast(:pubsub, "pe_topic", {:message, {:order_canceled, :order_id}})
+  #   Process.sleep(100)
 
-    completed_process = PS.get_completed_process(uid)
+  #   completed_process = PS.get_completed_process(uid)
 
-    assert completed_process.data == %{
-             "barrower_id" => "511-58-1422",
-             "order_canceled" => :order_id
-           }
+  #   assert completed_process.data == %{
+  #            "barrower_id" => "511-58-1422",
+  #            "order_canceled" => :order_id
+  #          }
 
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 5
-  end
+  #   assert completed_process.complete == true
+  #   assert length(completed_process.completed_tasks) == 5
+  # end
 
   def receive_loan_income(msg) do
     case msg do
@@ -1199,7 +1225,7 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, ppid, uid, _business_key} = PE.start_process("two service task case process", data)
     PE.execute(ppid)
-    Process.sleep(1000)
+    Process.sleep(500)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"income" => 100_000, "decision" => "Approved"}

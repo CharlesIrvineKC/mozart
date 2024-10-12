@@ -248,41 +248,23 @@ defmodule Mozart.ProcessEngine do
 
   def handle_call({:complete_user_task, task_uid, return_data}, _from, state) do
     state = complete_user_task_impl(state, task_uid, return_data)
-    {:reply, state, state}
+    test_for_process_completion(state)
   end
 
   def handle_call(:execute, _from, state) do
     model = PS.get_process_model(get_process_from_state(state))
     state = create_next_tasks(state, model.initial_task)
     state = execute_process(state)
-    {:reply, state, state}
-  end
-
-  def handle_cast(:complete_on_task_exit_event, state) do
-    Process.sleep(200)
-    now = DateTime.utc_now()
-
-    state =
-      Map.put(state, :complete, :exit_on_task_event)
-      |> Map.put(:end_time, now)
-      |> Map.put(:execute_duration, DateTime.diff(now, state.start_time, :microsecond))
-
-    PS.update_for_completed_process(state)
-
-    Logger.info(
-      "Exit process: complete due to task exit event [#{get_process_from_state(state)}][#{state.uid}]"
-    )
-
-    Process.exit(self(), :shutdown)
-    {:noreply, state}
+    test_for_process_completion(state)
   end
 
   def handle_cast(:execute, state) do
     current_state = get_current_execution_frame(state)
     model = PS.get_process_model(current_state.process)
 
-    state = create_next_tasks(state, model.initial_task) |> execute_process()
-    {:noreply, state}
+    state = create_next_tasks(state, model.initial_task)
+    state = execute_process(state)
+    test_for_process_completion(state)
   end
 
   def handle_cast({:notify_child_complete, subprocess_name, subprocess_data}, state) do
@@ -305,7 +287,7 @@ defmodule Mozart.ProcessEngine do
 
   def handle_cast({:complete_user_task, task_uid, return_data}, state) do
     state = complete_user_task_impl(state, task_uid, return_data)
-    {:noreply, state}
+    test_for_process_completion(state)
   end
 
   def handle_cast({:assign_user_task, task_uid, user_id}, state) do
@@ -320,7 +302,8 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_info({:timer_expired, timer_task_uid}, state) do
-    timer_task = Map.get(get_open_tasks_impl(state), timer_task_uid)
+    open_tasks = get_open_tasks_impl(state)
+    timer_task = Map.get(open_tasks, timer_task_uid)
     timer_task = Map.put(timer_task, :expired, true)
 
     state = insert_open_task(state, timer_task)
@@ -350,6 +333,17 @@ defmodule Mozart.ProcessEngine do
     {:noreply, state}
   end
 
+  defp test_for_process_completion(state) do
+    if tl(state.execution_frames) == [] && !work_remaining(state) do
+      Logger.info(
+        "Exit process: process complete [#{get_process_from_state(state)}][#{state.uid}]"
+      )
+      {:stop, :shutdown, state}
+    else
+      {:noreply, state}
+    end
+  end
+
   defp set_open_tasks(state, tasks) do
     execution_frame = hd(state.execution_frames)
     execution_frame = Map.put(execution_frame, :open_tasks, tasks)
@@ -369,12 +363,12 @@ defmodule Mozart.ProcessEngine do
   end
 
   def terminate(reason, state) do
-    {reason_code, _} = reason
-
-    if reason_code != :shutdown do
+    if reason != :shutdown do
+      IO.puts("**************************************")
       IO.puts("Process engine terminated with reason:")
-      IO.puts("terminate reason: #{inspect(reason)}")
-      IO.puts("terminate state: #{inspect(state)}")
+      IO.inspect(reason, label: "terminate reason")
+      IO.inspect(state, label: "terminate state")
+      IO.puts("**************************************")
 
       PS.cache_pe_state(state.uid, state)
     end
@@ -417,7 +411,10 @@ defmodule Mozart.ProcessEngine do
         do: apply(new_task.module, new_task.listener, [new_task, input_data]),
         else: new_task
 
-    new_task = Map.put(new_task, :data, input_data)|> Map.put(:business_key, state.business_key)
+    new_task =
+      Map.put(new_task, :data, input_data)
+      |> Map.put(:business_key, state.business_key)
+      |> Map.put(:top_level_process, state.top_level_process)
 
     PS.insert_user_task(new_task)
 
@@ -496,6 +493,8 @@ defmodule Mozart.ProcessEngine do
 
     initial_task =
       if initial_task.type == :user, do: update_user_task(initial_task, state), else: initial_task
+
+    if initial_task.type == :timer, do: set_timer_for(initial_task, initial_task.timer_duration)
 
     Logger.info(
       "New #{initial_task.type} task instance [#{initial_task.name}][#{initial_task.uid}]"
@@ -672,11 +671,9 @@ defmodule Mozart.ProcessEngine do
       end
     else
       # No work remaining in current execution frame.
-      Logger.info(
-        "Exit process: process complete [#{get_process_from_state(state)}][#{state.uid}]"
-      )
 
       now = DateTime.utc_now()
+
       state =
         Map.put(state, :complete, true)
         |> Map.put(:end_time, now)
@@ -686,7 +683,7 @@ defmodule Mozart.ProcessEngine do
         # This is the top level BPM process, so exit Elixir process
         PS.update_for_completed_process(state)
         PS.delete_process_state(state)
-        Process.exit(self(), :shutdown)
+        state
       else
         # Finished a BPM subprocess execution frame. Pop the frame and resume execution.
         update_execution_frame_stack(state) |> execute_process()
