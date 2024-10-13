@@ -247,47 +247,30 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_call({:complete_user_task, task_uid, return_data}, _from, state) do
-    state = complete_user_task_impl(state, task_uid, return_data)
-    test_for_process_completion(state)
+    complete_user_task_impl(state, task_uid, return_data)
+    |> test_for_process_completion()
   end
 
   def handle_call(:execute, _from, state) do
     model = PS.get_process_model(get_process_from_state(state))
-    state = create_next_tasks(state, model.initial_task)
-    state = execute_process(state)
-    test_for_process_completion(state)
+
+    create_next_tasks(state, model.initial_task)
+    |> execute_process()
+    |> test_for_process_completion()
   end
 
   def handle_cast(:execute, state) do
     current_state = get_current_execution_frame(state)
     model = PS.get_process_model(current_state.process)
 
-    state = create_next_tasks(state, model.initial_task)
-    state = execute_process(state)
-    test_for_process_completion(state)
-  end
-
-  def handle_cast({:notify_child_complete, subprocess_name, subprocess_data}, state) do
-    subprocess_task =
-      Enum.find_value(get_open_tasks_impl(state), fn {_uid, t} ->
-        if t.type == :subprocess && t.process == subprocess_name, do: t
-      end)
-
-    subprocess_task = Map.put(subprocess_task, :complete, true)
-    open_tasks = Map.put(get_open_tasks_impl(state), subprocess_task.uid, subprocess_task)
-
-    state =
-      state
-      |> Map.put(:open_tasks, open_tasks)
-      |> Map.put(:data, subprocess_data)
-      |> execute_process()
-
-    {:noreply, state}
+    create_next_tasks(state, model.initial_task)
+    |> execute_process()
+    |> test_for_process_completion()
   end
 
   def handle_cast({:complete_user_task, task_uid, return_data}, state) do
-    state = complete_user_task_impl(state, task_uid, return_data)
-    test_for_process_completion(state)
+    complete_user_task_impl(state, task_uid, return_data)
+    |> test_for_process_completion()
   end
 
   def handle_cast({:assign_user_task, task_uid, user_id}, state) do
@@ -306,10 +289,9 @@ defmodule Mozart.ProcessEngine do
     timer_task = Map.get(open_tasks, timer_task_uid)
     timer_task = Map.put(timer_task, :expired, true)
 
-    state = insert_open_task(state, timer_task)
-
-    state = execute_process(state)
-    {:noreply, state}
+    insert_open_task(state, timer_task)
+    |> execute_process()
+    |> test_for_process_completion()
   end
 
   def handle_info({:message, payload}, state) do
@@ -320,10 +302,9 @@ defmodule Mozart.ProcessEngine do
           else: {uid, task}
       end)
 
-    state = set_open_tasks(state, open_tasks)
-
-    state = execute_process(state)
-    {:noreply, state}
+    set_open_tasks(state, open_tasks)
+    |> execute_process()
+    |> test_for_process_completion()
   end
 
   def handle_info({:exit_task_event, payload}, state) do
@@ -338,6 +319,7 @@ defmodule Mozart.ProcessEngine do
       Logger.info(
         "Exit process: process complete [#{get_process_from_state(state)}][#{state.uid}]"
       )
+
       {:stop, :shutdown, state}
     else
       {:noreply, state}
@@ -352,8 +334,10 @@ defmodule Mozart.ProcessEngine do
 
   defp exit_task(event, state) do
     open_tasks = Map.values(get_open_tasks_impl(state))
-    task = Enum.find(open_tasks, fn t -> t.name == event.exit_task end)
-    task = Map.put(task, :complete, :exit_on_task_event)
+
+    task =
+      Enum.find(open_tasks, fn t -> t.name == event.exit_task end)
+      |> Map.put(:complete, :exit_on_task_event)
 
     if task.type == :subprocess, do: complete_on_task_exit_event(task.subprocess_pid)
 
@@ -488,8 +472,10 @@ defmodule Mozart.ProcessEngine do
     process_name = new_subprocess_task.process
     model = PS.get_process_model(process_name)
     initial_task_name = model.initial_task
-    initial_task = get_task_def_from_model(initial_task_name, model)
-    initial_task = initialize_new_task(initial_task, state.uid)
+
+    initial_task =
+      get_task_def_from_model(initial_task_name, model)
+      |> initialize_new_task(state.uid)
 
     initial_task =
       if initial_task.type == :user, do: update_user_task(initial_task, state), else: initial_task

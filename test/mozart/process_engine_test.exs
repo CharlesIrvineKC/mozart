@@ -21,7 +21,7 @@ defmodule Mozart.ProcessEngineTest do
     reroute_task "reroute task", condition: :reroute_is_true do
       prototype_task("rerouted prototype task")
     end
-    prototype_task("final prototype task")
+    prototype_task("final prototype task", foobar: true)
   end
 
   test "reroute process" do
@@ -280,111 +280,6 @@ defmodule Mozart.ProcessEngineTest do
     assert user_task.assigned_user == "admin@opera.com"
   end
 
-  def_choice_type("Invoice Approved?", choices: "Approved, Send to Review")
-  def_choice_type("Invoice Review Determination", choices: "Rejected, Send to Approval")
-
-  def invoice_approved(data) do
-    data["Invoice Approved?"] == "Approved"
-  end
-
-  def invoice_sent_to_review(data) do
-    data["Invoice Approved?"] == "Send to Review"
-  end
-
-  def invoice_not_rejected(data) do
-    data["Invoice Review Determination"] != "Rejected"
-  end
-
-  defprocess "Invoice Receipt Process" do
-    prototype_task("Assign Approver Group")
-    user_task("Approve Invoice", group: "Admin", outputs: "Invoice Approved?")
-
-    case_task "Approve Invoice Result" do
-      case_i :invoice_approved do
-        subprocess_task("Perform Bank Transfer SubTask", process: "Perform Bank Transfer")
-      end
-
-      case_i :invoice_sent_to_review do
-        subprocess_task("Perform Invoice Approval Negotiation Subprocess",
-          process: "Perform Invoice Approval Negotiation"
-        )
-      end
-    end
-  end
-
-  defprocess "Perform Invoice Approval Negotiation" do
-    repeat_task "Invoice Approval Negotiation", condition: :negotiation_not_resolved do
-      subprocess_task("Review Invoice Subprocess", process: "Review Invoice Process")
-
-      conditional_task "Reapprove if not Rejected", condition: :invoice_not_rejected do
-        user_task("Reapprove Invoice", group: "Admin", outputs: "Invoice Approved?")
-      end
-    end
-
-    conditional_task "Negotiation Result", condition: :invoice_approved do
-      subprocess_task("Perform Bank Transfer SubTask", process: "Perform Bank Transfer")
-    end
-  end
-
-  defprocess "Perform Bank Transfer" do
-    prototype_task("Prepare Bank Transfer")
-    prototype_task("Archive Invoice")
-  end
-
-  def negotiation_not_resolved(data) do
-    data["Invoice Review Determination"] != "Rejected" &&
-      data["Invoice Approved?"] != "Approved"
-  end
-
-  defprocess "Review Invoice Process" do
-    user_task("Assign Reviewer", group: "Admin", outputs: "Invoice Reviewer ID")
-    user_task("Review Invoice", group: "Admin", outputs: "Invoice Review Determination")
-  end
-
-  # test "Invoice Receipt Process" do
-  #   PS.clear_state()
-  #   load()
-  #   data = %{}
-
-  #   {:ok, ppid, uid, _business_key} =
-  #     PE.start_process("Invoice Receipt Process", data)
-
-  #   PE.execute(ppid)
-  #   Process.sleep(100)
-
-  #   user_task = hd(PS.get_user_tasks())
-
-  #   PS.complete_user_task(user_task.uid, %{"Invoice Approved?" => "Send to Review"})
-  #   Process.sleep(200)
-
-  #   user_task = hd(PS.get_user_tasks())
-
-  #   PS.complete_user_task(user_task.uid, %{"Invoice Reviewer ID" => "admin@opera.com"})
-  #   Process.sleep(200)
-
-  #   user_task = hd(PS.get_user_tasks())
-
-  #   PS.complete_user_task(user_task.uid, %{"Invoice Review Determination" => "Send to Approval"})
-  #   Process.sleep(200)
-
-  #   user_task = hd(PS.get_user_tasks())
-
-  #   PS.complete_user_task(user_task.uid, %{"Invoice Approved?" => "Approved"})
-  #   Process.sleep(200)
-
-  #   PE.get_state(ppid)
-
-  #   completed_process = PS.get_completed_process(uid)
-
-  #   assert completed_process.data == %{
-  #            "Invoice Approved?" => "Approved",
-  #            "Invoice Review Determination" => "Send to Approval",
-  #            "Invoice Reviewer ID" => "admin@opera.com"
-  #          }
-
-  #   assert completed_process.complete == true
-  #   assert length(completed_process.completed_tasks) == 4
-  # end
 
   def while_count_less_than(data) do
     data["count"] < 1
