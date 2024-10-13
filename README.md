@@ -84,7 +84,7 @@ by adding `mozart` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:mozart, "~> 0.6.0"}
+    {:mozart, "~> 0.9.0"}
   ]
 end
 ```
