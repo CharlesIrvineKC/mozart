@@ -1,5 +1,6 @@
 defmodule Mozart.Task.Case do
   @moduledoc false
+
   defstruct [
     :name,
     :function,

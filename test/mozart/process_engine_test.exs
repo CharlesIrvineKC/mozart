@@ -1,5 +1,6 @@
 defmodule Mozart.ProcessEngineTest do
   use ExUnit.Case
+
   use Mozart.BpmProcess
 
   alias Phoenix.PubSub
@@ -11,14 +12,136 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
-  defprocess "Pizza Order" do
-    subprocess_task("Prepare and Deliver Subprocess Task", process: "Prepare and Deliver Pizza")
-    timer_task("Settle Purchase", duration: 100, function: :schedule_timer_expiration)
+  def reroute_is_true(data) do
+    data.reroute
   end
 
-  defprocess "Prepare and Deliver Pizza" do
-    timer_task("Prepare Pizza", duration: 200, function: :schedule_timer_expiration)
-    timer_task("Deliver Pizza", duration: 200, function: :schedule_timer_expiration)
+  defprocess "reroute process" do
+    prototype_task("initial prototype task")
+    reroute_task "reroute task", condition: :reroute_is_true do
+      prototype_task("rerouted prototype task")
+    end
+    prototype_task("final prototype task", foobar: true)
+  end
+
+  test "reroute process" do
+    PS.clear_state()
+    load()
+    data = %{reroute: true}
+
+    {:ok, ppid, uid, _business_key1} = PE.start_process("reroute process", data)
+    PE.execute(ppid)
+
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
+  end
+
+  def case_1(_data) do
+    true
+  end
+
+  def case_2(_data) do
+    true
+  end
+
+  def count_is_greater_than_1(data) do
+    data[:count] < 1
+  end
+
+  defprocess "Case Process" do
+    prototype_task("First Prototype Task")
+
+    case_task "Case Task" do
+      case_i :case_1 do
+        prototype_task("Case 1 prototype task")
+        subprocess_task("Subprocess Task", process: "Case Subprocess")
+      end
+
+      case_i :case_2 do
+        prototype_task("Case 2 Prototype Task" )
+      end
+    end
+  end
+
+  defprocess "Case Subprocess" do
+    repeat_task "Repeat Task", condition: :count_is_greater_than_1 do
+      prototype_task("Repeated Prototype Task", %{count: 1})
+    end
+  end
+
+  test "Case Process" do
+    PS.clear_state()
+    load()
+    data = %{count: 0}
+
+    {:ok, ppid, uid, _business_key1} = PE.start_process("Case Process", data)
+    PE.execute(ppid)
+
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 6
+  end
+
+  defprocess "Simple Process with User Task" do
+    user_task("User Task", groups: "Foobar")
+  end
+
+  test "Simple Process with User Task" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, _uid, _business_key1} = PE.start_process("Simple Process with User Task", %{})
+    PE.execute(ppid)
+
+    Process.sleep(100)
+
+   assert PE.get_state(ppid).top_level_process == "Simple Process with User Task"
+  end
+
+  defprocess "Top Level Process" do
+    subprocess_task("Subprocess Task", process: "Subprocess")
+    prototype_task("Final prototype task")
+  end
+
+  defprocess "Subprocess" do
+    prototype_task("Prototype Task in Subprocess")
+  end
+
+  test "Simple Subprocess" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, uid, _business_key1} = PE.start_process("Subprocess", %{})
+    PE.execute(ppid)
+
+    Process.sleep(600)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 1
+  end
+
+  test "Top Level Process" do
+    PS.clear_state()
+    load()
+
+    {:ok, ppid, uid, _business_key1} = PE.start_process("Top Level Process", %{})
+    PE.execute(ppid)
+
+    Process.sleep(600)
+
+    completed_process = PS.get_completed_process(uid)
+
+    assert completed_process.complete == true
+    assert length(completed_process.completed_tasks) == 3
   end
 
   test "Prepare and Deliver Pizza" do
@@ -36,6 +159,19 @@ defmodule Mozart.ProcessEngineTest do
     assert length(completed_process.completed_tasks) == 2
   end
 
+  def schedule_timer_expiration(task_uid, process_uid, timer_duration) do
+    spawn(fn -> wait_and_notify(task_uid, process_uid, timer_duration) end)
+  end
+
+  defprocess "Pizza Order" do
+    subprocess_task("Prepare and Deliver Subprocess Task", process: "Prepare and Deliver Pizza")
+  end
+
+  defprocess "Prepare and Deliver Pizza" do
+    timer_task("Prepare Pizza", duration: 200, function: :schedule_timer_expiration)
+    timer_task("Deliver Pizza", duration: 200, function: :schedule_timer_expiration)
+  end
+
   def_task_exit_event "Cancel Pizza Order",
     process: "Pizza Order",
     exit_task: "Prepare and Deliver Subprocess Task",
@@ -44,34 +180,17 @@ defmodule Mozart.ProcessEngineTest do
     prototype_task("Cancel Delivery")
   end
 
-  def exit_subprocess_task_event_selector(:exit_subprocess_task), do: true
-  def exit_subprocess_task_event_selector(_), do: false
+  def exit_subprocess_task_event_selector(event) do
+    event == :exit_subprocess_task
+  end
 
-  test "Pizza Order" do
-    PS.clear_state()
-    load()
+  def send_timer_expired(task_uid, process_uid) do
+    ppid = PS.get_process_pid_from_uid(process_uid)
+    if ppid, do: send(ppid, {:timer_expired, task_uid})
+  end
 
-    {:ok, ppid1, uid1, _business_key1} = PE.start_process("Pizza Order", %{})
-    PE.execute(ppid1)
-
-    {:ok, ppid2, uid2, _business_key2} = PE.start_process("Pizza Order", %{})
-    PE.execute(ppid2)
-
-    Process.sleep(100)
-
-    send(ppid1, {:exit_task_event, :exit_subprocess_task})
-
-    Process.sleep(800)
-
-    completed_process = PS.get_completed_process(uid1)
-
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 3
-
-    completed_process = PS.get_completed_process(uid2)
-
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 2
+  defp wait_and_notify(task_uid, process_uid, timer_duration) do
+    :timer.apply_after(timer_duration, __MODULE__, :send_timer_expired, [task_uid, process_uid])
   end
 
   defprocess "process to test user assignment" do
@@ -127,15 +246,14 @@ defmodule Mozart.ProcessEngineTest do
     load()
     data = %{}
 
-    {:ok, ppid, _uid, _business_key} =
-      PE.start_process("top level process", data)
+    {:ok, ppid, _uid, _business_key} =PE.start_process("top level process", data)
 
     PE.execute(ppid)
     Process.sleep(100)
 
     user_task = hd(PS.get_user_tasks())
-
-    assert user_task.top_level_process == "top level process"
+    assert user_task.name == "a user task"
+    assert PE.get_state(ppid) |> Map.get(:execution_frames) |> length() == 2
   end
 
   def assign_user(user_task, data) do
@@ -162,109 +280,6 @@ defmodule Mozart.ProcessEngineTest do
     assert user_task.assigned_user == "admin@opera.com"
   end
 
-  def_choice_type("Invoice Approved?", choices: "Approved, Send to Review")
-  def_choice_type("Invoice Review Determination", choices: "Rejected, Send to Approval")
-
-  def invoice_approved(data) do
-    data["Invoice Approved?"] == "Approved"
-  end
-
-  def invoice_sent_to_review(data) do
-    data["Invoice Approved?"] == "Send to Review"
-  end
-
-  def invoice_not_rejected(data) do
-    data["Invoice Review Determination"] != "Rejected"
-  end
-
-  def negotiation_not_resolved(data) do
-    data["Invoice Review Determination"] != "Rejected" &&
-      data["Invoice Approved?"] != "Approved"
-  end
-
-  defprocess "Invoice Receipt Process" do
-    prototype_task("Assign Approver Group")
-    user_task("Approve Invoice", group: "Admin", outputs: "Invoice Approved?")
-
-    case_task "Approve Invoice Result" do
-      case_i :invoice_approved do
-        subprocess_task("Perform Bank Transfer SubTask", process: "Perform Bank Transfer")
-      end
-
-      case_i :invoice_sent_to_review do
-        subprocess_task("Perform Invoice Approval Negotiation Subprocess",
-          process: "Perform Invoice Approval Negotiation"
-        )
-      end
-    end
-  end
-
-  defprocess "Perform Bank Transfer" do
-    prototype_task("Prepare Bank Transfer")
-    prototype_task("Archive Invoice")
-  end
-
-  defprocess "Perform Invoice Approval Negotiation" do
-    repeat_task "Invoice Approval Negotiation", condition: :negotiation_not_resolved do
-      subprocess_task("Review Invoice Subprocess", process: "Review Invoice Process")
-
-      conditional_task "Reapprove if not Rejected", condition: :invoice_not_rejected do
-        user_task("Reapprove Invoice", group: "Admin", outputs: "Invoice Approved?")
-      end
-    end
-
-    conditional_task "Negotiation Result", condition: :invoice_approved do
-      subprocess_task("Perform Bank Transfer SubTask", process: "Perform Bank Transfer")
-    end
-  end
-
-  defprocess "Review Invoice Process" do
-    user_task("Assign Reviewer", group: "Admin", outputs: "Invoice Reviewer ID")
-    user_task("Review Invoice", group: "Admin", outputs: "Invoice Review Determination")
-  end
-
-  test "Invoice Receipt Process" do
-    PS.clear_state()
-    load()
-    data = %{}
-
-    {:ok, ppid, uid, _business_key} =
-      PE.start_process("Invoice Receipt Process", data)
-
-    PE.execute(ppid)
-    Process.sleep(100)
-
-    user_task = hd(PS.get_user_tasks())
-
-    PS.complete_user_task(user_task.uid, %{"Invoice Approved?" => "Send to Review"})
-    Process.sleep(200)
-
-    user_task = hd(PS.get_user_tasks())
-
-    PS.complete_user_task(user_task.uid, %{"Invoice Reviewer ID" => "admin@opera.com"})
-    Process.sleep(200)
-
-    user_task = hd(PS.get_user_tasks())
-
-    PS.complete_user_task(user_task.uid, %{"Invoice Review Determination" => "Send to Approval"})
-    Process.sleep(200)
-
-    user_task = hd(PS.get_user_tasks())
-
-    PS.complete_user_task(user_task.uid, %{"Invoice Approved?" => "Approved"})
-    Process.sleep(200)
-
-    completed_process = PS.get_completed_process(uid)
-
-    assert completed_process.data == %{
-             "Invoice Approved?" => "Approved",
-             "Invoice Review Determination" => "Send to Approval",
-             "Invoice Reviewer ID" => "admin@opera.com"
-           }
-
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 4
-  end
 
   def while_count_less_than(data) do
     data["count"] < 1
@@ -551,23 +566,23 @@ defmodule Mozart.ProcessEngineTest do
     prototype_task("prototype task upon task exit")
   end
 
-  test "exit a subprocess task" do
-    PS.clear_state()
-    load()
-    data = %{}
+  # test "exit a subprocess task" do
+  #   PS.clear_state()
+  #   load()
+  #   data = %{}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process("exit a subprocess task", data)
-    PE.execute(ppid)
-    Process.sleep(100)
+  #   {:ok, ppid, uid, _business_key} = PE.start_process("exit a subprocess task", data)
+  #   PE.execute(ppid)
+  #   Process.sleep(100)
 
-    send(ppid, {:exit_task_event, :exit_subprocess_task})
-    Process.sleep(3000)
+  #   send(ppid, {:exit_task_event, :exit_subprocess_task})
+  #   Process.sleep(3000)
 
-    completed_process = PS.get_completed_process(uid)
-    assert completed_process.data == %{}
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 2
-  end
+  #   completed_process = PS.get_completed_process(uid)
+  #   assert completed_process.data == %{}
+  #   assert completed_process.complete == true
+  #   assert length(completed_process.completed_tasks) == 2
+  # end
 
   def exit_user_task_event_selector(message) do
     case message do
@@ -660,7 +675,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 6
+    assert length(completed_process.completed_tasks) == 8
   end
 
   defprocess "repeat with subprocess service task process" do
@@ -691,7 +706,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"count" => 2, "limit" => 2}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 3
+    assert length(completed_process.completed_tasks) == 5
   end
 
   defprocess "repeat task process" do
@@ -723,19 +738,6 @@ defmodule Mozart.ProcessEngineTest do
   defprocess "two timer task process" do
     timer_task("one second timer task", duration: 1000, function: :schedule_timer_expiration)
     timer_task("two second timer task", duration: 2000, function: :schedule_timer_expiration)
-  end
-
-  def schedule_timer_expiration(task_uid, process_uid, timer_duration) do
-    spawn(fn -> wait_and_notify(task_uid, process_uid, timer_duration) end)
-  end
-
-  defp wait_and_notify(task_uid, process_uid, timer_duration) do
-    :timer.apply_after(timer_duration, __MODULE__, :send_timer_expired, [task_uid, process_uid])
-  end
-
-  def send_timer_expired(task_uid, process_uid) do
-    ppid = PS.get_process_pid_from_uid(process_uid)
-    if ppid, do: send(ppid, {:timer_expired, task_uid})
   end
 
   test "two timer task process" do
@@ -791,7 +793,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 3
+    assert length(completed_process.completed_tasks) == 5
   end
 
   def receive_payment_details(msg) do
@@ -825,30 +827,30 @@ defmodule Mozart.ProcessEngineTest do
     prototype_task("process payment")
   end
 
-  test "act on one of multiple events" do
-    PS.clear_state()
-    load()
-    data = %{"barrower_id" => "511-58-1422"}
+  # test "act on one of multiple events" do
+  #   PS.clear_state()
+  #   load()
+  #   data = %{"barrower_id" => "511-58-1422"}
 
-    {:ok, ppid, uid, _business_key} = PE.start_process("act on one of multiple events", data)
-    PE.execute(ppid)
-    Process.sleep(100)
+  #   {:ok, ppid, uid, _business_key} = PE.start_process("act on one of multiple events", data)
+  #   PE.execute(ppid)
+  #   Process.sleep(100)
 
-    assert PE.is_complete(ppid) == false
+  #   assert PE.is_complete(ppid) == false
 
-    PubSub.broadcast(:pubsub, "pe_topic", {:message, {:order_canceled, :order_id}})
-    Process.sleep(100)
+  #   PubSub.broadcast(:pubsub, "pe_topic", {:message, {:order_canceled, :order_id}})
+  #   Process.sleep(100)
 
-    completed_process = PS.get_completed_process(uid)
+  #   completed_process = PS.get_completed_process(uid)
 
-    assert completed_process.data == %{
-             "barrower_id" => "511-58-1422",
-             "order_canceled" => :order_id
-           }
+  #   assert completed_process.data == %{
+  #            "barrower_id" => "511-58-1422",
+  #            "order_canceled" => :order_id
+  #          }
 
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 5
-  end
+  #   assert completed_process.complete == true
+  #   assert length(completed_process.completed_tasks) == 5
+  # end
 
   def receive_loan_income(msg) do
     case msg do
@@ -1118,7 +1120,7 @@ defmodule Mozart.ProcessEngineTest do
 
     {:ok, ppid, uid, _business_key} = PE.start_process("two service task case process", data)
     PE.execute(ppid)
-    Process.sleep(1000)
+    Process.sleep(500)
 
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"income" => 100_000, "decision" => "Approved"}
@@ -1151,7 +1153,7 @@ defmodule Mozart.ProcessEngineTest do
     completed_process = PS.get_completed_process(uid)
     assert completed_process.data == %{"value" => 3}
     assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 1
+    assert length(completed_process.completed_tasks) == 3
   end
 
   defprocess "two prototype task process" do

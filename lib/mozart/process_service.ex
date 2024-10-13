@@ -13,6 +13,11 @@ defmodule Mozart.ProcessService do
   ## Client API
 
   @doc false
+  def get_process_state_process(process_state) do
+    (process_state.execution_frames |> hd()).process
+  end
+
+  @doc false
   def start_link(_init_arg) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
@@ -30,6 +35,29 @@ defmodule Mozart.ProcessService do
   @doc false
   def get_all_open_tasks() do
     GenServer.call(__MODULE__, :get_all_open_tasks)
+  end
+
+  @doc false
+  def get_open_tasks(%Mozart.Data.ProcessState{} = state) do
+    state
+    |> Map.get(:execution_frames)
+    |> Enum.map(fn f -> Map.get(f, :open_tasks) end)
+    |> Enum.map(fn m -> Map.values(m) end)
+    |> List.flatten()
+  end
+
+  def get_open_tasks(process_id) do
+    GenServer.call(__MODULE__, {:get_open_tasks, process_id})
+  end
+
+  @doc false
+  def get_completed_tasks(process_id) do
+    GenServer.call(__MODULE__, {:get_completed_tasks, process_id})
+  end
+
+  @doc false
+  def get_process_state(process_id) do
+    GenServer.call(__MODULE__, {:get_process_state, process_id})
   end
 
   @doc false
@@ -162,7 +190,7 @@ defmodule Mozart.ProcessService do
   ProcessService.
   """
   def load_process_models(models) do
-    GenServer.call(__MODULE__, {:load_process_models, models})
+    GenServer.call(__MODULE__, {:load_process_models, models}, :infinity)
   end
 
   @doc false
@@ -200,7 +228,7 @@ defmodule Mozart.ProcessService do
   Retrieves a process model by name.
   """
   def get_process_model(process) do
-    GenServer.call(__MODULE__, {:get_process_model, process})
+    GenServer.call(__MODULE__, {:get_process_model, process}, :infinity)
   end
 
   @doc false
@@ -239,7 +267,6 @@ defmodule Mozart.ProcessService do
 
   @doc false
   def init(_init_arg) do
-
     initial_state = %{
       active_process_groups: %{},
       active_processes: %{},
@@ -253,6 +280,7 @@ defmodule Mozart.ProcessService do
 
   def handle_continue(:initialize_databases, state) do
     env = Application.fetch_env(:mozart, :database_path)
+
     path =
       case env do
         :error -> "database"
@@ -347,6 +375,23 @@ defmodule Mozart.ProcessService do
 
   def handle_call({:get_process_pid_from_uid, uid}, _from, state) do
     {:reply, Map.get(state.active_processes, uid), state}
+  end
+
+  def handle_call({:get_open_tasks, process_id}, _from, state) do
+    ppid = Map.get(state.active_processes, process_id)
+    open_tasks = PE.get_all_open_tasks(ppid)
+    {:reply, open_tasks, state}
+  end
+
+  def handle_call({:get_completed_tasks, process_id}, _from, state) do
+    ppid = Map.get(state.active_processes, process_id)
+    completed_tasks = PE.get_completed_tasks(ppid)
+    {:reply, completed_tasks, state}
+  end
+
+  def handle_call({:get_process_state, process_id}, _from, state) do
+    ppid = Map.get(state.active_processes, process_id)
+    {:reply, PE.get_state(ppid), state}
   end
 
   def handle_call({:get_process_ppid, process_uid}, _from, state) do

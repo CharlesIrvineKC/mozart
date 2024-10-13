@@ -2,6 +2,7 @@ defmodule Mozart.Task.User do
   @moduledoc false
   defstruct [
     :name,
+    :data,
     :listener,
     :module,
     :uid,
@@ -14,8 +15,8 @@ defmodule Mozart.Task.User do
     :business_key,
     :process_uid,
     :assigned_user,
-    :top_level_process,
     :assigned_group,
+    :top_level_process,
     complete: false,
     type: :user
   ]
