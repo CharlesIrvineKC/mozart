@@ -17,6 +17,7 @@ defmodule Mozart.Task.User do
     :assigned_user,
     :assigned_group,
     :top_level_process,
+    :documentation,
     complete: false,
     type: :user
   ]

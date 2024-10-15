@@ -22,7 +22,7 @@ defmodule Mozart.ProcessEngineUnitTest do
     }
   end
 
-  test "simple user process" do
+  test "simple prototype process" do
     PS.clear_state()
     load()
 
@@ -31,5 +31,18 @@ defmodule Mozart.ProcessEngineUnitTest do
     state = create_next_tasks(state, model.initial_task)
 
     execute_process(state)
+  end
+
+  defprocess "process with documented user task" do
+    user_task("a user task",
+    documentation: "Now is the time for all good men to come to the aid of their country.")
+  end
+
+  test "process with documented user task" do
+    assert get_process("process with documented user task")
+           |> Map.get(:tasks)
+           |> Enum.find(fn t -> t.name == "a user task" end)
+           |> Map.get(:documentation)
+    === "Now is the time for all good men to come to the aid of their country."
   end
 end

@@ -772,6 +772,7 @@ defmodule Mozart.BpmProcess do
       inputs = Keyword.get(args, :inputs) |> then(fn i -> if i, do: parse_params(i) end)
       outputs = Keyword.get(args, :outputs) |> then(fn o -> if o, do: parse_params(o) end)
       listener = Keyword.get(args, :listener)
+      documentation = Keyword.get(args, :documentation)
       module = Keyword.get(args, :module) || __MODULE__
 
       user_task = %User{
@@ -780,7 +781,8 @@ defmodule Mozart.BpmProcess do
         inputs: inputs,
         outputs: outputs,
         listener: listener,
-        module: module
+        module: module,
+        documentation: documentation
       }
 
       insert_new_task(user_task)
