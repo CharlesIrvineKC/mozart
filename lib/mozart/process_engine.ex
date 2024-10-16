@@ -560,7 +560,7 @@ defmodule Mozart.ProcessEngine do
     |> check_for_conditional_task_completion(task)
   end
 
-  defp delete_open_task_from_execution_frame(task, state) do
+  def delete_open_task_from_execution_frame(task, state) do
     execution_frame = hd(state.execution_frames)
     open_tasks = execution_frame.open_tasks
     open_task = Enum.find_value(open_tasks, fn {_k, t} -> if t.name == task.name, do: t end)

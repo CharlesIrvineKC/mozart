@@ -20,10 +20,13 @@ defimpl Mozart.Task, for: Mozart.Task.Case do
   def complete_task(task, state) do
     Logger.info("Complete case task [#{task.name}][#{task.uid}]")
 
+    execution_frames = delete_open_task_from_execution_frame(task, state)
+
     next_task_name =
       Enum.find_value(task.cases, fn case -> if case.expression.(state.data), do: case.next end)
 
     state
+    |> Map.put(:execution_frames, execution_frames)
     |> create_next_tasks(next_task_name)
     |> update_completed_task_state(task, task.next)
     |> execute_process()

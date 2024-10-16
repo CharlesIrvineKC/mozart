@@ -45,4 +45,38 @@ defmodule Mozart.ProcessEngineUnitTest do
            |> Map.get(:documentation)
     === "Now is the time for all good men to come to the aid of their country."
   end
+
+  def return_true(_data) do
+    true
+  end
+
+  defprocess "case process calling subprocess" do
+    prototype_task("initial prototype task")
+
+    case_task "case task" do
+      case_i :return_true do
+        subprocess_task("perform subprocess task", process: "a subprocess")
+        # prototype_task("single case_i prototype task")
+      end
+    end
+  end
+
+  defprocess "a subprocess" do
+    prototype_task("subprocess prototype task 1")
+    prototype_task("subprocess prototype task 2")
+  end
+
+  test "case process calling subprocess" do
+    PS.clear_state()
+    load()
+
+    state = set_state("case process calling subprocess")
+    model = get_process("case process calling subprocess")
+    state = create_next_tasks(state, model.initial_task)
+
+    state = execute_process(state)
+
+    assert state.completed_tasks |> length() == 5
+    assert state.execution_frames |> hd() |> Map.get(:open_tasks) == %{}
+  end
 end
