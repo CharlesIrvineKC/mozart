@@ -79,4 +79,19 @@ defmodule Mozart.ProcessEngineUnitTest do
     assert state.completed_tasks |> length() == 5
     assert state.execution_frames |> hd() |> Map.get(:open_tasks) == %{}
   end
+
+  defprocess "simple process" do
+    prototype_task("a prototype task")
+  end
+
+  def_bpm_application("simple process")
+
+  test "define BPM application" do
+    bpm_application = get_bpm_application()
+    assert bpm_application.data == []
+    assert bpm_application.bk_prefix == []
+    assert bpm_application.groups == []
+    assert bpm_application.module == Mozart.ProcessEngineUnitTest
+    assert bpm_application.process == "simple process"
+  end
 end

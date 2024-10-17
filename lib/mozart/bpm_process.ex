@@ -77,11 +77,12 @@ defmodule Mozart.BpmProcess do
   Example:
   def_bpm_application("Home Loan", data: "Customer Name,Income,Debt")
   """
-  defmacro def_bpm_application(process, data: data, bk_prefix: prefix) do
+  defmacro def_bpm_application(process, options \\ []) do
     quote do
       if @bpm_application, do: raise("Only one BPM application allowed per module")
-      data = parse_params(unquote(data))
-      prefix = parse_params(unquote(prefix))
+      options = unquote(options)
+      data = Keyword.get(options, :data) |> parse_params()
+      prefix = Keyword.get(options, :bk_prefix) |> parse_params()
 
       bpm_application = %BpmApplication{
         process: unquote(process),
@@ -480,6 +481,7 @@ defmodule Mozart.BpmProcess do
   end
 
   @doc false
+  def parse_params(nil), do: []
   def parse_params(inputs_string) do
     String.split(inputs_string, ",") |> Enum.map(fn s -> String.trim(s) end)
   end
@@ -828,6 +830,8 @@ defmodule Mozart.BpmProcess do
           ProcessService.load_types(@types)
         end
       end
+
+      def get_bpm_application, do: @bpm_application
 
       def get_processes, do: Enum.reverse(@processes)
       def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)

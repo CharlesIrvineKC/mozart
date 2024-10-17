@@ -274,8 +274,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_cast({:assign_user_task, task_uid, user_id}, state) do
-    task_instance = get_task_instance(task_uid, state)
-    task_instance = Map.put(task_instance, :assigned_user, user_id)
+    task_instance = get_task_instance(task_uid, state) |> Map.put(:assigned_user, user_id)
     state = insert_open_task(state, task_instance)
     {:noreply, state}
   end
@@ -285,9 +284,7 @@ defmodule Mozart.ProcessEngine do
   end
 
   def handle_info({:timer_expired, timer_task_uid}, state) do
-    open_tasks = get_open_tasks_impl(state)
-    timer_task = Map.get(open_tasks, timer_task_uid)
-    timer_task = Map.put(timer_task, :expired, true)
+    timer_task = get_open_tasks_impl(state) |> Map.get(timer_task_uid) |> Map.put(:expired, true)
 
     insert_open_task(state, timer_task)
     |> execute_process()

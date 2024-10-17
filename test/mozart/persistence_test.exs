@@ -22,11 +22,6 @@ defmodule Mozart.PersistenceTest do
     PS.get_type("Decision")
   end
 
-  def_bpm_application("one prototype task process",
-    data: "",
-    bk_prefix: ""
-  )
-
   defprocess "one prototype task process" do
     prototype_task("a prototype task")
   end
