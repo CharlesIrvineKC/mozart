@@ -100,6 +100,9 @@ defmodule Mozart.ProcessEngine do
     GenServer.cast(ppid, :complete_on_task_exit_event)
   end
 
+  @doc """
+  Retrieves all completed tasks for a process instance.
+  """
   def get_completed_tasks(ppid) do
     GenServer.call(ppid, :get_completed_tasks)
   end
@@ -412,6 +415,7 @@ defmodule Mozart.ProcessEngine do
     end
   end
 
+  @doc false
   def create_next_tasks(state, next_task_name) do
     new_task = get_new_task_instance(next_task_name, state)
     process_new_task(state, new_task)
@@ -519,6 +523,7 @@ defmodule Mozart.ProcessEngine do
     state.execution_frames |> hd()
   end
 
+  @doc false
   def process_next_task_list(state, [], _parent_name) do
     state
   end
@@ -537,6 +542,7 @@ defmodule Mozart.ProcessEngine do
     |> List.flatten()
   end
 
+  @doc false
   def update_for_completed_task(state, task) do
     now = DateTime.utc_now()
     duration = DateTime.diff(now, task.start_time, :microsecond)
@@ -557,6 +563,7 @@ defmodule Mozart.ProcessEngine do
     |> check_for_conditional_task_completion(task)
   end
 
+  @doc false
   def delete_open_task_from_execution_frame(task, state) do
     execution_frame = hd(state.execution_frames)
     open_tasks = execution_frame.open_tasks
@@ -599,17 +606,19 @@ defmodule Mozart.ProcessEngine do
     end)
   end
 
+  @doc false
   def update_completed_task_state(state, task, next_task) do
     state = update_for_completed_task(state, task)
     if next_task, do: create_next_tasks(state, next_task), else: state
   end
 
+  @doc false
   def get_process_from_state(state) do
     current_state = get_current_execution_frame(state)
     current_state.process
   end
 
-  def get_task_instance(task_uid, state), do: Map.get(get_open_tasks_impl(state), task_uid)
+  defp get_task_instance(task_uid, state), do: Map.get(get_open_tasks_impl(state), task_uid)
 
   defp get_complete_able_task(state) do
     Enum.find_value(get_open_tasks_impl(state), fn {_uid, task} ->
@@ -642,6 +651,7 @@ defmodule Mozart.ProcessEngine do
     get_open_tasks_impl(state) != %{}
   end
 
+  @doc false
   def execute_process(state) do
     if work_remaining(state) do
       complete_able_task = get_complete_able_task(state)

@@ -1,6 +1,6 @@
 defmodule Mozart.ProcessService do
   @moduledoc """
-  This modeule provides a set of utility services.
+  This modeule provides a set of services for working with BPM processes.
   """
 
   @doc false

@@ -1,4 +1,5 @@
 defmodule Mozart.Task.Common do
+  @moduledoc false
   defmacro __using__(_) do
     quote do
       import Mozart.ProcessEngine
@@ -8,6 +9,7 @@ defmodule Mozart.Task.Common do
 end
 
 defprotocol Mozart.Task do
+  @moduledoc false
   def completable(task)
   def complete_task(task, state)
 end

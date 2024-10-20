@@ -66,16 +66,18 @@ defmodule Mozart.BpmProcess do
   end
 
   @doc """
-  Used to define a BPM application. An BPM application is used to identity a single
+  Used to define a BPM application. An BPM application is used to identity a top level
   business process implemented in a Elixir module. It's purpose is to facilitate external tool
-  integration. A single Elixir module might have zero or more such definitions. It's parameters
-  are as follows:
+  integration. A single Elixir module might have zero or one such definitions. Define a BPM application
+  when you intend for users to start process instances from a Mozart GUI.
+  It's parameters are as follows:
   * **process**: The name of the top level process defintion.
-  * **data**: A comma separated list of input parameters that the busines process should be
-  initialized with.
+  * **data**: A keyword argument for a comma separated list of input parameters that the busines process should be initialized with.
+  * **bk_prefix**: A keyword argument for a set of data values to use as the process instances business
+  key prefix.
 
   Example:
-  def_bpm_application("Home Loan", data: "Customer Name,Income,Debt")
+  def_bpm_application("Home Loan", data: "Customer Name,Income,Debt", bk_prefix: "Customer Name")
   """
   defmacro def_bpm_application(process, options \\ []) do
     quote do
@@ -190,23 +192,24 @@ defmodule Mozart.BpmProcess do
     end
   end
 
-  @doc """
-  Used to implement a business process event. Arguments are:
-  * the name of the event
-  * **process**: the name of the process that the event will act upon
-  * **exit_task**: the name of the task to be exited
-  * **selector**: a function that matches on the target event
-  * **do**: one or more tasks to be executed when the target task is exited.
-  ```
-  def_task_exit_event "exit loan decision 1",
-    process: "exit a user task 1",
-    exit_task: "user task 1",
-    selector: :event_selector do
-      prototype_task("event 1 prototype task 1")
-      prototype_task("event 1 prototype task 2")
-  end
-  ```
-  """
+  # @doc """
+  # Used to implement a business process event. Arguments are:
+  # * the name of the event
+  # * **process**: the name of the process that the event will act upon
+  # * **exit_task**: the name of the task to be exited
+  # * **selector**: a function that matches on the target event
+  # * **do**: one or more tasks to be executed when the target task is exited.
+  # ```
+  # def_task_exit_event "exit loan decision 1",
+  #   process: "exit a user task 1",
+  #   exit_task: "user task 1",
+  #   selector: :event_selector do
+  #     prototype_task("event 1 prototype task 1")
+  #     prototype_task("event 1 prototype task 2")
+  # end
+  # ```
+  # """
+  @doc false
   defmacro def_task_exit_event(name, options, do: tasks) do
     quote do
       options = unquote(options)
@@ -236,7 +239,7 @@ defmodule Mozart.BpmProcess do
     end
   end
 
-
+  @doc false
   defmacro def_process_exit_event(name, options, do: tasks) do
     quote do
       options = unquote(options)
@@ -482,6 +485,7 @@ defmodule Mozart.BpmProcess do
 
   @doc false
   def parse_params(nil), do: []
+
   def parse_params(inputs_string) do
     String.split(inputs_string, ",") |> Enum.map(fn s -> String.trim(s) end)
   end
@@ -792,6 +796,7 @@ defmodule Mozart.BpmProcess do
     end
   end
 
+  @doc false
   def merge_event_tasks(event_task_map, processes) do
     Enum.map(processes, fn p ->
       tasks = Map.get(event_task_map, p.name)
@@ -799,6 +804,7 @@ defmodule Mozart.BpmProcess do
     end)
   end
 
+  @doc false
   def assign_events(event_map, processes) do
     Enum.map(processes, fn p ->
       events =
