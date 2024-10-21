@@ -28,15 +28,15 @@ The task types currently supported are:
 | service_task            | Performed by calling a service. |
 | subprocess_task         | Performed by calling a subprocess. |
 | timer_task              | Waits for expiration of a timer. |
-| receive_task            | Waits for a subscribed PubSub event. |
-| send_task               | Sends a PubSub event. |
+| receive_task            | Waits for an event. |
+| send_task               | Sends an event. |
 | rule_task               | Performed by evaluating a set of rules represented in a table. |
 | case_task               | Selects one of many process paths. |
 | parallel_task           | Initiates two or more parallel process paths. |
 | prototype_task          | Has no behavior. Used for prototyping and subbing. |
 | repeat_task             | Repeats a set of tasks while condition is true. |
-| reroute_task            | Reroutes a process off the typical (happy) execution path |
-| conditional_task        | Implements a conditional task along the typical execution path |
+| reroute_task            | Reroutes a process off the typical (happy) execution path. |
+| conditional_task        | Implements a conditional task along the typical execution path. |
 
 ## BPM Process Module
 

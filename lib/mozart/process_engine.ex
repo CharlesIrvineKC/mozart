@@ -1,6 +1,6 @@
 defmodule Mozart.ProcessEngine do
   @moduledoc """
-  A ProcessEngine is dynamically spawned for the purpose of executing a process model defined by **defprocess** function call.
+  A **ProcessEngine** is dynamically spawned for the purpose of executing a top level process model defined by **defprocess** function (macro) call. Subprocess tasks do not result in the spawning of a new **ProcessEngine** instance. Instead, subprocess tasks are handled by pushing an execution frame upon the execution frame stack.
   """
 
   @doc false
