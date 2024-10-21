@@ -35,15 +35,16 @@ defmodule Mozart.ProcessEngineUnitTest do
 
   defprocess "process with documented user task" do
     user_task("a user task",
-    documentation: "Now is the time for all good men to come to the aid of their country.")
+      documentation: "Now is the time for all good men to come to the aid of their country."
+    )
   end
 
   test "process with documented user task" do
     assert get_process("process with documented user task")
            |> Map.get(:tasks)
            |> Enum.find(fn t -> t.name == "a user task" end)
-           |> Map.get(:documentation)
-    === "Now is the time for all good men to come to the aid of their country."
+           |> Map.get(:documentation) ===
+             "Now is the time for all good men to come to the aid of their country."
   end
 
   def return_true(_data) do
@@ -80,18 +81,26 @@ defmodule Mozart.ProcessEngineUnitTest do
     assert state.execution_frames |> hd() |> Map.get(:open_tasks) == %{}
   end
 
-  defprocess "simple process" do
+  defprocess "simple process 1" do
     prototype_task("a prototype task")
   end
 
-  def_bpm_application("simple process")
+  defprocess "simple process 2" do
+    prototype_task("a prototype task")
+  end
 
-  test "define BPM application" do
-    bpm_application = get_bpm_application()
-    assert bpm_application.data == []
-    assert bpm_application.bk_prefix == []
-    assert bpm_application.groups == []
-    assert bpm_application.module == Mozart.ProcessEngineUnitTest
-    assert bpm_application.process == "simple process"
+  def_bpm_application("simple process 1")
+  def_bpm_application("simple process 2")
+
+  test "define BPM applications" do
+    bpm_applications = get_bpm_applications()
+
+    Enum.each(bpm_applications, fn bpm_app ->
+      assert bpm_app.data == []
+      assert bpm_app.bk_prefix == []
+      assert bpm_app.groups == []
+      assert bpm_app.module == Mozart.ProcessEngineUnitTest
+      assert bpm_app.process |> String.slice(0,14) == "simple process"
+    end)
   end
 end
