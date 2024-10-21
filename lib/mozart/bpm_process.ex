@@ -58,7 +58,7 @@ defmodule Mozart.BpmProcess do
       @route_task_names []
       @cases []
       @event_task_process_map %{}
-      @bpm_application nil
+      @bpm_applications []
       @types []
       @groups []
       @before_compile Mozart.BpmProcess
@@ -81,7 +81,6 @@ defmodule Mozart.BpmProcess do
   """
   defmacro def_bpm_application(process, options \\ []) do
     quote do
-      if @bpm_application, do: raise("Only one BPM application allowed per module")
       options = unquote(options)
       data = Keyword.get(options, :data) |> parse_params()
       prefix = Keyword.get(options, :bk_prefix) |> parse_params()
@@ -93,7 +92,7 @@ defmodule Mozart.BpmProcess do
         module: __MODULE__
       }
 
-      @bpm_application bpm_application
+      @bpm_applications [bpm_application | @bpm_applications]
     end
   end
 
@@ -823,21 +822,17 @@ defmodule Mozart.BpmProcess do
         @processes assign_events(Map.to_list(@events), @processes)
       end
 
-      if @bpm_application do
-        @bpm_application Map.put(@bpm_application, :groups, @groups)
-        def load() do
-          ProcessService.load_process_models(get_processes())
-          ProcessService.load_bpm_application(@bpm_application)
-          ProcessService.load_types(@types)
-        end
-      else
-        def load() do
-          ProcessService.load_process_models(get_processes())
-          ProcessService.load_types(@types)
-        end
+      @bpm_applications Enum.map(@bpm_applications, fn app ->
+                          Map.put(app, :groups, @groups)
+                        end)
+
+      def load() do
+        ProcessService.load_process_models(get_processes())
+        ProcessService.load_bpm_applications(@bpm_applications)
+        ProcessService.load_types(@types)
       end
 
-      def get_bpm_application, do: @bpm_application
+      def get_bpm_applications, do: @bpm_applications
 
       def get_processes, do: Enum.reverse(@processes)
       def get_process(name), do: Enum.find(@processes, fn p -> p.name == name end)
