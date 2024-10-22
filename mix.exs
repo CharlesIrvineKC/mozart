@@ -4,7 +4,7 @@ defmodule Mozart.MixProject do
   def project do
     [
       app: :mozart,
-      version: "0.9.7",
+      version: "0.9.8",
       elixir: "~> 1.16",
       elixirc_paths: ["lib", "test/support"],
       start_permanent: Mix.env() == :prod,
@@ -42,9 +42,7 @@ defmodule Mozart.MixProject do
     [
       "guides/intro_bpm.md",
       "guides/app_overview.md",
-      "guides/first_process_execution.md",
-      "guides/task_types.md",
-      "guides/event_types.md"
+      "guides/first_process_execution.md"
     ]
   end
 

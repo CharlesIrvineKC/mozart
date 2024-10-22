@@ -10,7 +10,9 @@ See [Introduction to BPM](https://hexdocs.pm/mozart/intro_bpm.html) in hexdocs f
 
 ## Documentation
 
-View complete documentation for Mozart in hexdocs at [https://hexdocs.pm/mozart/api-reference.html](https://hexdocs.pm/mozart/api-reference.html)
+View documentation for Mozart in hexdocs at [https://hexdocs.pm/mozart/api-reference.html](https://hexdocs.pm/mozart/api-reference.html)
+
+Another source of learning material is found in Mozart's companion project, **Opera**. See below.
 
 ## Two Features Made Possible by Elixir
 
@@ -25,11 +27,11 @@ defmodule MyBpmApplication do
   use Mozart.BpmProcess
 
   def sum(data) do
-    %{sum: data.x + data.y}
+    %{"sum" => data["x"] + data["y"]}
   end
 
   defprocess "add x and y process" do
-    service_task("add x and y task", function: &MyBpmApplication.sum/1, inputs: "x,y")
+    service_task("add x and y task", function: :sum, inputs: "x,y")
   end
 
 end
@@ -37,9 +39,9 @@ end
 
 This module can be used as-is to start and execute a BPM process engine as shown below. (A small quanity of system output was removed to improve clarity.)
 
-```
+```elixir
 iex > MyBpmApplication.load()
-iex > {:ok, ppid, uid, _key} = ProcessEntine.start_process("add x and y process", %{x: 1, y: 1})
+iex > {:ok, ppid, uid, _key} = ProcessEntine.start_process("add x and y process", %{"x" => 1, "y" => 2})
 [info] Start process instance [add x and y process][b82f5da1-6e5d-44df-b4ed-9064b877e484]
 
 iex > ProcessEngine.execute(ppid)
@@ -48,7 +50,7 @@ iex > ProcessEngine.execute(ppid)
 [info] Process complete [add x and y process][b82f5da1-6e5d-44df-b4ed-9064b877e484]
 
 iex > ProcessService.get_completed_process_data(uid)
-%{sum: 2, y: 1, x: 1}
+%{"sum" => 2, "x" => 1, "y" => 2}
 ```
 
 With Mazart, process models are not graphically constructed using a visual programming environment typical of most of current BPM development. Mozart's target user community is software development organizations who prefer something that fits seamlessly into their existing development process.
@@ -69,12 +71,13 @@ Opera is a POC GUI for Mozart. It provides the ability to:
 
 * Load BPM process Elixir modules.
 * Start business process instances.
-* Complete user tasks.
+* Filter and complete user tasks.
 * Examine the state of active and completed process instances.
+* Assign users to work groups.
 
 The application is available in GitHub at https://github.com/CharlesIrvineKC/opera.
 
-It's also deployed to Fly.io at https://opera-holy-bush-2296.fly.dev/
+It's also deployed to Fly.io at https://opera-holy-bush-2296.fly.dev/. Feel free to experiment with it, and don't worry. It's just a playground of sorts for experimenting and learning.
 
 ## Installation
 

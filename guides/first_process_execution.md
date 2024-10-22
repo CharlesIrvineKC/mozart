@@ -4,19 +4,33 @@ Now we will put together what we've lerned so far to execute a process model.
 
 ## To Follow Along..
 
-To follow along create a new Elxir **mix** project and then add Mozart as a dependency in your **mix.exs** project file. Your dependency should look like this:
+To follow along create a new Elxir **mix** project and then add Mozart as a dependency in your **mix.exs** project file.
+
+Create a project:
+
+```
+$ mix new mozart_play
+```
+
+Open mix.exs and add **mozart** dependency:
 
 ```elixir
   defp deps do
     [
-      {:mozart, "~> 0.4"}
+      {:mozart, "~> 0.9"}
     ]
   end
 ```
 
+Get dependencies:
+
+```
+$ mix deps.get
+```
+
 ## Create BPM Application
 
-First you need to create a BPM application module. In it you will specify your process models and any needed supported functions. Add the following file to your project.
+First you need to create a BPM application module. In it you will specify your process models and any needed supported functions. Add the file lib/my_bpm_application.ex to your project:
 
 ```elixir
 defmodule MyBpmApplication do
@@ -36,11 +50,11 @@ defmodule MyBpmApplication do
   use Mozart.BpmProcess
 
   def sum(data) do
-    %{sum: data.x + data.y}
+    %{sum: data["x"] + data["y"]}
   end
 
   defprocess "add x and y process" do
-    service_task("add x and y task", function: &MyBpmApplication.sum/1, inputs: "x,y")
+    service_task("add x and y task", function: :sum, inputs: "x,y")
   end
 
 end
@@ -67,17 +81,27 @@ You should see:
 
 ````
 iex [15:06 :: 3] > MyBpmApplication.load()
-{:ok, ["add x and y process"]}
+%{
+  active_process_groups: %{},
+  active_processes: %{},
+  restart_state_cache: %{},
+  user_task_db: #PID<0.1995.0>,
+  completed_process_db: #PID<0.2000.0>,
+  process_model_db: #PID<0.2004.0>,
+  bpm_application_db: #PID<0.2008.0>,
+  process_state_db: #PID<0.2013.0>,
+  type_db: #PID<0.2017.0>
+}
 ````
 
-The function **MyBpmApplication.load/0** was created for you automatically when you inserted **use Mozart.BpmProcess** into your module definition.
+The function **MyBpmApplication.load/0** was created for you automatically when you inserted **use Mozart.BpmProcess** into your module definition. The output shows the internal state of the system. Disregard this for now.
 
 ## Start a Process Engine and Execute the Process Model
 
 Now let us start a process engine, initializing it with our process model and some data. Then we call the function that will invoke process execution. Copy the following into your iex session:
 
 ```elixir
-{:ok, ppid, uid, _key} = PE.start_process("add x and y process", %{x: 1, y: 1})
+{:ok, ppid, uid, _key} = PE.start_process("add x and y process",%{"x" => 1, "y" => 2})
 
 ```
 
@@ -106,9 +130,9 @@ After calling the *ProcessEngine.execute* function, you should see something lik
 ```elixir
 iex [08:50 :: 23] > PE.execute(ppid)
 :ok
-10:02:40.292 [info] New service task instance [add x and y task][ddd36158-7837-4c5a-b0be-66a02f304d27]
-10:02:40.292 [info] Complete service task [add x and y task[ddd36158-7837-4c5a-b0be-66a02f304d27]
-10:02:40.292 [info] Process complete [add x and y process][a1d4525d-96cb-4da1-9a82-d20bab4afa89]
+10:14:43.450 [info] New service task instance [add x and y task][2dd65cc0-ca74-4b4d-9219-db36e486dd68]
+10:14:43.454 [info] Complete service task [add x and y task[2dd65cc0-ca74-4b4d-9219-db36e486dd68]
+10:14:43.456 [info] Exit process: process complete [add x and y process][3261eb1a-7b2a-438a-aa2a-3c9ec646e8f7]
 ```
 
 The logs show that:
@@ -130,7 +154,7 @@ and you should see:
 
 ```elixir
 iex [08:50 :: 26] > PS.get_completed_process_data(uid)
-%{sum: 2, y: 1, x: 1}
+%{:sum => 3, "x" => 1, "y" => 2}
 ```
 
 We see that a **sum** property was added to process data whose value is the sume of the properties **x** and **y**..
