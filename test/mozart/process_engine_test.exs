@@ -12,15 +12,54 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  def receive_selector(msg, data) do
+    case msg do
+      %{"Customer Name" => name, "Phone Number" => phone_number} ->
+        if name == data["Customer Name"] do
+          %{"Phone Number" => phone_number}
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defprocess "receive process" do
+    receive_task("receive_task", selector: :receive_selector)
+  end
+
+  defprocess "send process" do
+    send_task("send task",
+      message: %{"Customer Name" => "Charles Irvine", "Phone Number" => "800 328 0022"}
+    )
+  end
+
+  test "receive a send message" do
+    PS.clear_state()
+    load()
+
+    r_data = %{"Customer Name" => "Charles Irvine"}
+    {:ok, r_ppid, _r_uid, _business_key1} = PE.start_process("receive process", r_data)
+    PE.execute(r_ppid)
+    Process.sleep(100)
+
+    s_data = %{}
+    {:ok, s_ppid, _s_uid, _business_key1} = PE.start_process("send process", s_data)
+    PE.execute(s_ppid)
+    Process.sleep(100)
+  end
+
   def reroute_is_true(data) do
     data.reroute
   end
 
   defprocess "reroute process" do
     prototype_task("initial prototype task")
+
     reroute_task "reroute task", condition: :reroute_is_true do
       prototype_task("rerouted prototype task")
     end
+
     prototype_task("final prototype task", foobar: true)
   end
 
@@ -62,7 +101,7 @@ defmodule Mozart.ProcessEngineTest do
       end
 
       case_i :case_2 do
-        prototype_task("Case 2 Prototype Task" )
+        prototype_task("Case 2 Prototype Task")
       end
     end
   end
@@ -102,7 +141,7 @@ defmodule Mozart.ProcessEngineTest do
 
     Process.sleep(100)
 
-   assert PE.get_state(ppid).top_level_process == "Simple Process with User Task"
+    assert PE.get_state(ppid).top_level_process == "Simple Process with User Task"
   end
 
   defprocess "Top Level Process" do
@@ -246,7 +285,7 @@ defmodule Mozart.ProcessEngineTest do
     load()
     data = %{}
 
-    {:ok, ppid, _uid, _business_key} =PE.start_process("top level process", data)
+    {:ok, ppid, _uid, _business_key} = PE.start_process("top level process", data)
 
     PE.execute(ppid)
     Process.sleep(100)
@@ -279,7 +318,6 @@ defmodule Mozart.ProcessEngineTest do
 
     assert user_task.assigned_user == "admin@opera.com"
   end
-
 
   def while_count_less_than(data) do
     data["count"] < 1
@@ -852,10 +890,15 @@ defmodule Mozart.ProcessEngineTest do
   #   assert length(completed_process.completed_tasks) == 5
   # end
 
-  def receive_loan_income(msg) do
+  def receive_loan_income(msg, state_data) do
     case msg do
-      {:barrower_income, income} -> %{"barrower_income" => income}
-      _ -> nil
+      %{"Barrower Income" => income, "Barrower ID" => id} ->
+        if state_data["Barrower ID"] == id do
+          %{"Barrower Income" => income}
+        end
+
+      _ ->
+        nil
     end
   end
 
@@ -866,7 +909,7 @@ defmodule Mozart.ProcessEngineTest do
   test "receive barrower income process" do
     PS.clear_state()
     load()
-    data = %{"barrower_id" => "511-58-1422"}
+    data = %{"Barrower ID" => "511-58-1422"}
 
     {:ok, ppid, uid, _business_key} = PE.start_process("receive barrower income process", data)
     PE.execute(ppid)
@@ -874,14 +917,19 @@ defmodule Mozart.ProcessEngineTest do
 
     assert PE.is_complete(ppid) == false
 
-    PubSub.broadcast(:pubsub, "pe_topic", {:message, {:barrower_income, 100_000}})
+    PubSub.broadcast(
+      :pubsub,
+      "pe_topic",
+      {:message, %{"Barrower Income" => 100_000, "Barrower ID" => "511-58-1422"}}
+    )
+
     Process.sleep(100)
 
     completed_process = PS.get_completed_process(uid)
 
     assert completed_process.data == %{
-             "barrower_income" => 100_000,
-             "barrower_id" => "511-58-1422"
+             "Barrower Income" => 100_000,
+             "Barrower ID" => "511-58-1422"
            }
 
     assert completed_process.complete == true
@@ -890,32 +938,6 @@ defmodule Mozart.ProcessEngineTest do
 
   defprocess "send barrower income process" do
     send_task("send barrower income", message: {:barrower_income, 100_000})
-  end
-
-  test "send and receive barrower income process" do
-    PS.clear_state()
-    load()
-    data = %{"barrower_id" => "511-58-1422"}
-
-    {:ok, r_ppid, r_uid, _business_key} =
-      PE.start_process("receive barrower income process", data)
-
-    PE.execute(r_ppid)
-    Process.sleep(500)
-
-    {:ok, s_ppid, _s_uid, _business_key} = PE.start_process("send barrower income process", %{})
-    PE.execute(s_ppid)
-    Process.sleep(500)
-
-    completed_process = PS.get_completed_process(r_uid)
-
-    assert completed_process.data == %{
-             "barrower_income" => 100_000,
-             "barrower_id" => "511-58-1422"
-           }
-
-    assert completed_process.complete == true
-    assert length(completed_process.completed_tasks) == 1
   end
 
   def square(data) do

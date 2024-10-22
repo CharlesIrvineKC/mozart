@@ -294,11 +294,11 @@ defmodule Mozart.ProcessEngine do
     |> test_for_process_completion()
   end
 
-  def handle_info({:message, payload}, state) do
+  def handle_info({:message, message}, state) do
     open_tasks =
       Enum.into(get_open_tasks_impl(state), %{}, fn {uid, task} ->
         if task.type == :receive,
-          do: {uid, update_receive_event_task(task, payload)},
+          do: {uid, update_receive_event_task(task, message, state.data)},
           else: {uid, task}
       end)
 
@@ -360,8 +360,8 @@ defmodule Mozart.ProcessEngine do
 
   ## callback utilities
 
-  defp update_receive_event_task(s_task, payload) do
-    select_result = apply(s_task.module, s_task.selector, [payload])
+  defp update_receive_event_task(s_task, message, state_data) do
+    select_result = apply(s_task.module, s_task.selector, [message, state_data])
 
     if select_result,
       do: Map.put(s_task, :data, select_result) |> Map.put(:complete, true),
