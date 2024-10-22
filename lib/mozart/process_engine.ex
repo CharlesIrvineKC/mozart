@@ -426,8 +426,10 @@ defmodule Mozart.ProcessEngine do
 
     if new_task.type == :timer, do: set_timer_for(new_task, new_task.timer_duration)
 
-    if new_task.type == :send,
-      do: PubSub.broadcast(:pubsub, "pe_topic", {:message, new_task.message})
+    if new_task.type == :send do
+      message = new_task.message || apply(new_task.module, new_task.generator, [state.data])
+      PubSub.broadcast(:pubsub, "pe_topic", {:message, message})
+    end
 
     new_task =
       if new_task.type == :user, do: update_user_task(new_task, state), else: new_task

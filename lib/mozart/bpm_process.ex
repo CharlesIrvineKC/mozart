@@ -695,9 +695,13 @@ defmodule Mozart.BpmProcess do
   end
   ```
   """
-  defmacro send_task(name, message: message) do
+  defmacro send_task(name, options) do
     quote do
-      task = %Send{name: unquote(name), message: unquote(message)}
+      options = unquote(options)
+      message = Keyword.get(options, :message)
+      generator = Keyword.get(options, :generator)
+      module = Keyword.get(options, :module) || __MODULE__
+      task = %Send{name: unquote(name), module: module, message: message, generator: generator}
       insert_new_task(task)
     end
   end

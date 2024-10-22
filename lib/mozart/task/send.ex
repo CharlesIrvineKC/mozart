@@ -5,6 +5,8 @@ defmodule Mozart.Task.Send do
     :next,
     :uid,
     :message,
+    :generator,
+    :module,
     :start_time,
     :finish_time,
     :duration,

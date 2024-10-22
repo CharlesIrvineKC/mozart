@@ -25,13 +25,22 @@ defmodule Mozart.ProcessEngineTest do
   end
 
   defprocess "receive process" do
-    receive_task("receive_task", selector: :receive_selector)
+    receive_task("receive_task 1", selector: :receive_selector)
+    receive_task("receive_task 2", selector: :receive_selector)
   end
 
-  defprocess "send process" do
+  defprocess "send process 1" do
     send_task("send task",
       message: %{"Customer Name" => "Charles Irvine", "Phone Number" => "800 328 0022"}
     )
+  end
+
+  defprocess "send process 2" do
+    send_task("send task", generator: :build_message)
+  end
+
+  def build_message(data) do
+    %{"Customer Name" => data["Customer Name"], "Phone Number" => data["Phone Number"]}
   end
 
   test "receive a send message" do
@@ -39,14 +48,28 @@ defmodule Mozart.ProcessEngineTest do
     load()
 
     r_data = %{"Customer Name" => "Charles Irvine"}
-    {:ok, r_ppid, _r_uid, _business_key1} = PE.start_process("receive process", r_data)
+    {:ok, r_ppid, r_uid, _business_key1} = PE.start_process("receive process", r_data)
     PE.execute(r_ppid)
     Process.sleep(100)
 
-    s_data = %{}
-    {:ok, s_ppid, _s_uid, _business_key1} = PE.start_process("send process", s_data)
-    PE.execute(s_ppid)
+    s_data_1 = %{}
+    {:ok, s_ppid_1, s_uid_1, _business_key1} = PE.start_process("send process 1", s_data_1)
+    PE.execute(s_ppid_1)
     Process.sleep(100)
+
+    s_data_2 = %{"Customer Name" => "Charles Irvine", "Phone Number" => "800 328 0022"}
+    {:ok, s_ppid_2, s_uid_2, _business_key1} = PE.start_process("send process 2", s_data_2)
+    PE.execute(s_ppid_2)
+    Process.sleep(100)
+
+    completed_process = PS.get_completed_process(r_uid)
+    assert length(completed_process.completed_tasks) == 2
+
+    completed_process = PS.get_completed_process(s_uid_1)
+    assert length(completed_process.completed_tasks) == 1
+
+    completed_process = PS.get_completed_process(s_uid_2)
+    assert length(completed_process.completed_tasks) == 1
   end
 
   def reroute_is_true(data) do
