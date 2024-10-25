@@ -8,6 +8,7 @@ defmodule Mozart.ProcessEngine do
 
   require Logger
 
+  alias Mozart.Data.Note
   alias Mozart.ProcessService, as: PS
   alias Mozart.Data.ProcessState
   alias Mozart.Data.ExecutionFrame
@@ -93,6 +94,21 @@ defmodule Mozart.ProcessEngine do
       DynamicSupervisor.start_child(ProcessEngineSupervisor, child_spec)
 
     {:ok, pid, uid, business_key}
+  end
+
+  @doc false
+  def add_process_note(ppid, user_task_name, author_id, note_text) do
+    GenServer.call(ppid, {:add_process_note, user_task_name, author_id, note_text})
+  end
+
+  @doc false
+  def update_process_note(ppid, note) do
+    GenServer.call(ppid, {:update_process_note, note})
+  end
+
+  @doc false
+  def get_process_notes(ppid) do
+    GenServer.call(ppid, :get_process_notes)
   end
 
   @doc false
@@ -218,6 +234,29 @@ defmodule Mozart.ProcessEngine do
       |> Map.put(:completed_tasks, previous_state.completed_tasks)
 
     {:reply, state, state}
+  end
+
+  def handle_call(:get_process_notes, _from, state) do
+    {:reply, state.notes, state}
+  end
+
+  def handle_call({:update_process_note, note}, _from, state) do
+    notes = state.notes |> Map.put(note.uid, note)
+    state = state |> Map.put(:notes, notes)
+    {:reply, note, state}
+  end
+
+  def handle_call({:add_process_note, user_task_name, author_id, note_text}, _from, state) do
+    note = %Note{
+      uid: Ecto.UUID.generate(),
+      task_name: user_task_name,
+      author: author_id,
+      timestamp: DateTime.utc_now(),
+      text: note_text
+    }
+    notes = state.notes |> Map.put(note.uid, note)
+    state = state |> Map.put(:notes, notes)
+    {:reply, note, state}
   end
 
   def handle_call(:is_complete, _from, state) do

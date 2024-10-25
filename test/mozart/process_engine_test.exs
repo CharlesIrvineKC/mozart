@@ -12,6 +12,63 @@ defmodule Mozart.ProcessEngineTest do
   alias Mozart.Type.MultiChoice
   alias Mozart.Type.Confirm
 
+  defp get_first_task_from_state(ppid) do
+    PE.get_state(ppid)
+    |> Map.get(:execution_frames)
+    |> hd()
+    |> Map.get(:open_tasks)
+    |> Map.values()
+    |> hd()
+  end
+
+  defprocess "a user task process" do
+    user_task("a user task", group: "Admin")
+  end
+
+  test "add process note from service" do
+    PS.clear_state()
+    load()
+    {:ok, ppid, _uid, _business_key1} = PE.start_process("a user task process", %{})
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    user_task = get_first_task_from_state(ppid)
+
+    note = PS.add_process_note(user_task.uid, "foobar@opera.com", "a sample note")
+
+    assert PE.get_state(ppid) |> Map.get(:notes) |> Map.get(note.uid) == note
+  end
+
+  test "add process note" do
+    PS.clear_state()
+    load()
+    {:ok, ppid, _uid, _business_key1} = PE.start_process("a user task process", %{})
+    PE.execute(ppid)
+    Process.sleep(100)
+
+    note = PE.add_process_note(ppid, "my task", "john.doe@mozart.com", "some note text")
+    assert %Mozart.Data.Note{
+             uid: _uid,
+             task_name: "my task",
+             author: "john.doe@mozart.com",
+             timestamp: _timestamp,
+             text: "some note text"
+           } = note
+
+    note = %{note | text: "some new text"}
+    assert %Mozart.Data.Note{
+             uid: _uid,
+             task_name: "my task",
+             author: "john.doe@mozart.com",
+             timestamp: _timestamp,
+             text: "some new text"
+           } = PE.update_process_note(ppid, note)
+
+    user_task = get_first_task_from_state(ppid)
+    assert PS.get_process_notes(user_task.uid) |> map_size() == 1
+
+  end
+
   def receive_selector(msg, data) do
     case msg do
       %{"Customer Name" => name, "Phone Number" => phone_number} ->

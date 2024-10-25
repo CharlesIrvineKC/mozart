@@ -160,6 +160,27 @@ defmodule Mozart.ProcessService do
     GenServer.cast(__MODULE__, {:complete_user_task, user_task_uid, data})
   end
 
+  @doc """
+  Add a note to process state.
+  """
+  def add_process_note(user_task_id, author_id, note_text) do
+    GenServer.call(__MODULE__, {:add_process_note, user_task_id, author_id, note_text})
+  end
+
+  @doc """
+  Update a process note.
+  """
+  def update_process_note(user_task_id, note) do
+    GenServer.call(__MODULE__, {:update_process_note, user_task_id, note})
+  end
+
+  @doc """
+  Get notes from process state of task.
+  """
+  def get_process_notes(user_task_id) do
+    GenServer.call(__MODULE__, {:get_process_notes, user_task_id})
+  end
+
   @doc false
   def assign_user_task(task_uid, user_id) do
     GenServer.cast(__MODULE__, {:assign_user_task, task_uid, user_id})
@@ -510,6 +531,27 @@ defmodule Mozart.ProcessService do
   def handle_call(:get_persisted_processes, _from, state) do
     persisted_processes = CubDB.select(state.process_state_db) |> Enum.to_list()
     {:reply, persisted_processes, state}
+  end
+
+  def handle_call({:add_process_note, user_task_uid, author_id, note_text}, _from, state) do
+    user_task = get_user_task_by_id(state, user_task_uid)
+    ppid = Map.get(state.active_processes, user_task.process_uid)
+    note = PE.add_process_note(ppid, user_task.name, author_id, note_text)
+    {:reply, note, state}
+  end
+
+  def handle_call({:get_process_notes, user_task_uid}, _from, state) do
+    user_task = get_user_task_by_id(state, user_task_uid)
+    ppid = Map.get(state.active_processes, user_task.process_uid)
+    notes = PE.get_process_notes(ppid)
+    {:reply, notes, state}
+  end
+
+  def handle_call({:update_process_note, user_task_uid, note}, _from, state) do
+    user_task = get_user_task_by_id(state, user_task_uid)
+    ppid = Map.get(state.active_processes, user_task.process_uid)
+    note = PE.update_process_note(ppid, note)
+    {:reply, note, state}
   end
 
   def handle_cast({:persist_process_state, pe_state}, state) do

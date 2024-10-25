@@ -8,6 +8,7 @@ defmodule Mozart.Data.ProcessState do
     :end_time,
     :top_level_process,
     :execute_duration,
+    notes: %{},
     data: %{},
     execution_frames: [],
     completed_tasks: [],
