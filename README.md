@@ -50,10 +50,10 @@ iex > ProcessEngine.execute(ppid)
 [info] Process complete [add x and y process][b82f5da1-6e5d-44df-b4ed-9064b877e484]
 
 iex > ProcessService.get_completed_process_data(uid)
-%{"sum" => 2, "x" => 1, "y" => 2}
+%{"sum" => 3, "x" => 1, "y" => 2}
 ```
 
-With Mazart, process models are not graphically constructed using a visual programming environment typical of most of current BPM development. Mozart's target user community is software development organizations who prefer something that fits seamlessly into their existing development process.
+With Mozart, process models are not graphically constructed using a visual programming environment typical of most of current BPM development. Mozart's target user community is software development organizations who prefer something that fits seamlessly into their existing development process.
 
 However, visual BPM modelling tools are highly regarded by business process analysts and the resulting graphical process depictions are highly readable by developers and process analysts alike. So, it was essential that the DSL developed produce process models that are as readily understood by process analysts as are BPMN2 process models. We hope you will think we have been reasonably successful achieving this goal.
 
