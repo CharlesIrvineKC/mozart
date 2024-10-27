@@ -349,7 +349,7 @@ defmodule Mozart.ProcessEngineTest do
     apps = PS.get_bpm_applications()
     {"test bpm app", app} = hd(apps)
     assert app.module == Mozart.ProcessEngineTest
-    assert app.groups == ["Admin", "Customer Service"]
+    assert Enum.frequencies(app.groups) == Enum.frequencies(["Admin", "Customer Service"])
   end
 
   defprocess "user task has top level model name" do

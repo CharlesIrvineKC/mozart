@@ -170,6 +170,13 @@ defmodule Mozart.ProcessService do
   @doc """
   Update a process note.
   """
+  def delete_process_note(user_task_id, note) do
+    GenServer.call(__MODULE__, {:delete_process_note, user_task_id, note})
+  end
+
+  @doc """
+  Update a process note.
+  """
   def update_process_note(user_task_id, note) do
     GenServer.call(__MODULE__, {:update_process_note, user_task_id, note})
   end
@@ -545,6 +552,13 @@ defmodule Mozart.ProcessService do
     ppid = Map.get(state.active_processes, user_task.process_uid)
     notes = PE.get_process_notes(ppid)
     {:reply, notes, state}
+  end
+
+  def handle_call({:delete_process_note, user_task_uid, note}, _from, state) do
+    user_task = get_user_task_by_id(state, user_task_uid)
+    ppid = Map.get(state.active_processes, user_task.process_uid)
+    note = PE.delete_process_note(ppid, note)
+    {:reply, note, state}
   end
 
   def handle_call({:update_process_note, user_task_uid, note}, _from, state) do

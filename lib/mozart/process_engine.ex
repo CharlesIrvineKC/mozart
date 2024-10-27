@@ -19,8 +19,8 @@ defmodule Mozart.ProcessEngine do
   ## Client API
 
   @doc false
-  def start_link(uid, process, data, business_key) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, process, data, business_key})
+  def start_link(uid, process, data, business_key, notes, execution_frames) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, {uid, process, data, business_key, notes, execution_frames})
 
     {:ok, pid, {uid, business_key}}
   end
@@ -64,10 +64,12 @@ defmodule Mozart.ProcessEngine do
   def start_process(process, data, business_key \\ nil) do
     uid = UUID.generate()
     business_key = business_key || UUID.generate()
+    notes = %{}
+    execution_frames = [%ExecutionFrame{process: process, data: data}]
 
     child_spec = %{
       id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start_link, [uid, process, data, business_key]},
+      start: {Mozart.ProcessEngine, :start_link, [uid, process, data, business_key, notes, execution_frames]},
       restart: :transient
     }
 
@@ -83,10 +85,12 @@ defmodule Mozart.ProcessEngine do
     process = state.top_level_process
     data = state.data
     business_key = state.business_key
+    notes = state.notes
+    execution_frames = state.execution_frames
 
     child_spec = %{
       id: MyProcessEngine,
-      start: {Mozart.ProcessEngine, :start_link, [uid, process, data, business_key]},
+      start: {Mozart.ProcessEngine, :start_link, [uid, process, data, business_key, notes, execution_frames]},
       restart: :transient
     }
 
@@ -99,6 +103,11 @@ defmodule Mozart.ProcessEngine do
   @doc false
   def add_process_note(ppid, user_task_name, author_id, note_text) do
     GenServer.call(ppid, {:add_process_note, user_task_name, author_id, note_text})
+  end
+
+  @doc false
+  def delete_process_note(ppid, note) do
+    GenServer.call(ppid, {:delete_process_note, note})
   end
 
   @doc false
@@ -195,7 +204,7 @@ defmodule Mozart.ProcessEngine do
   ## GenServer callbacks
 
   @doc false
-  def init({uid, process, data, business_key}) do
+  def init({uid, process, data, business_key, notes, execution_frames}) do
     pe_recovered_state = PS.get_cached_state(uid)
 
     state =
@@ -204,10 +213,11 @@ defmodule Mozart.ProcessEngine do
           uid: uid,
           data: data,
           business_key: business_key,
+          notes: notes,
           top_level_process: process,
           start_time: DateTime.utc_now(),
-          execution_frames: [%ExecutionFrame{process: process, data: data}]
-        }
+          execution_frames: execution_frames
+        } 
 
     # if pe_recovered_state do
     #   Logger.warning("Restart process instance [#{process}][#{uid}]")
@@ -240,10 +250,14 @@ defmodule Mozart.ProcessEngine do
     {:reply, state.notes, state}
   end
 
+  def handle_call({:delete_process_note, note}, _from, state) do
+    state = Map.put(state, :notes, Map.delete(state.notes, note.uid))
+    {:reply, note, state}
+  end
+
   def handle_call({:update_process_note, note}, _from, state) do
     notes = state.notes |> Map.put(note.uid, note)
-    state = state |> Map.put(:notes, notes)
-    {:reply, note, state}
+    {:reply, note, state |> Map.put(:notes, notes)}
   end
 
   def handle_call({:add_process_note, user_task_name, author_id, note_text}, _from, state) do

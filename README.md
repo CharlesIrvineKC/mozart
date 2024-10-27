@@ -1,6 +1,6 @@
 # Mozart - An Elixir BPM Platform
 
-Mozart is an open source BPM platform written using Elixir. 
+Mozart is an open source BPM platform written using Elixir. Instead of using a visual modelling tool to construct BPMN2 models, process models are defined using a BPM Domain Specific Language (DSL). 
 
 ## What is a Business Process Management
 
@@ -61,13 +61,13 @@ We anticipate that BPMN2 tools will still be used by Mozart development teams, b
 
 ### A Process for Each Business Process
 
-Another distinguishing feature is that each business process model is executed in a separate Elixir process (GenServer) instance. This is possible due to Elixir's (and Erlang's) unique capacity for highly performant, fault tolerant and massively concurrent multi-processing. 
+Another distinguishing feature is that each business top-level process model is executed in a separate Elixir process (GenServer) instance. This is possible due to Elixir's (and Erlang's) unique capacity for highly performant, fault tolerant and massively concurrent multi-processing. Subprocess models do not execute in their own Elixir processes. 
 
 The goal is extremely fast and relable business process model execution. We will be publishing performance metics in the near future to gage Mozart's performance charateristics. Initial results look very promising.
 
 ## Opera - A Proof of Concept Mozart GUI
 
-Opera is a POC GUI for Mozart. It provides the ability to:
+Opera is a POC GUI for Mozart implemented using LiveView. It provides the ability to:
 
 * Load BPM process Elixir modules.
 * Start business process instances.
