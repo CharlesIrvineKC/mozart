@@ -386,6 +386,11 @@ defmodule Mozart.ProcessService do
       type_db: state.type_db
     }
 
+    children = DynamicSupervisor.which_children(ProcessEngineSupervisor)
+    Enum.each(children, fn {_, pid, _, _} ->
+      DynamicSupervisor.terminate_child(ProcessEngineSupervisor, pid)
+    end)
+
     {:reply, new_state, new_state}
   end
 
